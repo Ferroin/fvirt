@@ -1,0 +1,27 @@
+---
+# Configuration for the pr-labeler workflow.
+
+area/common:
+  - ulvdm/__init__.py
+  - ulvdm/common.py
+
+documentation:
+  - LICENSE.md
+  - README.md
+
+infra:
+  - .gigignore
+  - .gitmodules
+  - .github/labeler.yml
+  - .github/labels.yml
+
+infra/ci:
+  - .flake8
+  - .github/dependabot.yml
+  - .github/scripts/check-labels.py
+  - .github/workflows/**
+  - .mdl-style.rb
+
+infra/packaging:
+  - poetry.lock
+  - pyproject.toml

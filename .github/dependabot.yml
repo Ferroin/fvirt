@@ -1,0 +1,19 @@
+---
+version: 2
+
+updates:
+  - package-ecosystem: "pip"
+    directory: "/"
+    labels:
+      - infra/deps
+      - infra/deps/python
+    schedule:
+      interval: "weekly"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    labels:
+      - infra/deps
+      - infra/deps/github-actions
+    schedule:
+      interval: "weekly"
