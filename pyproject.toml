@@ -1,31 +1,32 @@
 [tool.poetry]
-name = "ulvdm"
+name = "virshx"
 version = "0.0.1"
-description = "The micro libvirt domain manager."
+description = "The extended libvirt shell."
 authors = ["Austin S. Hemmelgarn <ahferroin7@gmail.com>"]
 license = "MITNFA"
 readme = "README.md"
-repository = "https://github.com/Ferroin/ulvdm"
+repository = "https://github.com/Ferroin/virshx"
 
 [tool.poetry.dependencies]
 python = "^3.11"
 Jinja2 = "^3.1.2"
 libvirt-python = "^9.6.0"
+lxml = "^4.9.3"
 
 [tool.poetry.group.dev.dependencies]
-mypy = "^1.5.0"
+bandit = "^1.7.5"
 flake8 = "^6.0.0"
 flake8-2020 = "^1.8.1"
-flake8-quotes = "^3.3.2"
-flake8-debug = "^0.2.0"
 flake8-async = "^22.11.14"
+flake8-debug = "^0.2.0"
+flake8-quotes = "^3.3.2"
 flake8-sfs = "^0.0.4"
-bandit = "^1.7.5"
+lxml-stubs = "^0.4.0"
+mypy = "^1.5.0"
 yamllint = "^1.32.0"
 
 [tool.mypy]
 python_version = "3.11"
-incremental = false
 warn_unused_configs = true
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
@@ -34,6 +35,10 @@ warn_redundant_casts = true
 warn_unused_ignores = true
 warn_return_any = true
 warn_unreachable = true
+
+[[tool.mypy.overrides]]
+module = "libvirt"
+ignore_missing_imports = true
 
 [build-system]
 requires = ["poetry-core"]
