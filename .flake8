@@ -7,6 +7,4 @@ multiline-quotes='''
 docstring-quotes='''
 
 per-file-ignores=
-    scripts/check-labels.py: DB100
-    scripts/convert_spells_csv.py: DB100
-    scripts/gen-docker-tags.py: DB100
+    .github/scripts/check-labels.py: DB100
