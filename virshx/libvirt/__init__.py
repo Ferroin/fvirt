@@ -10,12 +10,32 @@
   that should logically have them.
 
   These wrappers are intended to compensate for these limitations and
-  make it overall nicer for us to interact with libvirt.'''
+  make it overall nicer for us to interact with libvirt.
+
+  The API_VERSION constant provides version information about the
+  underlying libvirt-python library as a virshx.common.VersionNumber
+  instance.'''
 
 from __future__ import annotations
 
+import libvirt
+
+from ..common import VersionNumber
 from .exceptions import (NotConnected, EntityNotRunning, InvalidConfig, InvalidEntity, InsufficientPrivileges)
 from .hypervisor import Hypervisor
+
+
+def parse_libvirt_version(version: int) -> VersionNumber:
+    '''Parse a libvirt version number into a version tuple.'''
+    vstr = str(version)
+    release = int(vstr[-3:].lstrip('0') or '0')
+    minor = int(vstr[-6:-3].lstrip('0') or '0')
+    major = int(vstr[:-6].lstrip('0'))
+    return VersionNumber(major, minor, release)
+
+
+API_VERSION = parse_libvirt_version(libvirt.getVersion())
+
 
 __all__ = [
     'EntityNotRunning',
@@ -24,4 +44,5 @@ __all__ = [
     'InvalidEntity',
     'NotConnected',
     'Hypervisor',
+    'API_VERSION',
 ]

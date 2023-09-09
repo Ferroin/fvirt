@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
     from .hypervisor import Hypervisor
 
-    T = TypeVar('T')
+T = TypeVar('T')
 
 
 class Entity(ABC):
