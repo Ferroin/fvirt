@@ -9,7 +9,7 @@ repository = "https://github.com/Ferroin/virshx"
 
 [tool.poetry.dependencies]
 python = "^3.11"
-libvirt-python = "^9.6.0"
+libvirt-python = "^9.6.0,!=9.7.0"
 lxml = "^4.9.3"
 
 [tool.poetry.group.dev.dependencies]

@@ -167,12 +167,12 @@ gitdb = ">=4.0.1,<5"
 
 [[package]]
 name = "libvirt-python"
-version = "9.7.0"
+version = "9.6.0"
 description = "The libvirt virtualization API python binding"
 optional = false
 python-versions = ">=3.6"
 files = [
-    {file = "libvirt-python-9.7.0.tar.gz", hash = "sha256:d8be9eaa75bad75641e13b608285926cde46d6440a239f106277a6dd55235470"},
+    {file = "libvirt-python-9.6.0.tar.gz", hash = "sha256:53422d8e3110139655c3d9c2ff2602b238f8a39b7bf61a92a620119b45550a99"},
 ]
 
 [[package]]
@@ -580,4 +580,4 @@ dev = ["doc8", "flake8", "flake8-import-order", "rstcheck[sphinx]", "sphinx"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "afc90502f391cf98a0498c540bfc8f696f1ee0e86dc164121b9abdc90e6ff8b5"
+content-hash = "e432c1b653c3a5e7e537eea321577818242b7f0067f5b5b55ce27a71a6da37a7"
