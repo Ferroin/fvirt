@@ -7,60 +7,94 @@ from __future__ import annotations
 
 from time import sleep
 from typing import TYPE_CHECKING, Self, cast
-from uuid import UUID
 
-from lxml import etree
+import libvirt
 
-from .exceptions import InvalidDomain, InsufficientPrivileges
+from .entity import ConfigurableEntity, RunnableEntity, ConfigElementProperty, ConfigAttributeProperty
 
 if TYPE_CHECKING:
-    import libvirt
-
     from .hypervisor import Hypervisor
 
 
-def update_element_text(tree: etree._Element, path: str, text: str) -> etree._Element:
-    '''Update the text of the element at path in tree.
-
-       Expects the requested element to exist.'''
-    element = tree.find(path)
-
-    if element is None:
-        raise RuntimeError
-
-    element.text = text
-
-    return tree
+def _non_negative_integer(value: int, _instance: Domain) -> None:
+    if not isinstance(value, int):
+        raise ValueError(f'{ value } is not a positive integer.')
+    else:
+        if value < 1:
+            raise ValueError(f'{ value } is not a positive integer.')
 
 
-def update_element_attribute(tree: etree._Element, path: str, attrib: str, value: str) -> etree._Element:
-    '''Update the value of the attribute attrib of the element at path in tree.
+def _currentCPUs_validator(value: int, instance: Domain) -> None:
+    _non_negative_integer(value, instance)
 
-       Expects the requested element to exist.'''
-    element = tree.find(path)
-
-    if element is None:
-        raise RuntimeError
-
-    element.set(attrib, value)
-
-    return tree
+    if value > instance.maxCPUs:
+        raise ValueError('Current CPU count may not exceed max CPU count.')
 
 
-class Domain:
+def _memory_validator(value: int, instance: Domain) -> None:
+    _non_negative_integer(value, instance)
+
+    if value > instance.maxMemory:
+        raise ValueError('Memory cannot exceed maxMemory value.')
+
+
+def _currentMemory_validator(value: int, instance: Domain) -> None:
+    _non_negative_integer(value, instance)
+
+    if value > instance.memory:
+        raise ValueError('Current memory cannot exceed memory value.')
+
+
+class Domain(ConfigurableEntity, RunnableEntity):
     '''Basic class encapsulating a libvirt domain.
 
        This is a wrapper around a libvirt.virDomain instance. It lacks
        some of the functionality provided by that class, but wraps most
        of the useful parts in a nicer, more Pythonic interface.'''
+    maxCPUs: ConfigElementProperty[int] = ConfigElementProperty(
+        path='./vcpu',
+        typ=int,
+        validator=_non_negative_integer,
+    )
+    currentCPUs: ConfigAttributeProperty[int] = ConfigAttributeProperty(
+        path='./vcpu',
+        attrib='current',
+        typ=int,
+        fallback='maxCPUs',
+        validator=_currentCPUs_validator,
+    )
+    maxMemory: ConfigElementProperty[int] = ConfigElementProperty(
+        path='./maxMemory',
+        typ=int,
+        units_to_bytes=True,
+        validator=_non_negative_integer,
+    )
+    maxMemorySlots: ConfigAttributeProperty[int] = ConfigAttributeProperty(
+        path='./maxMemory',
+        attrib='slots',
+        typ=int,
+        validator=_non_negative_integer,
+    )
+    memory: ConfigElementProperty[int] = ConfigElementProperty(
+        path='./memory',
+        typ=int,
+        fallback='maxMemory',
+        units_to_bytes=True,
+        validator=_memory_validator,
+    )
+    currentMemory: ConfigElementProperty[int] = ConfigElementProperty(
+        path='./currentMemory',
+        typ=int,
+        fallback='memory',
+        units_to_bytes=True,
+        validator=_currentMemory_validator,
+    )
+
     def __init__(self: Self, dom: libvirt.virDomain | Domain, conn: Hypervisor) -> None:
         if isinstance(dom, Domain):
-            self._domain: libvirt.virDomain = dom._domain
-        else:
-            self._domain = dom
+            dom = dom._entity
 
-        self._conn = conn
-        self._valid = True
+        super().__init__(dom, conn)
 
     def __repr__(self: Self) -> str:
         if self.valid:
@@ -69,197 +103,36 @@ class Domain:
             return '<virshx.libvirt.Domain: INVALID>'
 
     @property
-    def valid(self: Self) -> bool:
-        '''Whether the domain is valid or not.
-
-           Defaults to True on Domain instance creation.
-
-           Will be set to false when the domain is shut down or destroyed
-           if the domain is transient.
-
-           If this is false, most calling most methods or accessing most
-           properties will raise a virshex.libvirt.InvalidDomain error.'''
-        return self._valid
+    def _format_properties(self: Self) -> set[str]:
+        return super()._format_properties | {
+            'id',
+            'maxCPUs',
+            'currentCPUs',
+        }
 
     @property
-    def configRaw(self: Self) -> str:
-        '''The raw XML configuration of the domain.
+    def _define_method(self: Self) -> str:
+        return 'defineDomain'
 
-           Writing to this property will attempt to redefine the domain
-           with the specified config.
-
-           For pre-parsed XML configuration, use the config property
-           instead.'''
-        if not self.valid:
-            raise InvalidDomain
-
-        flags = libvirt.VIR_DOMAIN_XML_INACTIVE
+    @property
+    def _config_flags(self: Self) -> int:
+        flags: int = libvirt.VIR_DOMAIN_XML_INACTIVE
 
         if not self._conn.read_only:
             flags |= libvirt.VIR_DOMAIN_XML_SECURE
 
-        return cast(str, self._domain.XMLDesc(flags))
-
-    @configRaw.setter
-    def configRaw(self: Self, config: str) -> None:
-        '''Recreate the domain with the specified raw XML configuration.'''
-        self._domain = self._conn.defineDomain(config)._domain
-
-        self._valid = True
-
-    @property
-    def config(self: Self) -> etree._Element:
-        '''The XML configuration of the domain as an lxml.etree.Element instnce.
-
-           Writing to this property will attempt to redefine the domain
-           with the specified config.
-
-           For the raw XML as a string, use the rawConfig property.'''
-        if not self.valid:
-            raise InvalidDomain
-
-        return etree.fromstring(self.configRaw)
-
-    @config.setter
-    def config(self: Self, config: etree._Element) -> None:
-        '''Recreate the domain with the specified XML configuration.'''
-        self.configRaw = etree.tostring(config, encoding='unicode')
-
-        self._valid = True
-
-    @property
-    def running(self: Self) -> bool:
-        '''Whether the domain is running or not.'''
-        if not self.valid:
-            return False
-
-        return bool(self._domain.isActive())
-
-    @property
-    def persistent(self: Self) -> bool:
-        '''Whether the domain is persistent or not.'''
-        if not self.valid:
-            return False
-
-        return bool(self._domain.isPersistent())
-
-    @property
-    def name(self: Self) -> str:
-        '''The name of the domain.'''
-        if not self.valid:
-            raise InvalidDomain
-
-        return cast(str, self._domain.name())
-
-    @name.setter
-    def name(self: Self, name: str) -> None:
-        if not isinstance(name, str):
-            raise ValueError('Name must be a string.')
-
-        if not self.valid:
-            raise InvalidDomain
-
-        if self._conn.read_only:
-            raise InsufficientPrivileges
-
-        self.config = update_element_text(self.config, './name', name)
-
-    @property
-    def uuid(self: Self) -> UUID:
-        '''The UUID of the domain.'''
-        if not self.valid:
-            raise InvalidDomain
-
-        return UUID(self._domain.UUIDString())
+        return flags
 
     @property
     def id(self: Self) -> int | None:
-        '''The libvirt id of the domain, or None if it is not running.'''
-        if not self.valid:
-            raise InvalidDomain
+        '''The libvirt id of the domain.
 
-        domid = self._domain.ID()
+           A value of -1 is returned if the domain is not running.'''
+        self._check_valid()
 
-        if domid == -1:
-            return None
+        domid = self._entity.ID()
 
         return cast(int, domid)
-
-    @property
-    def maxCPUs(self: Self) -> int:
-        '''The maximum number of VCPUs for the domain.'''
-        if not self.valid:
-            raise InvalidDomain
-
-        return cast(int, self._domain.maxVcpus())
-
-    @maxCPUs.setter
-    def maxCPUs(self: Self, value: int) -> None:
-        if not isinstance(value, int):
-            raise ValueError('Max CPU count should be a positive integer.')
-        else:
-            if value < 1:
-                raise ValueError('Max CPU count should be a positive integer.')
-
-        if not self.valid:
-            raise InvalidDomain
-
-        if self._conn.read_only:
-            raise InsufficientPrivileges
-
-        self.config = update_element_text(self.config, './vcpu', str(value))
-
-    @property
-    def currentCPUs(self: Self) -> int:
-        '''The current number of VCPUs for the domain.'''
-        if not self.valid:
-            raise InvalidDomain
-
-        element = self.config.find('./vcpu')
-
-        if element is None:
-            raise RuntimeError
-
-        return int(element.get('current', self.maxCPUs))
-
-    @currentCPUs.setter
-    def currentCPUs(self: Self, value: int) -> None:
-        if not isinstance(value, int):
-            raise ValueError('Current CPU count should be a positive integer.')
-        else:
-            if value < 1:
-                raise ValueError('Current CPU count should be a positive integer.')
-            elif value > self.maxCPUs:
-                raise ValueError('Current CPU count may not exceed max CPU count.')
-
-        if not self.valid:
-            raise InvalidDomain
-
-        if self._conn.read_only:
-            raise InsufficientPrivileges
-
-        self.config = update_element_attribute(self.config, './vcpu', 'current', str(value))
-
-    def start(self: Self) -> bool:
-        '''Idempotently start the domain.
-
-           If called on a domain that is already running, do nothing
-           and return True.
-
-           If called on a domain that is not running, attempt to start
-           it, and return True if successful or False if unsuccessful.'''
-        if not self.valid:
-            raise InvalidDomain
-
-        if self.running:
-            return True
-
-        try:
-            self._domain.create()
-        except libvirt.libvirtError:
-            return False
-
-        return True
 
     def shutdown(self: Self, timeout: int | None = None) -> bool:
         '''Idempotently attempt to gracefully shut down the domain.
@@ -282,8 +155,7 @@ class Domain:
            If the domain is transient, the Domain instance will become
            invalid and most methods and property access will raise a
            virshex.libvirt.InvalidDomain exception.'''
-        if not self.valid:
-            raise InvalidDomain
+        self._check_valid()
 
         if timeout is None:
             tmcount = 0
@@ -305,14 +177,14 @@ class Domain:
             mark_invalid = True
 
         try:
-            self._domain.shutdown()
+            self._entity.shutdown()
         except libvirt.libvirtError:
             return False
 
         while tmcount > 0:
             # The cast below is needed to convince type checkers that
             # self.running may not be True anymore at this point, since
-            # they do not know that self._domain.shutdown() may result in
+            # they do not know that self._entity.shutdown() may result in
             # it's value changing.
             if not cast(bool, self.running):
                 if mark_invalid:
@@ -323,48 +195,9 @@ class Domain:
             tmcount -= 1
             sleep(1)
 
-        return self.running
+        return not self.running
 
-    def destroy(self: Self) -> bool:
-        '''Idempotently attempt to forcibly shut down the domain.
 
-           If the domain is not running, do nothing and return True.
-
-           If the domain is running, attempt to forcibly shut it down,
-           returning True on success or False on failure.
-
-           The timeout is polled roughly once per second using time.sleep().
-
-           To gracefully shut down the domain instead use the shutdown()
-           method.
-
-           If the domain is transient, the Domain instance will become
-           invalid and most methods and property access will raise a
-           virshex.libvirt.InvalidDomain exception.'''
-        if not self.valid:
-            raise InvalidDomain
-
-        if not self.running:
-            return True
-
-        mark_invalid = False
-
-        if not self.persistent:
-            mark_invalid = True
-
-        try:
-            self._domain.destroy()
-        except libvirt.libvirtError:
-            return False
-
-        if mark_invalid:
-            self._valid = False
-
-        return True
-
-    def applyXSLT(self: Self, xslt: etree.XSLT) -> None:
-        '''Apply the given XSLT object to the domain's configuration.
-
-           This handles reading the config, applying the transformation,
-           and then saving the config, all aas one operation.'''
-        self.configRaw = str(xslt(self.config))
+__all__ = [
+    'Domain',
+]

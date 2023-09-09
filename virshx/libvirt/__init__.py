@@ -14,15 +14,14 @@
 
 from __future__ import annotations
 
-from .domain import Domain
-from .exceptions import (NotConnected, InvalidConfig, InvalidDomain, InsufficientPrivileges)
+from .exceptions import (NotConnected, EntityNotRunning, InvalidConfig, InvalidEntity, InsufficientPrivileges)
 from .hypervisor import Hypervisor
 
 __all__ = [
-    'Domain',
-    'NotConnected',
-    'InvalidConfig',
-    'InvalidDomain',
+    'EntityNotRunning',
     'InsufficientPrivileges',
+    'InvalidConfig',
+    'InvalidEntity',
+    'NotConnected',
     'Hypervisor',
 ]

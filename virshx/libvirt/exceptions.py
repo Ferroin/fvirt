@@ -18,8 +18,13 @@ class InvalidConfig(VirshxException):
     pass
 
 
-class InvalidDomain(VirshxException):
-    '''Raised when attempting to access a domain that is no longer valid.'''
+class InvalidEntity(VirshxException):
+    '''Raised when attempting to access an Entity that is no longer valid.'''
+    pass
+
+
+class EntityNotRunning(VirshxException):
+    '''Raised when attempting to access runtime-only information about an entity that is not running.'''
     pass
 
 
@@ -29,8 +34,9 @@ class InsufficientPrivileges(VirshxException):
 
 
 __all__ = [
-    'NotConnected',
-    'InvalidConfig',
-    'InvalidDomain',
+    'EntityNotRunning',
     'InsufficientPrivileges',
+    'InvalidConfig',
+    'InvalidEntity',
+    'NotConnected',
 ]
