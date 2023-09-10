@@ -25,6 +25,7 @@ from .exceptions import (NotConnected, EntityNotRunning, InvalidConfig, InvalidE
 from .hypervisor import Hypervisor
 from .domain import Domain
 from .storage_pool import StoragePool
+from .uri import URI, Driver, Transport, SESSION_DRIVERS, SYSTEM_DRIVERS, CLIENT_ONLY_DRIVERS, LIBVIRT_DEFAULT_URI
 from .volume import Volume
 
 
@@ -48,6 +49,13 @@ __all__ = [
     'Hypervisor',
     'Domain',
     'StoragePool',
+    'URI',
+    'Driver',
+    'Transport',
+    'SESSION_DRIVERS',
+    'SYSTEM_DRIVERS',
+    'CLIENT_ONLY_DRIVERS',
+    'LIBVIRT_DEFAULT_URI',
     'Volume',
     'API_VERSION',
 ]

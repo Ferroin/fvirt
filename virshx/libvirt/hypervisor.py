@@ -13,8 +13,9 @@ from uuid import UUID
 import libvirt
 
 from .domain import Domain
-from .storage_pool import StoragePool
 from .exceptions import NotConnected, InvalidConfig, InsufficientPrivileges
+from .storage_pool import StoragePool
+from .uri import URI
 
 
 def _count_domains(hv: Hypervisor) -> int:
@@ -50,11 +51,8 @@ class Hypervisor:
 
        Storage pools can be accessed via the `pools`, `pools_by_name`,
        or `pools_by_uuid` properties.'''
-    def __init__(self: Self, hvuri: str | None, read_only: bool = False) -> None:
-        if hvuri == '':
-            self._uri = None
-        else:
-            self._uri = hvuri
+    def __init__(self: Self, hvuri: URI, read_only: bool = False) -> None:
+        self._uri = hvuri
 
         self._connection: libvirt.virConnect | None = None
         self.__read_only = bool(read_only)
@@ -70,7 +68,7 @@ class Hypervisor:
         self.__pools_by_uuid = StoragePoolsByUUID(self)
 
     def __repr__(self: Self) -> str:
-        return f'<virshx.libvirt.Hypervisor: uri={ self.uri }, ro={ self.read_only }, conns={ self.__conn_count }>'
+        return f'<virshx.libvirt.Hypervisor: uri={ str(self.uri) }, ro={ self.read_only }, conns={ self.__conn_count }>'
 
     def __bool__(self: Self) -> bool:
         return self.__conn_count > 0
@@ -91,10 +89,10 @@ class Hypervisor:
         return self.__read_only
 
     @property
-    def uri(self: Self) -> str:
+    def uri(self: Self) -> URI:
         with self:
             assert self._connection is not None
-            return cast(str, self._connection.getURI())
+            return URI.from_string(self._connection.getURI())
 
     @property
     def domains(self: Self) -> Domains:
@@ -154,9 +152,9 @@ class Hypervisor:
         if self._connection is None:
             try:
                 if self.read_only:
-                    self._connection = libvirt.openReadOnly(self._uri)
+                    self._connection = libvirt.openReadOnly(str(self._uri))
                 else:
-                    self._connection = libvirt.open(self._uri)
+                    self._connection = libvirt.open(str(self._uri))
             except libvirt.libvirtError as e:
                 raise e
 

@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import click
 
-from .libvirt import API_VERSION
+from .libvirt import API_VERSION, URI
 from .common import VERSION
 from .commands import COMMANDS
 
@@ -22,7 +22,7 @@ def cli(
         ) -> None:
     '''Extra tooling to supplemnt virsh.'''
     ctx.ensure_object(dict)
-    ctx.obj['uri'] = connect
+    ctx.obj['uri'] = URI.from_string(connect)
 
 
 for cmd in COMMANDS:

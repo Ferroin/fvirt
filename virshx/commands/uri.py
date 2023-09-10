@@ -15,7 +15,7 @@ from ..libvirt import Hypervisor
 def uri(ctx: click.core.Context) -> None:
     '''print the hypervisor URI'''
     with Hypervisor(hvuri=ctx.obj['uri']) as hv:
-        click.echo(hv.uri)
+        click.echo(str(hv.uri))
 
 
 __all__ = [

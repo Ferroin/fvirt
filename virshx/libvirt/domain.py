@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+from enum import Enum, verify, UNIQUE, CONTINUOUS
 from time import sleep
 from typing import TYPE_CHECKING, Self, cast
 
@@ -43,6 +44,36 @@ def _currentMemory_validator(value: int, instance: Domain) -> None:
 
     if value > instance.memory:
         raise ValueError('Current memory cannot exceed memory value.')
+
+
+@verify(UNIQUE)
+@verify(CONTINUOUS)
+class DomainState(Enum):
+    '''Enumerable for domain states.
+
+       This is manually copied from virDomainState in the libvirt C API
+       because the libvirt Python modules neglect to expose it for some
+       reason despite returning raw values for domain states.'''
+    NONE = 0x0
+    RUNNING = 0x1
+    BLOCKED = 0x2
+    PAUSED = 0x3
+    SHUTDOWN = 0x4
+    SHUTOFF = 0x5
+    CRASHED = 0x6
+    PMSUSPEND = 0x7
+    UNKNOWN = 0x8
+
+    def __str__(self: Self) -> str:
+        match self:
+            case DomainState.SHUTDOWN:
+                return 'shutting down'
+            case DomainState.SHUTOFF:
+                return 'shut off'
+            case DomainState.PMSUSPEND:
+                return 'suspended by guest'
+
+        return self.name.lower()
 
 
 class Domain(ConfigurableEntity, RunnableEntity):
@@ -149,11 +180,18 @@ class Domain(ConfigurableEntity, RunnableEntity):
         return bool(self._entity.hasManagedSave())
 
     @property
-    def state(self: Self) -> str:
+    def state(self: Self) -> DomainState:
         '''The current state of the domain.'''
         self._check_valid()
 
-        return cast(str, self._entity.state())
+        intstate = self._entity.state()[0]
+
+        try:
+            state = DomainState(intstate)
+        except ValueError:
+            state = DomainState.UNKNOWN
+
+        return state
 
     def shutdown(self: Self, timeout: int | None = None) -> bool:
         '''Idempotently attempt to gracefully shut down the domain.
