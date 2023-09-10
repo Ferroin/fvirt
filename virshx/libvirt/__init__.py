@@ -23,6 +23,9 @@ import libvirt
 from ..common import VersionNumber
 from .exceptions import (NotConnected, EntityNotRunning, InvalidConfig, InvalidEntity, InsufficientPrivileges)
 from .hypervisor import Hypervisor
+from .domain import Domain
+from .storage_pool import StoragePool
+from .volume import Volume
 
 
 def parse_libvirt_version(version: int) -> VersionNumber:
@@ -36,7 +39,6 @@ def parse_libvirt_version(version: int) -> VersionNumber:
 
 API_VERSION = parse_libvirt_version(libvirt.getVersion())
 
-
 __all__ = [
     'EntityNotRunning',
     'InsufficientPrivileges',
@@ -44,5 +46,8 @@ __all__ = [
     'InvalidEntity',
     'NotConnected',
     'Hypervisor',
+    'Domain',
+    'StoragePool',
+    'Volume',
     'API_VERSION',
 ]

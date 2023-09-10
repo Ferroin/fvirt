@@ -14,10 +14,15 @@ from .commands import COMMANDS
 
 @click.group
 @click.version_option(version=f'{ VERSION }, using libvirt-python { API_VERSION }')
+@click.option('--connect', '-c', '--uri', nargs=1, type=str, default='', help='hypervisor connection URI', metavar='URI')
 @click.pass_context
-def cli(ctx: click.core.Context) -> None:
+def cli(
+        ctx: click.core.Context,
+        connect: str,
+        ) -> None:
     '''Extra tooling to supplemnt virsh.'''
     ctx.ensure_object(dict)
+    ctx.obj['uri'] = connect
 
 
 for cmd in COMMANDS:

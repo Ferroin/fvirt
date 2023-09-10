@@ -5,14 +5,10 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Self
 
 import math
-
-
-class VirshxException(Exception):
-    '''Base exception for all virshx exceptions.'''
-    pass
 
 
 class VersionNumber:
@@ -53,6 +49,14 @@ class VersionNumber:
     def release(self: Self) -> int:
         '''The release release number.'''
         return self.__release
+
+
+VERSION = VersionNumber(0, 0, 1)
+
+
+class VirshxException(Exception):
+    '''Base exception for all virshx exceptions.'''
+    pass
 
 
 def unit_to_bytes(value: int | float, unit: str) -> int:
@@ -105,7 +109,50 @@ def unit_to_bytes(value: int | float, unit: str) -> int:
     return math.ceil(ret)
 
 
-VERSION = VersionNumber(0, 0, 1)
+@dataclass(kw_only=True, slots=True)
+class Column:
+    '''Data class representing column configuration for table rendering.'''
+    title: str
+    prop: str
+    right_align: bool = False
+
+
+def render_table(items: list[list[str]], columns: list[Column]) -> str:
+    '''Render a table of items.
+
+       `items` should be a list of rows, where each row is a list of
+       strings corresponding to the values for each column in that row.
+
+       `columns` is a list of corresponding Column instances for the
+       columns to be used for the table.'''
+    ret = ''
+
+    column_sizes = [
+        max([
+            len(row[i]) for row in items
+        ] + [len(columns[i].title)]) for i in range(0, len(columns))
+    ]
+
+    for idx, column in enumerate(columns):
+        if columns[idx].right_align:
+            ret += f' {column.title:>{column_sizes[idx]}}'
+        else:
+            ret += f' {column.title:<{column_sizes[idx]}}'
+
+    ret += '\n'
+    ret += ('-' * (sum(column_sizes) + 4))
+    ret += '\n'
+
+    for row in items:
+        for idx, item in enumerate(row):
+            if columns[idx].right_align:
+                ret += f' {item:>{column_sizes[idx]}}'
+            else:
+                ret += f' {item:<{column_sizes[idx]}}'
+
+        ret += '\n'
+
+    return ret
 
 
 __all__ = [
@@ -113,4 +160,6 @@ __all__ = [
     'VersionNumber',
     'VirshxException',
     'unit_to_bytes',
+    'Column',
+    'render_table',
 ]

@@ -50,8 +50,12 @@ class Hypervisor:
 
        Storage pools can be accessed via the `pools`, `pools_by_name`,
        or `pools_by_uuid` properties.'''
-    def __init__(self: Self, hvuri: str, read_only: bool = False) -> None:
-        self._uri = str(hvuri)
+    def __init__(self: Self, hvuri: str | None, read_only: bool = False) -> None:
+        if hvuri == '':
+            self._uri = None
+        else:
+            self._uri = hvuri
+
         self._connection: libvirt.virConnect | None = None
         self.__read_only = bool(read_only)
         self.__conn_count = 0
@@ -66,7 +70,7 @@ class Hypervisor:
         self.__pools_by_uuid = StoragePoolsByUUID(self)
 
     def __repr__(self: Self) -> str:
-        return f'<virshx.libvirt.Hypervisor: uri={ self._uri }, ro={ self.read_only }, conns={ self.__conn_count }>'
+        return f'<virshx.libvirt.Hypervisor: uri={ self.uri }, ro={ self.read_only }, conns={ self.__conn_count }>'
 
     def __bool__(self: Self) -> bool:
         return self.__conn_count > 0
@@ -85,6 +89,12 @@ class Hypervisor:
     @property
     def read_only(self: Self) -> bool:
         return self.__read_only
+
+    @property
+    def uri(self: Self) -> str:
+        with self:
+            assert self._connection is not None
+            return cast(str, self._connection.getURI())
 
     @property
     def domains(self: Self) -> Domains:

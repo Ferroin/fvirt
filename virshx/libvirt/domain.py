@@ -134,6 +134,27 @@ class Domain(ConfigurableEntity, RunnableEntity):
 
         return cast(int, domid)
 
+    @property
+    def hasCurrentSnapshot(self: Self) -> bool:
+        '''Whether or not the domain has a current snapshot.'''
+        self._check_valid()
+
+        return bool(self._entity.hasCurrentSnapshot())
+
+    @property
+    def hasManagedSave(self: Self) -> bool:
+        '''Whether or not the domain has a managed save state.'''
+        self._check_valid()
+
+        return bool(self._entity.hasManagedSave())
+
+    @property
+    def state(self: Self) -> str:
+        '''The current state of the domain.'''
+        self._check_valid()
+
+        return cast(str, self._entity.state())
+
     def shutdown(self: Self, timeout: int | None = None) -> bool:
         '''Idempotently attempt to gracefully shut down the domain.
 

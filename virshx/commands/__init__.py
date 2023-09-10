@@ -3,7 +3,10 @@
 
 '''Individual commands for the virshx CLI interface.'''
 
+from .domains import domains
+
 COMMANDS = [
+    domains,
 ]
 
 __all__ = [
