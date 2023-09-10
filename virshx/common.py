@@ -141,7 +141,9 @@ def ColumnsParam(cols: dict[str, Column], type_name: str) -> Type[click.ParamTyp
 
         def convert(self: Self, value: str | list[str], param: Any, ctx: click.core.Context | None) -> list[str]:
             if isinstance(value, str):
-                if value == 'all':
+                if value == 'list':
+                    return ['list']
+                elif value == 'all':
                     ret = [x for x in cols.keys()]
                 else:
                     ret = [x.lstrip().rstrip() for x in value.split(',')]
@@ -150,19 +152,35 @@ def ColumnsParam(cols: dict[str, Column], type_name: str) -> Type[click.ParamTyp
 
             for item in ret:
                 if item not in cols.keys():
-                    self.fail(f'{ item } is not a valid column name.', param, ctx)
+                    self.fail(f'{ item } is not a valid column name. Specify a value of "list" to list known columns.', param, ctx)
 
             return ret
 
     return ColumnsParam
 
 
+def print_columns(columns: dict[str, Column], defaults: list[str]) -> None:
+    '''Print out a list of supported columns.
+
+       Takes the column definitions that would be passed to ColumnsParam
+       or render_table, together with a list of default columns, then
+       uses click to print out info about supported columns.'''
+    output = 'Recognized columns:\n'
+
+    for name in columns.keys():
+        output += f'  - { name }\n'
+
+    output += f'\nDefault columns: { ", ".join(defaults) }\n'
+
+    click.echo(output)
+
+
 def color_bool(value: bool) -> str:
     '''Produce a colored string from a boolean.'''
     if value:
-        return TERM.bright_green(TERM.on_black('True'))
+        return TERM.bright_green_on_black('Yes')
     else:
-        return 'False'
+        return 'No'
 
 
 def render_table(items: list[list[str]], columns: list[Column]) -> str:
@@ -211,6 +229,7 @@ __all__ = [
     'unit_to_bytes',
     'Column',
     'ColumnsParam',
+    'print_columns',
     'color_bool',
     'render_table',
 ]

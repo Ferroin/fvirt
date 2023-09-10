@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
 import click
 
 from ..libvirt import Hypervisor, Domain, DomainState
-from ..common import render_table, Column, ColumnsParam, color_bool, TERM
+from ..common import render_table, Column, ColumnsParam, color_bool, print_columns, TERM
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -20,13 +20,13 @@ def color_state(state: DomainState) -> str:
     '''Apply colors to a domain state.'''
     match state:
         case d if d in {DomainState.RUNNING}:
-            return TERM.bright_green(TERM.on_black(str(state)))
+            return TERM.bright_green_on_black(str(state))
         case d if d in {DomainState.CRASHED, DomainState.BLOCKED, DomainState.NONE}:
-            return TERM.bright_red(TERM.on_black(str(state)))
+            return TERM.bright_red_on_black(str(state))
         case d if d in {DomainState.PAUSED}:
-            return TERM.bright_yellow(TERM.on_black(str(state)))
+            return TERM.bright_yellow_on_black(str(state))
         case d if d in {DomainState.PMSUSPEND}:
-            return TERM.bright_blue(TERM.on_black(str(state)))
+            return TERM.bright_blue_on_black(str(state))
         case _:
             return str(state)
 
@@ -41,13 +41,14 @@ def format_id(value: int) -> str:
 
 
 COLUMNS = {
-    'name': Column(title='Name', prop='name'),
     'id': Column(title='ID', prop='id', right_align=True, color=format_id),
+    'name': Column(title='Name', prop='name'),
     'uuid': Column(title='UUID', prop='uuid'),
     'state': Column(title='State', prop='state', color=color_state),
     'persistent': Column(title='Is Persistent', prop='persistent', color=color_bool),
     'managed-save': Column(title='Has Managed Save', prop='hasManagedSave', color=color_bool),
     'current-snapshot': Column(title='Has Current Snapshot', prop='hasCurrentSnapshot', color=color_bool),
+    'autostart': Column(title='Autostart', prop='autostart', color=color_bool),
     'title': Column(title='Domain Title', prop='title'),
 }
 
@@ -80,11 +81,15 @@ def tabulate_domains(domains: Iterable[Domain], cols: list[str] = DEFAULT_COLS) 
 
 @click.command
 @click.option('--columns', type=ColumnsParam(COLUMNS, 'domain columns')(), nargs=1,
-              help='A comma separated list of columns to show when listing domains.',
+              help='A comma separated list of columns to show when listing domains. Use `--columns list` to list recognized column names.',
               default=DEFAULT_COLS)
 @click.pass_context
 def domains(ctx: click.core.Context, columns: list[str]) -> None:
     '''list domains'''
+    if columns == ['list']:
+        print_columns(COLUMNS, DEFAULT_COLS)
+        ctx.exit(0)
+
     with Hypervisor(hvuri=ctx.obj['uri']) as hv:
         data = tabulate_domains(hv.domains, columns)
 

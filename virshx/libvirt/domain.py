@@ -194,6 +194,19 @@ class Domain(ConfigurableEntity, RunnableEntity):
         return state
 
     @property
+    def autostart(self: Self) -> bool:
+        '''Whether or not the domain is configured to auto-start.'''
+        self._check_valid()
+
+        return bool(self._entity.autostart())
+
+    @autostart.setter
+    def autostart(self: Self, value: bool) -> None:
+        self._check_valid()
+
+        self._entity.setAutostart(int(value))
+
+    @property
     def title(self: Self) -> str:
         '''The title of the domain.
 
