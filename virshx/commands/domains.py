@@ -9,20 +9,45 @@ from typing import TYPE_CHECKING
 
 import click
 
-from ..libvirt import Hypervisor, Domain
-from ..common import render_table, Column
+from ..libvirt import Hypervisor, Domain, DomainState
+from ..common import render_table, Column, ColumnsParam, color_bool, TERM
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
+
+def color_state(state: DomainState) -> str:
+    '''Apply colors to a domain state.'''
+    match state:
+        case d if d in {DomainState.RUNNING}:
+            return TERM.bright_green(TERM.on_black(str(state)))
+        case d if d in {DomainState.CRASHED, DomainState.BLOCKED, DomainState.NONE}:
+            return TERM.bright_red(TERM.on_black(str(state)))
+        case d if d in {DomainState.PAUSED}:
+            return TERM.bright_yellow(TERM.on_black(str(state)))
+        case d if d in {DomainState.PMSUSPEND}:
+            return TERM.bright_blue(TERM.on_black(str(state)))
+        case _:
+            return str(state)
+
+    raise RuntimeError  # Needed because mypy thinks the above case statement is non-exhaustive.
+
+
+def format_id(value: int) -> str:
+    if value == -1:
+        return '-'
+    else:
+        return str(value)
+
+
 COLUMNS = {
     'name': Column(title='Name', prop='name'),
-    'id': Column(title='ID', prop='id', right_align=True),
+    'id': Column(title='ID', prop='id', right_align=True, color=format_id),
     'uuid': Column(title='UUID', prop='uuid'),
-    'state': Column(title='State', prop='state'),
-    'persistent': Column(title='Is Persistent', prop='persistent'),
-    'managed-save': Column(title='Has Managed Save', prop='hasManagedSave'),
-    'current-snapshot': Column(title='Has Current Snapshot', prop='hasCurrentSnapshot'),
+    'state': Column(title='State', prop='state', color=color_state),
+    'persistent': Column(title='Is Persistent', prop='persistent', color=color_bool),
+    'managed-save': Column(title='Has Managed Save', prop='hasManagedSave', color=color_bool),
+    'current-snapshot': Column(title='Has Current Snapshot', prop='hasCurrentSnapshot', color=color_bool),
     'title': Column(title='Domain Title', prop='title'),
 }
 
@@ -46,7 +71,7 @@ def tabulate_domains(domains: Iterable[Domain], cols: list[str] = DEFAULT_COLS) 
             if hasattr(prop, '__get__'):
                 prop = prop.__get__(domain)
 
-            items.append(str(prop))
+            items.append(prop)
 
         ret.append(items)
 
@@ -54,11 +79,12 @@ def tabulate_domains(domains: Iterable[Domain], cols: list[str] = DEFAULT_COLS) 
 
 
 @click.command
+@click.option('--columns', type=ColumnsParam(COLUMNS, 'domain columns')(), nargs=1,
+              help='A comma separated list of columns to show when listing domains.',
+              default=DEFAULT_COLS)
 @click.pass_context
-def domains(ctx: click.core.Context) -> None:
+def domains(ctx: click.core.Context, columns: list[str]) -> None:
     '''list domains'''
-    columns = DEFAULT_COLS
-
     with Hypervisor(hvuri=ctx.obj['uri']) as hv:
         data = tabulate_domains(hv.domains, columns)
 

@@ -23,7 +23,7 @@ import libvirt
 from ..common import VersionNumber
 from .exceptions import (NotConnected, EntityNotRunning, InvalidConfig, InvalidEntity, InsufficientPrivileges)
 from .hypervisor import Hypervisor
-from .domain import Domain
+from .domain import Domain, DomainState
 from .storage_pool import StoragePool
 from .uri import URI, Driver, Transport, SESSION_DRIVERS, SYSTEM_DRIVERS, CLIENT_ONLY_DRIVERS, LIBVIRT_DEFAULT_URI
 from .volume import Volume
@@ -48,6 +48,7 @@ __all__ = [
     'NotConnected',
     'Hypervisor',
     'Domain',
+    'DomainState',
     'StoragePool',
     'URI',
     'Driver',

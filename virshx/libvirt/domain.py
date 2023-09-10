@@ -83,38 +83,38 @@ class Domain(ConfigurableEntity, RunnableEntity):
        some of the functionality provided by that class, but wraps most
        of the useful parts in a nicer, more Pythonic interface.'''
     maxCPUs: ConfigElementProperty[int] = ConfigElementProperty(
-        path='./vcpu',
+        path='/domain/vcpu/text()[1]',
         typ=int,
         validator=_non_negative_integer,
     )
     currentCPUs: ConfigAttributeProperty[int] = ConfigAttributeProperty(
-        path='./vcpu',
+        path='/domain/vcpu/text()[1]',
         attrib='current',
         typ=int,
         fallback='maxCPUs',
         validator=_currentCPUs_validator,
     )
     maxMemory: ConfigElementProperty[int] = ConfigElementProperty(
-        path='./maxMemory',
+        path='/domain/maxMemory/text()[1]',
         typ=int,
         units_to_bytes=True,
         validator=_non_negative_integer,
     )
     maxMemorySlots: ConfigAttributeProperty[int] = ConfigAttributeProperty(
-        path='./maxMemory',
+        path='/domain/maxMemory/text()[1]',
         attrib='slots',
         typ=int,
         validator=_non_negative_integer,
     )
     memory: ConfigElementProperty[int] = ConfigElementProperty(
-        path='./memory',
+        path='/domain/memory/text()[1]',
         typ=int,
         fallback='maxMemory',
         units_to_bytes=True,
         validator=_memory_validator,
     )
     currentMemory: ConfigElementProperty[int] = ConfigElementProperty(
-        path='./currentMemory',
+        path='/domain/currentMemory/text()[1]',
         typ=int,
         fallback='memory',
         units_to_bytes=True,
@@ -177,7 +177,7 @@ class Domain(ConfigurableEntity, RunnableEntity):
         '''Whether or not the domain has a managed save state.'''
         self._check_valid()
 
-        return bool(self._entity.hasManagedSave())
+        return bool(self._entity.hasManagedSaveImage())
 
     @property
     def state(self: Self) -> DomainState:
@@ -192,6 +192,21 @@ class Domain(ConfigurableEntity, RunnableEntity):
             state = DomainState.UNKNOWN
 
         return state
+
+    @property
+    def title(self: Self) -> str:
+        '''The title of the domain.
+
+           This is an optional bit of metadata describing the domain.'''
+        self._check_valid()
+
+        match self.config.xpath('/domain/title/text()[1]', smart_strings=False):
+            case []:
+                return ''
+            case [str() as ret]:
+                return ret
+            case _:
+                raise RuntimeError
 
     def shutdown(self: Self, timeout: int | None = None) -> bool:
         '''Idempotently attempt to gracefully shut down the domain.

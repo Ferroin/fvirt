@@ -5,10 +5,18 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Self
-
 import math
+
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Self, Type, Any
+
+import blessed
+import click
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+TERM = blessed.Terminal()
 
 
 class VersionNumber:
@@ -115,6 +123,46 @@ class Column:
     title: str
     prop: str
     right_align: bool = False
+    color: Callable[[Any], str] = lambda x: str(x)
+
+
+def ColumnsParam(cols: dict[str, Column], type_name: str) -> Type[click.ParamType]:
+    '''Factory funcion for creating types for column options.
+
+       This will produce a subclass of click.ParamType for parsing a
+       comma-separated list of columns based on the mapping of column
+       names to columns in cols.
+
+       The resultant class can be used with the `type` argument for
+       click.option decorators to properly parse a list of columns for
+       a command option.'''
+    class ColumnsParam(click.ParamType):
+        name = type_name
+
+        def convert(self: Self, value: str | list[str], param: Any, ctx: click.core.Context | None) -> list[str]:
+            if isinstance(value, str):
+                if value == 'all':
+                    ret = [x for x in cols.keys()]
+                else:
+                    ret = [x.lstrip().rstrip() for x in value.split(',')]
+            else:
+                ret = value
+
+            for item in ret:
+                if item not in cols.keys():
+                    self.fail(f'{ item } is not a valid column name.', param, ctx)
+
+            return ret
+
+    return ColumnsParam
+
+
+def color_bool(value: bool) -> str:
+    '''Produce a colored string from a boolean.'''
+    if value:
+        return TERM.bright_green(TERM.on_black('True'))
+    else:
+        return 'False'
 
 
 def render_table(items: list[list[str]], columns: list[Column]) -> str:
@@ -129,26 +177,26 @@ def render_table(items: list[list[str]], columns: list[Column]) -> str:
 
     column_sizes = [
         max([
-            len(row[i]) for row in items
+            len(str(row[i])) for row in items
         ] + [len(columns[i].title)]) for i in range(0, len(columns))
     ]
 
     for idx, column in enumerate(columns):
         if columns[idx].right_align:
-            ret += f' {column.title:>{column_sizes[idx]}}'
+            ret += f'  {column.title:>{column_sizes[idx]}}'
         else:
-            ret += f' {column.title:<{column_sizes[idx]}}'
+            ret += f'  {column.title:<{column_sizes[idx]}}'
 
     ret += '\n'
-    ret += ('-' * (sum(column_sizes) + 4))
+    ret += (TERM.bold('-' * (sum(column_sizes) + (2 * len(column_sizes)))))
     ret += '\n'
 
     for row in items:
         for idx, item in enumerate(row):
             if columns[idx].right_align:
-                ret += f' {item:>{column_sizes[idx]}}'
+                ret += f'  {TERM.rjust(columns[idx].color(item), width=column_sizes[idx])}'
             else:
-                ret += f' {item:<{column_sizes[idx]}}'
+                ret += f'  {TERM.ljust(columns[idx].color(item), width=column_sizes[idx])}'
 
         ret += '\n'
 
@@ -157,9 +205,12 @@ def render_table(items: list[list[str]], columns: list[Column]) -> str:
 
 __all__ = [
     'VERSION',
+    'TERM',
     'VersionNumber',
     'VirshxException',
     'unit_to_bytes',
     'Column',
+    'ColumnsParam',
+    'color_bool',
     'render_table',
 ]
