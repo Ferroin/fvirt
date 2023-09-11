@@ -5,15 +5,10 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 import click
 
-from ..libvirt import Hypervisor, Domain, DomainState
-from ..common import render_table, Column, ColumnsParam, color_bool, print_columns, TERM
-
-if TYPE_CHECKING:
-    from collections.abc import Iterable
+from ..libvirt import Hypervisor, DomainState
+from ..common import render_table, Column, ColumnsParam, color_bool, print_columns, tabulate_entities, TERM
 
 
 def color_state(state: DomainState) -> str:
@@ -59,26 +54,6 @@ DEFAULT_COLS = [
 ]
 
 
-def tabulate_domains(domains: Iterable[Domain], cols: list[str] = DEFAULT_COLS) -> list[list[str]]:
-    '''Convert a list of domains to a list of values for columns.'''
-    ret = []
-
-    for domain in domains:
-        items = []
-
-        for column in cols:
-            prop = getattr(domain, COLUMNS[column].prop)
-
-            if hasattr(prop, '__get__'):
-                prop = prop.__get__(domain)
-
-            items.append(prop)
-
-        ret.append(items)
-
-    return ret
-
-
 @click.command
 @click.option('--columns', type=ColumnsParam(COLUMNS, 'domain columns')(), nargs=1,
               help='A comma separated list of columns to show when listing domains. Use `--columns list` to list recognized column names.',
@@ -91,7 +66,7 @@ def domains(ctx: click.core.Context, columns: list[str]) -> None:
         ctx.exit(0)
 
     with Hypervisor(hvuri=ctx.obj['uri']) as hv:
-        data = tabulate_domains(hv.domains, columns)
+        data = tabulate_entities(hv.domains, COLUMNS, columns)
 
     output = render_table(
         data,

@@ -359,6 +359,11 @@ class ConfigProperty(Generic[T]):
         else:
             ret = self._xpath(instance.config)
 
+            if ret is None or ret == []:
+                raise AttributeError
+            elif isinstance(ret, list):
+                ret = ret[0]
+
         if self._type is not None:
             return self._type(ret)
         else:

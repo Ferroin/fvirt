@@ -14,7 +14,9 @@ import blessed
 import click
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Iterable
+
+    from .libvirt.entity import Entity
 
 TERM = blessed.Terminal()
 
@@ -183,6 +185,29 @@ def color_bool(value: bool) -> str:
         return 'No'
 
 
+def tabulate_entities(domains: Iterable[Entity], columns: dict[str, Column], selected_cols: list[str]) -> list[list[str]]:
+    '''Convert a list of domains to a list of values for columns.'''
+    ret = []
+
+    for domain in domains:
+        items = []
+
+        for column in selected_cols:
+            try:
+                prop = getattr(domain, columns[column].prop)
+
+                if hasattr(prop, '__get__'):
+                    prop = prop.__get__(domain)
+            except AttributeError:
+                prop = '-'
+
+            items.append(prop)
+
+        ret.append(items)
+
+    return ret
+
+
 def render_table(items: list[list[str]], columns: list[Column]) -> str:
     '''Render a table of items.
 
@@ -195,7 +220,7 @@ def render_table(items: list[list[str]], columns: list[Column]) -> str:
 
     column_sizes = [
         max([
-            len(str(row[i])) for row in items
+            TERM.length(columns[i].color(row[i])) for row in items
         ] + [len(columns[i].title)]) for i in range(0, len(columns))
     ]
 
