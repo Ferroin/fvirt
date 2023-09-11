@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING, Self, cast
 
 import libvirt
 
-from ..common import unit_to_bytes
 from .entity import ConfigurableEntity, ConfigProperty
 
 if TYPE_CHECKING:

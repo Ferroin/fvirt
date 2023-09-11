@@ -5,10 +5,10 @@
 
 import sys
 
-from .common import VERSION
+from .version import VERSION
 
-if not sys.version_info >= (3, 10):
-    raise RuntimeError('virshx requires Python 3.10 or newer.')
+if not sys.version_info >= (3, 11):
+    raise RuntimeError('virshx requires Python 3.11 or newer.')
 
 __all__ = [
     'VERSION',

@@ -13,7 +13,7 @@ import libvirt
 
 from lxml import etree
 
-from ..common import unit_to_bytes
+from ..util.units import unit_to_bytes
 from .exceptions import InvalidEntity, InsufficientPrivileges
 
 if TYPE_CHECKING:

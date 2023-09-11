@@ -8,7 +8,7 @@ from __future__ import annotations
 import click
 
 from .libvirt import API_VERSION, URI
-from .common import VERSION
+from .version import VERSION
 from .commands import COMMANDS
 
 

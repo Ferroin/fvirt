@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import libvirt
 
-from ..common import VersionNumber
+from ..version import VersionNumber
 from .exceptions import (NotConnected, EntityNotRunning, InvalidConfig, InvalidEntity, InsufficientPrivileges)
 from .hypervisor import Hypervisor
 from .domain import Domain, DomainState

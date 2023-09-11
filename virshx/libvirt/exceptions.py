@@ -5,7 +5,10 @@
 
 from __future__ import annotations
 
-from ..common import VirshxException
+
+class VirshxException(Exception):
+    '''Base exception for all virshx exceptions.'''
+    pass
 
 
 class NotConnected(VirshxException):
@@ -34,6 +37,7 @@ class InsufficientPrivileges(VirshxException):
 
 
 __all__ = [
+    'VirshxException',
     'EntityNotRunning',
     'InsufficientPrivileges',
     'InvalidConfig',

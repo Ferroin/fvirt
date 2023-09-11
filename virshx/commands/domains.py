@@ -10,7 +10,8 @@ from typing import Any
 import click
 
 from ..libvirt import Hypervisor, DomainState
-from ..common import render_table, Column, ColumnsParam, color_bool, print_columns, tabulate_entities, TERM
+from ..util.tables import render_table, Column, ColumnsParam, color_bool, print_columns, tabulate_entities
+from ..util.terminal import TERM
 
 
 def color_state(state: DomainState) -> str:

@@ -8,7 +8,7 @@ from __future__ import annotations
 import click
 
 from ..libvirt import Hypervisor
-from ..common import render_table, Column, ColumnsParam, color_bool, print_columns, tabulate_entities, TERM
+from ..util.tables import render_table, Column, ColumnsParam, print_columns, tabulate_entities
 
 
 COLUMNS = {
