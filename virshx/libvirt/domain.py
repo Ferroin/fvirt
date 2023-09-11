@@ -8,6 +8,7 @@ from __future__ import annotations
 from enum import Enum, verify, UNIQUE, CONTINUOUS
 from time import sleep
 from typing import TYPE_CHECKING, Self, cast
+from uuid import UUID
 
 import libvirt
 
@@ -82,39 +83,61 @@ class Domain(ConfigurableEntity, RunnableEntity):
        This is a wrapper around a libvirt.virDomain instance. It lacks
        some of the functionality provided by that class, but wraps most
        of the useful parts in a nicer, more Pythonic interface.'''
+    genid: ConfigElementProperty[UUID] = ConfigElementProperty(
+        path='./genid/text()[1]',
+        typ=UUID,
+    )
+    osType: ConfigElementProperty[str] = ConfigElementProperty(
+        path='./os/type/text()[1]',
+        typ=str,
+    )
+    osArch: ConfigAttributeProperty[str] = ConfigAttributeProperty(
+        path='./os',
+        attrib='arch',
+        typ=str,
+    )
+    osMachine: ConfigAttributeProperty[str] = ConfigAttributeProperty(
+        path='./os',
+        attrib='machine',
+        typ=str,
+    )
+    emulator: ConfigElementProperty[str] = ConfigElementProperty(
+        path='./devices/emulator/text()[1]',
+        typ=str,
+    )
     maxCPUs: ConfigElementProperty[int] = ConfigElementProperty(
-        path='/domain/vcpu/text()[1]',
+        path='./vcpu/text()[1]',
         typ=int,
         validator=_non_negative_integer,
     )
     currentCPUs: ConfigAttributeProperty[int] = ConfigAttributeProperty(
-        path='/domain/vcpu/text()[1]',
+        path='./vcpu/text()[1]',
         attrib='current',
         typ=int,
         fallback='maxCPUs',
         validator=_currentCPUs_validator,
     )
     maxMemory: ConfigElementProperty[int] = ConfigElementProperty(
-        path='/domain/maxMemory/text()[1]',
+        path='./maxMemory/text()[1]',
         typ=int,
         units_to_bytes=True,
         validator=_non_negative_integer,
     )
     maxMemorySlots: ConfigAttributeProperty[int] = ConfigAttributeProperty(
-        path='/domain/maxMemory/text()[1]',
+        path='./maxMemory/text()[1]',
         attrib='slots',
         typ=int,
         validator=_non_negative_integer,
     )
     memory: ConfigElementProperty[int] = ConfigElementProperty(
-        path='/domain/memory/text()[1]',
+        path='./memory/text()[1]',
         typ=int,
         fallback='maxMemory',
         units_to_bytes=True,
         validator=_memory_validator,
     )
     currentMemory: ConfigElementProperty[int] = ConfigElementProperty(
-        path='/domain/currentMemory/text()[1]',
+        path='./currentMemory/text()[1]',
         typ=int,
         fallback='memory',
         units_to_bytes=True,

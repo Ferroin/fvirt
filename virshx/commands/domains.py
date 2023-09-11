@@ -5,6 +5,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import click
 
 from ..libvirt import Hypervisor, DomainState
@@ -35,15 +37,27 @@ def format_id(value: int) -> str:
         return str(value)
 
 
+def format_optional_attrib(value: Any) -> str:
+    if value is None:
+        return '-'
+    else:
+        return str(value)
+
+
 COLUMNS = {
     'id': Column(title='ID', prop='id', right_align=True, color=format_id),
     'name': Column(title='Name', prop='name'),
     'uuid': Column(title='UUID', prop='uuid'),
+    'genid': Column(title='GenID', prop='genid'),
     'state': Column(title='State', prop='state', color=color_state),
-    'persistent': Column(title='Is Persistent', prop='persistent', color=color_bool),
-    'managed-save': Column(title='Has Managed Save', prop='hasManagedSave', color=color_bool),
-    'current-snapshot': Column(title='Has Current Snapshot', prop='hasCurrentSnapshot', color=color_bool),
+    'persistent': Column(title='Persistent', prop='persistent', color=color_bool),
+    'managed-save': Column(title='Managed Save', prop='hasManagedSave', color=color_bool),
+    'current-snapshot': Column(title='Current Snapshot', prop='hasCurrentSnapshot', color=color_bool),
     'autostart': Column(title='Autostart', prop='autostart', color=color_bool),
+    'osType': Column(title='OS Type', prop='osType', color=format_optional_attrib),
+    'osArch': Column(title='Architecture', prop='osArch', color=format_optional_attrib),
+    'osMachine': Column(title='Machine', prop='osMachine', color=format_optional_attrib),
+    'emulator': Column(title='Emulator', prop='emulator'),
     'title': Column(title='Domain Title', prop='title'),
 }
 
