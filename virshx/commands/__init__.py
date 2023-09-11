@@ -5,12 +5,14 @@
 
 from .domains import domains
 from .pools import pools
+from .volumes import volumes
 from .uri import uri
 
 COMMANDS = [
     uri,
     domains,
     pools,
+    volumes,
 ]
 
 __all__ = [

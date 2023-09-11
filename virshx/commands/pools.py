@@ -67,4 +67,5 @@ def pools(ctx: click.core.Context, columns: list[str]) -> None:
 __all__ = [
     'COLUMNS',
     'DEFAULT_COLS',
+    'pools',
 ]

@@ -43,6 +43,10 @@ class Volume(ConfigurableEntity):
         path='/volume/@type',
         typ=str,
     )
+    format: ConfigProperty[str] = ConfigProperty(
+        path='/volume/source/format/@type',
+        typ=str,
+    )
 
     def __init__(self: Self, vol: libvirt.virStorageVol | Volume, conn: Hypervisor, pool: StoragePool) -> None:
         if isinstance(vol, Volume):

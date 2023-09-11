@@ -424,7 +424,7 @@ class StoragePoolsByName(Mapping):
         with self._hv as hv:
             assert hv._connection is not None
 
-            match hv._connection.lookupByName(key):
+            match hv._connection.storagePoolLookupByName(key):
                 case None:
                     raise KeyError(key)
                 case domain:
@@ -474,7 +474,7 @@ class StoragePoolsByUUID(Mapping):
         with self._hv as hv:
             assert hv._connection is not None
 
-            match hv._connection.lookupByUUIDString(key):
+            match hv._connection.storagePoolLookupByUUIDString(key):
                 case None:
                     raise KeyError(key)
                 case domain:
