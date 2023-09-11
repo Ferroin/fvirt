@@ -23,8 +23,9 @@ COLUMNS = {
     'name': Column(title='Name', prop='name'),
     'uuid': Column(title='UUID', prop='uuid'),
     'state': Column(title='State', prop='running', color=color_state),
-    'persistent': Column(title='Is Persistent', prop='persistent', color=color_bool),
+    'persistent': Column(title='Persistent', prop='persistent', color=color_bool),
     'autostart': Column(title='Autostart', prop='autostart', color=color_bool),
+    'volumes': Column(title='Volumes', prop='numVolumes', right_align=True),
     'capacity': Column(title='Capacity', prop='capacity', right_align=True),
     'allocation': Column(title='Allocation', prop='allocation', right_align=True),
     'available': Column(title='Available', prop='available', right_align=True),
@@ -41,6 +42,7 @@ DEFAULT_COLS = [
     'format',
     'state',
     'autostart',
+    'volumes',
     'capacity',
     'available',
 ]
