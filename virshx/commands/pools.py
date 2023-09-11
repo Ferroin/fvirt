@@ -37,8 +37,12 @@ COLUMNS = {
 
 DEFAULT_COLS = [
     'name',
+    'type',
+    'format',
     'state',
     'autostart',
+    'capacity',
+    'available',
 ]
 
 

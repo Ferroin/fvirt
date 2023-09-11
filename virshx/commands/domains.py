@@ -51,6 +51,8 @@ DEFAULT_COLS = [
     'id',
     'name',
     'state',
+    'persistent',
+    'autostart',
 ]
 
 
