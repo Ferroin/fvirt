@@ -13,9 +13,22 @@ import libvirt
 from .entity import ConfigurableEntity, RunnableEntity, ConfigProperty
 from .exceptions import EntityNotRunning, InsufficientPrivileges, InvalidConfig, InvalidEntity, NotConnected
 from .volume import Volume
+from ..util.match_alias import MatchAlias
 
 if TYPE_CHECKING:
     from .hypervisor import Hypervisor
+
+MATCH_ALIASES = {
+    'autostart': MatchAlias(property='autostart', desc='Match on whether the pool is set to autostart or not.'),
+    'device': MatchAlias(property='device', desc='Match on the pool device.'),
+    'directory': MatchAlias(property='dir', desc='Match on the pool directory.'),
+    'format': MatchAlias(property='format', desc='Match on the pool format.'),
+    'host': MatchAlias(property='host', desc='Match on the pool host.'),
+    'name': MatchAlias(property='name', desc='Match on the name of the pool.'),
+    'persistent': MatchAlias(property='persistent', desc='Match on whether the pool is persistent or not.'),
+    'target': MatchAlias(property='target', desc='Match on the pool target.'),
+    'type': MatchAlias(property='type', desc='Match on the pool type.'),
+}
 
 
 class StoragePool(ConfigurableEntity, RunnableEntity):

@@ -5,13 +5,18 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 import click
 
 from ..libvirt import Hypervisor, DomainState
+from ..libvirt.domain import MATCH_ALIASES
+from ..util.match import MatchTarget, MatchTargetParam, MatchPatternParam, matcher, print_match_help
 from ..util.tables import render_table, Column, ColumnsParam, color_bool, print_columns, tabulate_entities
 from ..util.terminal import TERM
+
+if TYPE_CHECKING:
+    import re
 
 
 def color_state(state: DomainState) -> str:
@@ -75,15 +80,35 @@ DEFAULT_COLS = [
 @click.option('--columns', type=ColumnsParam(COLUMNS, 'domain columns')(), nargs=1,
               help='A comma separated list of columns to show when listing domains. Use `--columns list` to list recognized column names.',
               default=DEFAULT_COLS)
+@click.option('--match', type=(MatchTargetParam(MATCH_ALIASES)(), MatchPatternParam()),
+              help='Limit listed domains by match parameter. For more info, use `--match-help`')
+@click.option('--match-help', is_flag=True, default=False,
+              help='Show help info about object matching.')
 @click.pass_context
-def domains(ctx: click.core.Context, columns: list[str]) -> None:
+def domains(
+        ctx: click.core.Context,
+        columns: list[str],
+        match: tuple[MatchTarget, re.Pattern] | None,
+        match_help: bool,
+        ) -> None:
     '''list domains'''
     if columns == ['list']:
         print_columns(COLUMNS, DEFAULT_COLS)
         ctx.exit(0)
 
+    if match_help:
+        print_match_help(MATCH_ALIASES)
+        ctx.exit(0)
+
+    if match is not None:
+        select = matcher(*match)
+    else:
+        def select(x: Any) -> bool: return True
+
     with Hypervisor(hvuri=ctx.obj['uri']) as hv:
-        data = tabulate_entities(hv.domains, COLUMNS, columns)
+        domains = filter(select, hv.domains)
+
+        data = tabulate_entities(domains, COLUMNS, columns)
 
     output = render_table(
         data,

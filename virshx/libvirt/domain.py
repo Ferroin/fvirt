@@ -13,9 +13,23 @@ from uuid import UUID
 import libvirt
 
 from .entity import ConfigurableEntity, RunnableEntity, ConfigElementProperty, ConfigAttributeProperty
+from ..util.match_alias import MatchAlias
 
 if TYPE_CHECKING:
     from .hypervisor import Hypervisor
+
+
+MATCH_ALIASES = {
+    'arch': MatchAlias(property='osArch', desc='Match on the architecture of the domain.'),
+    'autostart': MatchAlias(property='autostart', desc='Match on whether the domain is set to autostart or not.'),
+    'currentSnapshot': MatchAlias(property='hasCurrentSnapshot', desc='Match on whether the domain has a current snapshot or not.'),
+    'machine': MatchAlias(property='osMachine', desc='Match on the machine type of the domain.'),
+    'managedSave': MatchAlias(property='hasManagedSave', desc='Match on whether the domain has a managed save state or not.'),
+    'name': MatchAlias(property='name', desc='Match on the name of the domain.'),
+    'osType': MatchAlias(property='osType', desc='Match on the OS type of the domain.'),
+    'persistent': MatchAlias(property='persistent', desc='Match on whether the domain is persistent or not.'),
+    'state': MatchAlias(property='state', desc='Match on the current state of the domain.'),
+}
 
 
 def _non_negative_integer(value: int, _instance: Domain) -> None:
@@ -310,4 +324,5 @@ class Domain(ConfigurableEntity, RunnableEntity):
 
 __all__ = [
     'Domain',
+    'MATCH_ALIASES',
 ]

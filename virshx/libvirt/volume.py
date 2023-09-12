@@ -10,10 +10,19 @@ from typing import TYPE_CHECKING, Self, cast
 import libvirt
 
 from .entity import ConfigurableEntity, ConfigProperty
+from ..util.match_alias import MatchAlias
 
 if TYPE_CHECKING:
     from .hypervisor import Hypervisor
     from .storage_pool import StoragePool
+
+MATCH_ALIASES = {
+    'format': MatchAlias(property='format', desc='Match on the volume format.'),
+    'key': MatchAlias(property='key', desc='Match on the volume key.'),
+    'name': MatchAlias(property='name', desc='Match on the name of the volume.'),
+    'path': MatchAlias(property='path', desc='Match on the volume path.'),
+    'type': MatchAlias(property='type', desc='Match on the volume type.'),
+}
 
 
 class Volume(ConfigurableEntity):
@@ -204,4 +213,5 @@ class Volume(ConfigurableEntity):
 
 __all__ = [
     'Volume',
+    'MATCH_ALIASES',
 ]
