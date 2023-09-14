@@ -483,18 +483,18 @@ class RunnableEntity(Entity):
 
         return bool(self._entity.isPersistent())
 
-    def start(self: Self) -> bool:
-        '''Idempotently start the entity.
+    def start(self: Self, /, *, idempotent: bool = False) -> bool:
+        '''Attempt to start the entity.
 
            If called on an entity that is already running, do nothing
-           and return True.
+           and return the value of the idempotent parameter.
 
            If called on an entity that is not running, attempt to start
            it, and return True if successful or False if unsuccessful.'''
         self._check_valid()
 
         if self.running:
-            return True
+            return idempotent
 
         try:
             self._entity.create()
@@ -503,10 +503,11 @@ class RunnableEntity(Entity):
 
         return True
 
-    def destroy(self: Self) -> bool:
-        '''Idempotently attempt to forcibly shut down the entity.
+    def destroy(self: Self, /, *, idempotent: bool = False) -> bool:
+        '''Attempt to forcibly shut down the entity.
 
-           If the entity is not running, do nothing and return True.
+           If the entity is not running, do nothing and return the value
+           of the idempotent parameter.
 
            If the entity is running, attempt to forcibly shut it down,
            returning True on success or False on failure.
@@ -515,7 +516,7 @@ class RunnableEntity(Entity):
            invalid and most methods and property access will raise a
            virshex.libvirt.InvalidEntity exception.'''
         if not self.running or not self.valid:
-            return True
+            return idempotent
 
         mark_invalid = False
 

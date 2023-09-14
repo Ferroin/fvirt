@@ -258,10 +258,11 @@ class Domain(ConfigurableEntity, RunnableEntity):
             case _:
                 raise RuntimeError
 
-    def shutdown(self: Self, timeout: int | None = None) -> bool:
+    def shutdown(self: Self, /, *, timeout: int | None = None, idempotent: bool = False) -> bool:
         '''Idempotently attempt to gracefully shut down the domain.
 
-           If the domain is not running, do nothing and return True.
+           If the domain is not running, do nothing and return the value
+           of the idempotent parameter.
 
            If the domain is running, attempt to gracefully shut it down,
            returning True on success or False on failure.
@@ -279,8 +280,6 @@ class Domain(ConfigurableEntity, RunnableEntity):
            If the domain is transient, the Domain instance will become
            invalid and most methods and property access will raise a
            virshex.libvirt.InvalidDomain exception.'''
-        self._check_valid()
-
         if timeout is None:
             tmcount = 0
         else:
@@ -292,8 +291,8 @@ class Domain(ConfigurableEntity, RunnableEntity):
             else:
                 raise ValueError(f'Invalid timeout specified: { timeout }.')
 
-        if not self.running:
-            return True
+        if not self.running or not self.valid:
+            return idempotent
 
         mark_invalid = False
 
