@@ -7,6 +7,7 @@ from .domains import domains
 from .start import start
 
 from .pools import pools
+from .start_pool import start_pool
 
 from .volumes import volumes
 
@@ -16,6 +17,7 @@ COMMANDS = [
     uri,
     domains,
     start,
+    start_pool,
     pools,
     volumes,
 ]
