@@ -4,13 +4,18 @@
 '''Individual commands for the virshx CLI interface.'''
 
 from .domains import domains
+from .start import start
+
 from .pools import pools
+
 from .volumes import volumes
+
 from .uri import uri
 
 COMMANDS = [
     uri,
     domains,
+    start,
     pools,
     volumes,
 ]
