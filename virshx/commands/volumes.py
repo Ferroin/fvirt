@@ -51,7 +51,11 @@ def volumes(
         match_help: bool,
         pool: str,
         ) -> None:
-    '''list volumes'''
+    '''List volumes in a given storage pool.
+
+       This will produce a (reasonably) nicely formatted table of volumes
+       in the specified storage pool, possibly limited by the specified
+       matching parameters.'''
     if columns == ['list']:
         print_columns(COLUMNS, DEFAULT_COLS)
         ctx.exit(0)

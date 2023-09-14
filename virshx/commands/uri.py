@@ -13,7 +13,10 @@ from ..libvirt import Hypervisor
 @click.command
 @click.pass_context
 def uri(ctx: click.core.Context) -> None:
-    '''print the hypervisor URI'''
+    '''Print the hypervisor URI.
+
+       This functions identically to the virsh `uri` command, except it
+       uses the virshx.libvirt bindings.'''
     with Hypervisor(hvuri=ctx.obj['uri']) as hv:
         click.echo(str(hv.uri))
 

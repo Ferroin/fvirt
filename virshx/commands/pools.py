@@ -71,7 +71,10 @@ def pools(
         match: tuple[MatchTarget, re.Pattern] | None,
         match_help: bool,
         ) -> None:
-    '''list storage pools'''
+    '''List storage pools.
+
+       This will produce a (reasonably) nicely formatted table of storage pools,
+       possibly limited by the specified matching parameters.'''
     if columns == ['list']:
         print_columns(COLUMNS, DEFAULT_COLS)
         ctx.exit(0)

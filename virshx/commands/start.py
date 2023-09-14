@@ -33,7 +33,7 @@ def start(
         fail_if_no_match: bool,
         domain: str | None,
         ) -> None:
-    '''start (previously defined) inactive domains
+    '''Start (previously defined) inactive domains.
 
        Either a specific domain name to start should be specified as
        DOMAIN, or matching parameters should be specified using the
@@ -42,8 +42,15 @@ def start(
 
        If more than one domain is requested to be started, a failure
        starting any domain will result in a non-zero exit code even if
-       some domains were started, unless the --fail-fast switch was
-       spcified.'''
+       some domains were started.
+
+       This command supports virshx's fail-fast logic. In fail-fast mode,
+       the first domain that fails to start will cause the operation to
+       stop, and any failure will result in a non-zero exit code.
+
+       This command supports virshx's idempotent logic. In idempotent
+       mode, failing to start a domain because it is already running
+       will not be treated as an error.'''
     if match_help:
         print_match_help(MATCH_ALIASES)
         ctx.exit(0)

@@ -91,7 +91,10 @@ def domains(
         match: tuple[MatchTarget, re.Pattern] | None,
         match_help: bool,
         ) -> None:
-    '''list domains'''
+    '''List domains.
+
+       This will produce a (reasonably) nicely formatted table of domains,
+       possibly limited by the specified matching parameters.'''
     if columns == ['list']:
         print_columns(COLUMNS, DEFAULT_COLS)
         ctx.exit(0)
