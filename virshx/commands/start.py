@@ -42,7 +42,8 @@ def start(
 
        If more than one domain is requested to be started, a failure
        starting any domain will result in a non-zero exit code even if
-       some domains were started.'''
+       some domains were started, unless the --fail-fast switch was
+       spcified.'''
     if match_help:
         print_match_help(MATCH_ALIASES)
         ctx.exit(0)
@@ -63,20 +64,26 @@ def start(
         else:
             domains = list(filter(select, hv.domains))
 
-            if not domains:
+            if not domains and fail_if_no_match:
                 click.echo('No domains found matching the specified criteria.', err=True)
                 ctx.exit(2)
 
         success = 0
 
         for dom in domains:
-            if dom.shutdown():
+            if dom.start(idempotent=ctx.obj['idempotent']):
                 click.echo(f'Started domain "{ dom.name }".')
                 success += 1
             else:
-                click.echo(f'Failed to start domain "{ dom.name }".')
+                if dom.running:
+                    click.echo(f'Domain "{ dom.name }" is already running.')
+                else:
+                    click.echo(f'Failed to start domain "{ dom.name }".')
 
-        if success:
+                if ctx.obj['fail_fast']:
+                    break
+
+        if success or (not domains and not fail_if_no_match):
             click.echo(f'Successfully started { success } out of { len(domains) } domains.')
         else:
             click.echo('Failed to start any domains.')
