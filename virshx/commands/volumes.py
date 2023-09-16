@@ -72,6 +72,10 @@ def volumes(
     with Hypervisor(hvuri=ctx.obj['uri']) as hv:
         storage_pool = hv.pools_by_name[pool]
         volumes = filter(select, storage_pool.volumes)
+
+        if not volumes and ctx.obj['fail_if_no_match']:
+            ctx.fail('No volumes found matching the specified parameters.')
+
         data = tabulate_entities(volumes, COLUMNS, columns)
 
     output = render_table(

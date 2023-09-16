@@ -91,6 +91,9 @@ def pools(
     with Hypervisor(hvuri=ctx.obj['uri']) as hv:
         pools = filter(select, hv.pools)
 
+        if not pools and ctx.obj['fail_if_no_match']:
+            ctx.fail('No storage pools found matching the specified parameters.')
+
         data = tabulate_entities(pools, COLUMNS, columns)
 
     output = render_table(

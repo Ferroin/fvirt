@@ -111,6 +111,9 @@ def domains(
     with Hypervisor(hvuri=ctx.obj['uri']) as hv:
         domains = filter(select, hv.domains)
 
+        if not domains and ctx.obj['fail_if_no_match']:
+            ctx.fail('No domains found matching the specified parameters.')
+
         data = tabulate_entities(domains, COLUMNS, columns)
 
     output = render_table(

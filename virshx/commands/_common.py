@@ -31,7 +31,6 @@ def get_match_or_entity(
         entity: str | None,
         ctx: click.core.Context,
         doc_name: str,
-        fail_if_no_match: bool,
         ) -> Sequence[RunnableEntity]:
     '''Get a list of entities based on the given parameters.'''
     entities: list[RunnableEntity] = []
@@ -41,7 +40,7 @@ def get_match_or_entity(
 
         entities = cast(list[RunnableEntity], list(filter(select, getattr(hv, hvprop).__get__(hv))))
 
-        if not entities and fail_if_no_match:
+        if not entities and ctx.obj['fail_if_no_match']:
             click.echo(f'No { doc_name }s found matching the specified criteria.', err=True)
             ctx.exit(2)
     elif entity is not None:
@@ -79,7 +78,6 @@ def make_start_command(name: str, aliases: Mapping[str, MatchAlias], hvprop: str
                 entity=name,
                 ctx=ctx,
                 doc_name=doc_name,
-                fail_if_no_match=fail_if_no_match,
             )
 
             success = 0
@@ -127,8 +125,6 @@ def make_start_command(name: str, aliases: Mapping[str, MatchAlias], hvprop: str
 
     cmd = click.pass_context(cmd)  # type: ignore
     cmd = click.argument('name', nargs=1, required=False)(cmd)
-    cmd = click.option('--fail-if-no-match', is_flag=True, default=False,
-                       help='Exit with a failure if no { doc_name }s are matched.')(cmd)
     cmd = click.option('--match-help', is_flag=True, default=False,
                        help='Show help info about object matching.')(cmd)
     cmd = click.option('--match', type=(MatchTargetParam(aliases)(), MatchPatternParam()),
@@ -160,7 +156,6 @@ def make_stop_command(name: str, aliases: Mapping[str, MatchAlias], hvprop: str,
                 entity=name,
                 ctx=ctx,
                 doc_name=doc_name,
-                fail_if_no_match=fail_if_no_match,
             )
 
             success = 0
@@ -208,8 +203,6 @@ def make_stop_command(name: str, aliases: Mapping[str, MatchAlias], hvprop: str,
 
     cmd = click.pass_context(cmd)  # type: ignore
     cmd = click.argument('name', nargs=1, required=False)(cmd)
-    cmd = click.option('--fail-if-no-match', is_flag=True, default=False,
-                       help='Exit with a failure if no { doc_name }s are matched.')(cmd)
     cmd = click.option('--match-help', is_flag=True, default=False,
                        help='Show help info about object matching.')(cmd)
     cmd = click.option('--match', type=(MatchTargetParam(aliases)(), MatchPatternParam()),
