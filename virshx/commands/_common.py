@@ -10,16 +10,51 @@ from typing import TYPE_CHECKING, cast
 import click
 
 from ..libvirt import Hypervisor
-from ..libvirt.entity import RunnableEntity
 
 from ..util.match import MatchTarget, MatchTargetParam, MatchPatternParam, matcher, print_match_help
 
 if TYPE_CHECKING:
     import re
 
-    from collections.abc import Mapping
+    from collections.abc import Mapping, Sequence
 
+    from ..libvirt.entity import RunnableEntity
     from ..util.match_alias import MatchAlias
+
+
+def get_match_or_entity(
+        *,
+        hv: Hypervisor,
+        hvprop: str,
+        hvnameprop: str,
+        match: tuple[MatchTarget, re.Pattern] | None,
+        entity: str | None,
+        ctx: click.core.Context,
+        doc_name: str,
+        fail_if_no_match: bool,
+        ) -> Sequence[RunnableEntity]:
+    '''Get a list of entities based on the given parameters.'''
+    entities: list[RunnableEntity] = []
+
+    if match is not None:
+        select = matcher(*match)
+
+        entities = cast(list[RunnableEntity], list(filter(select, getattr(hv, hvprop).__get__(hv))))
+
+        if not entities and fail_if_no_match:
+            click.echo(f'No { doc_name }s found matching the specified criteria.', err=True)
+            ctx.exit(2)
+    elif entity is not None:
+        try:
+            entities = cast(list[RunnableEntity], [getattr(hv, hvnameprop).__get__(hv)[entity]])
+        except KeyError:
+            click.echo(f'"{ entity }" is not a defined { doc_name } on this hypervisor.', err=True)
+            ctx.exit(2)
+    else:
+        click.echo(f'Either match parameters or a { doc_name } name is required.', err=True)
+        ctx.exit(1)
+
+    return entities
 
 
 def make_start_command(name: str, aliases: Mapping[str, MatchAlias], hvprop: str, hvnameprop: str, doc_name: str) -> click.Command:
@@ -35,25 +70,17 @@ def make_start_command(name: str, aliases: Mapping[str, MatchAlias], hvprop: str
             print_match_help(aliases)
             ctx.exit(0)
 
-        if match is not None:
-            select = matcher(*match)
-        elif name is None:
-            click.echo(f'Either match parameters or a { doc_name } name is required.', err=True)
-            ctx.exit(1)
-
         with Hypervisor(hvuri=ctx.obj['uri']) as hv:
-            if name is not None:
-                try:
-                    entities = cast(list[RunnableEntity], [getattr(hv, hvnameprop).__get__(hv)[name]])
-                except KeyError:
-                    click.echo(f'"{ name }" is not a defined { doc_name } on this hypervisor.', err=True)
-                    ctx.exit(2)
-            else:
-                entities = cast(list[RunnableEntity], list(filter(select, getattr(hv, hvprop).__get__(hv))))
-
-                if not entities and fail_if_no_match:
-                    click.echo(f'No { doc_name }s found matching the specified criteria.', err=True)
-                    ctx.exit(2)
+            entities = get_match_or_entity(
+                hv=hv,
+                hvprop=hvprop,
+                hvnameprop=hvnameprop,
+                match=match,
+                entity=name,
+                ctx=ctx,
+                doc_name=doc_name,
+                fail_if_no_match=fail_if_no_match,
+            )
 
             success = 0
 
@@ -109,5 +136,6 @@ def make_start_command(name: str, aliases: Mapping[str, MatchAlias], hvprop: str
 
 
 __all__ = [
+    'get_match_or_entity',
     'make_start_command',
 ]
