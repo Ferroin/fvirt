@@ -70,7 +70,11 @@ def volumes(
         def select(x: Any) -> bool: return True
 
     with Hypervisor(hvuri=ctx.obj['uri']) as hv:
-        storage_pool = hv.pools_by_name[pool]
+        try:
+            storage_pool = hv.pools_by_name[pool]
+        except KeyError:
+            ctx.fail(f'No storage pool with name "{ pool }" is defined on this hypervisor.')
+
         volumes = filter(select, storage_pool.volumes)
 
         if not volumes and ctx.obj['fail_if_no_match']:
