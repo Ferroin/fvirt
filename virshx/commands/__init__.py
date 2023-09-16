@@ -5,6 +5,7 @@
 
 from .domains import domains
 from .start import start
+from .reset import reset
 
 from .pools import pools
 from .start_pool import start_pool
@@ -14,12 +15,13 @@ from .volumes import volumes
 from .uri import uri
 
 COMMANDS = [
-    uri,
     domains,
+    reset,
     start,
     start_pool,
     pools,
     volumes,
+    uri,
 ]
 
 __all__ = [

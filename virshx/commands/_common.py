@@ -99,6 +99,9 @@ def make_start_command(name: str, aliases: Mapping[str, MatchAlias], hvprop: str
 
             if success or (not entities and not fail_if_no_match):
                 click.echo(f'Successfully started { success } out of { len(entities) } { doc_name }s.')
+
+                if success != len(entities) and ctx.obj['fail_fast']:
+                    ctx.exit(3)
             else:
                 click.echo('Failed to start any { doc_name }s.')
                 ctx.exit(3)
@@ -125,11 +128,11 @@ def make_start_command(name: str, aliases: Mapping[str, MatchAlias], hvprop: str
     cmd = click.pass_context(cmd)  # type: ignore
     cmd = click.argument('name', nargs=1, required=False)(cmd)
     cmd = click.option('--fail-if-no-match', is_flag=True, default=False,
-                       help='Exit with a failure if no domains are matched.')(cmd)
+                       help='Exit with a failure if no { doc_name }s are matched.')(cmd)
     cmd = click.option('--match-help', is_flag=True, default=False,
                        help='Show help info about object matching.')(cmd)
     cmd = click.option('--match', type=(MatchTargetParam(aliases)(), MatchPatternParam()),
-                       help='Limit listed domains by match parameter. For more info, use `--match-help`')(cmd)
+                       help='Limit { doc_name }s to operate on by match parameter. For more info, use `--match-help`')(cmd)
     cmd = click.command(name=name)(cmd)
 
     return cmd

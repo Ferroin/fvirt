@@ -27,7 +27,7 @@ class InvalidEntity(VirshxException):
 
 
 class EntityNotRunning(VirshxException):
-    '''Raised when attempting to access runtime-only information about an entity that is not running.'''
+    '''Raised when attempting runtime-only operations on an entity that is not running.'''
     pass
 
 

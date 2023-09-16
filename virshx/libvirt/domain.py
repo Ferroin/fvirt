@@ -13,6 +13,7 @@ from uuid import UUID
 import libvirt
 
 from .entity import ConfigurableEntity, RunnableEntity, ConfigElementProperty, ConfigAttributeProperty
+from .exceptions import EntityNotRunning
 from ..util.match_alias import MatchAlias
 
 if TYPE_CHECKING:
@@ -257,6 +258,26 @@ class Domain(ConfigurableEntity, RunnableEntity):
                 return ret
             case _:
                 raise RuntimeError
+
+    def reset(self: Self) -> bool:
+        '''Attempt to reset the domain.
+
+           If the domain is not running, raises virshx.libvirt.EntityNotRunning.
+
+           Exact behavior of a reset depends on the specific hypervisor
+           driver, but this operation is generally a hard reset, similar
+           to toggling the reset line on the processor.'''
+        self._check_valid()
+
+        if not self.running:
+            raise EntityNotRunning
+
+        try:
+            self._entity.reset()
+        except libvirt.libvirtError:
+            return False
+
+        return True
 
     def shutdown(self: Self, /, *, timeout: int | None = None, idempotent: bool = False) -> bool:
         '''Idempotently attempt to gracefully shut down the domain.
