@@ -5,97 +5,16 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
-import click
-
-from ..libvirt import Hypervisor
+from ._common import make_start_command
 from ..libvirt.domain import MATCH_ALIASES
-from ..util.match import MatchTarget, MatchTargetParam, MatchPatternParam, matcher, print_match_help
 
-if TYPE_CHECKING:
-    import re
-
-
-@click.command
-@click.option('--match', type=(MatchTargetParam(MATCH_ALIASES)(), MatchPatternParam()),
-              help='Limit listed domains by match parameter. For more info, use `--match-help`')
-@click.option('--match-help', is_flag=True, default=False,
-              help='Show help info about object matching.')
-@click.option('--fail-if-no-match', is_flag=True, default=False,
-              help='Exit with a failure if no domains are matched.')
-@click.argument('domain', nargs=1, required=False)
-@click.pass_context
-def start(
-        ctx: click.core.Context,
-        match: tuple[MatchTarget, re.Pattern] | None,
-        match_help: bool,
-        fail_if_no_match: bool,
-        domain: str | None,
-        ) -> None:
-    '''Start (previously defined) inactive domains.
-
-       Either a specific domain name to start should be specified as
-       DOMAIN, or matching parameters should be specified using the
-       --match option, which will then cause all inactive domains that
-       match to be started.
-
-       If more than one domain is requested to be started, a failure
-       starting any domain will result in a non-zero exit code even if
-       some domains were started.
-
-       This command supports virshx's fail-fast logic. In fail-fast mode,
-       the first domain that fails to start will cause the operation to
-       stop, and any failure will result in a non-zero exit code.
-
-       This command supports virshx's idempotent logic. In idempotent
-       mode, failing to start a domain because it is already running
-       will not be treated as an error.'''
-    if match_help:
-        print_match_help(MATCH_ALIASES)
-        ctx.exit(0)
-
-    if match is not None:
-        select = matcher(*match)
-    elif domain is None:
-        click.echo('Either match parameters or a domain name is required.', err=True)
-        ctx.exit(1)
-
-    with Hypervisor(hvuri=ctx.obj['uri']) as hv:
-        if domain is not None:
-            try:
-                domains = [hv.domains_by_name[domain]]
-            except KeyError:
-                click.echo(f'"{ domain }" is not a defined domain on this hypervisor.', err=True)
-                ctx.exit(2)
-        else:
-            domains = list(filter(select, hv.domains))
-
-            if not domains and fail_if_no_match:
-                click.echo('No domains found matching the specified criteria.', err=True)
-                ctx.exit(2)
-
-        success = 0
-
-        for dom in domains:
-            if dom.start(idempotent=ctx.obj['idempotent']):
-                click.echo(f'Started domain "{ dom.name }".')
-                success += 1
-            else:
-                if dom.running:
-                    click.echo(f'Domain "{ dom.name }" is already running.')
-                else:
-                    click.echo(f'Failed to start domain "{ dom.name }".')
-
-                if ctx.obj['fail_fast']:
-                    break
-
-        if success or (not domains and not fail_if_no_match):
-            click.echo(f'Successfully started { success } out of { len(domains) } domains.')
-        else:
-            click.echo('Failed to start any domains.')
-            ctx.exit(3)
-
+start = make_start_command(
+    name='start',
+    aliases=MATCH_ALIASES,
+    hvprop='domains',
+    hvnameprop='domains_by_name',
+    doc_name='domain',
+)
 
 __all__ = [
     'start',
