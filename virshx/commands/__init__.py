@@ -5,10 +5,12 @@
 
 from .domains import domains
 from .start import start
+from .stop import stop
 from .reset import reset
 
 from .pools import pools
 from .start_pool import start_pool
+from .stop_pool import stop_pool
 
 from .volumes import volumes
 
@@ -19,6 +21,8 @@ COMMANDS = [
     reset,
     start,
     start_pool,
+    stop,
+    stop_pool,
     pools,
     volumes,
     uri,

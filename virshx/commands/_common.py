@@ -138,7 +138,89 @@ def make_start_command(name: str, aliases: Mapping[str, MatchAlias], hvprop: str
     return cmd
 
 
+def make_stop_command(name: str, aliases: Mapping[str, MatchAlias], hvprop: str, hvnameprop: str, doc_name: str) -> click.Command:
+    '''Produce a click Command to stop (destroy) a given type of libvirt entity.'''
+    def cmd(
+            ctx: click.core.Context,
+            match: tuple[MatchTarget, re.Pattern] | None,
+            match_help: bool,
+            fail_if_no_match: bool,
+            name: str | None,
+            ) -> None:
+        if match_help:
+            print_match_help(aliases)
+            ctx.exit(0)
+
+        with Hypervisor(hvuri=ctx.obj['uri']) as hv:
+            entities = get_match_or_entity(
+                hv=hv,
+                hvprop=hvprop,
+                hvnameprop=hvnameprop,
+                match=match,
+                entity=name,
+                ctx=ctx,
+                doc_name=doc_name,
+                fail_if_no_match=fail_if_no_match,
+            )
+
+            success = 0
+
+            for e in entities:
+                if e.destroy(idempotent=ctx.obj['idempotent']):
+                    click.echo(f'Stopped { doc_name } "{ e.name }".')
+                    success += 1
+                else:
+                    if not e.running:
+                        click.echo(f'Domain "{ e.name }" is already stopped.')
+                    else:
+                        click.echo(f'Failed to stop { doc_name } "{ e.name }".')
+
+                    if ctx.obj['fail_fast']:
+                        break
+
+            if success or (not entities and not fail_if_no_match):
+                click.echo(f'Successfully stopped { success } out of { len(entities) } { doc_name }s.')
+
+                if success != len(entities) and ctx.obj['fail_fast']:
+                    ctx.exit(3)
+            else:
+                click.echo('Failed to stop any { doc_name }s.')
+                ctx.exit(3)
+
+    cmd.__doc__ = f'''Forcibly stop active { doc_name }s.
+
+    Either a specific { doc_name } name to stop should be specified as
+    NAME, or matching parameters should be specified using the
+    --match option, which will then cause all active { doc_name }s that
+    match to be stopped.
+
+    If more than one { doc_name } is requested to be stopped, a failure
+    stopping any { doc_name } will result in a non-zero exit code even if
+    some { doc_name }s were stopped.
+
+    This command supports virshx's fail-fast logic. In fail-fast mode,
+    the first { doc_name } that fails to stop will cause the operation to
+    stop, and any failure will result in a non-zero exit code.
+
+    This command supports virshx's idempotent logic. In idempotent
+    mode, failing to stop a { doc_name } because it is already stopped
+    will not be treated as an error.'''
+
+    cmd = click.pass_context(cmd)  # type: ignore
+    cmd = click.argument('name', nargs=1, required=False)(cmd)
+    cmd = click.option('--fail-if-no-match', is_flag=True, default=False,
+                       help='Exit with a failure if no { doc_name }s are matched.')(cmd)
+    cmd = click.option('--match-help', is_flag=True, default=False,
+                       help='Show help info about object matching.')(cmd)
+    cmd = click.option('--match', type=(MatchTargetParam(aliases)(), MatchPatternParam()),
+                       help='Limit { doc_name }s to operate on by match parameter. For more info, use `--match-help`')(cmd)
+    cmd = click.command(name=name)(cmd)
+
+    return cmd
+
+
 __all__ = [
     'get_match_or_entity',
     'make_start_command',
+    'make_stop_command',
 ]
