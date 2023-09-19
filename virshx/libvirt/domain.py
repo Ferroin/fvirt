@@ -7,13 +7,13 @@ from __future__ import annotations
 
 from enum import Enum, verify, UNIQUE, CONTINUOUS
 from time import sleep
-from typing import TYPE_CHECKING, Self, cast
+from typing import TYPE_CHECKING, Self, Literal, cast
 from uuid import UUID
 
 import libvirt
 
-from .entity import ConfigurableEntity, RunnableEntity, ConfigElementProperty, ConfigAttributeProperty
-from .exceptions import EntityNotRunning, TimedOut
+from .entity import ConfigurableEntity, RunnableEntity, ConfigElementProperty, ConfigAttributeProperty, LifecycleResult
+from .exceptions import EntityNotRunning
 from ..util.match_alias import MatchAlias
 
 if TYPE_CHECKING:
@@ -259,7 +259,7 @@ class Domain(ConfigurableEntity, RunnableEntity):
             case _:
                 raise RuntimeError
 
-    def reset(self: Self) -> bool:
+    def reset(self: Self) -> Literal[LifecycleResult.SUCCESS, LifecycleResult.FAILURE]:
         '''Attempt to reset the domain.
 
            If the domain is not running, raises virshx.libvirt.EntityNotRunning.
@@ -275,11 +275,11 @@ class Domain(ConfigurableEntity, RunnableEntity):
         try:
             self._entity.reset()
         except libvirt.libvirtError:
-            return False
+            return LifecycleResult.FAILURE
 
-        return True
+        return LifecycleResult.SUCCESS
 
-    def shutdown(self: Self, /, *, timeout: int | None = None, force: bool = False, idempotent: bool = False) -> bool:
+    def shutdown(self: Self, /, *, timeout: int | None = None, force: bool = False, idempotent: bool = False) -> LifecycleResult:
         '''Attempt to gracefully shut down the domain.
 
            If the domain is not running, do nothing and return the value
@@ -316,7 +316,10 @@ class Domain(ConfigurableEntity, RunnableEntity):
                 raise ValueError(f'Invalid timeout specified: { timeout }.')
 
         if not self.running or not self.valid:
-            return idempotent
+            if idempotent:
+                return LifecycleResult.SUCCESS
+            else:
+                return LifecycleResult.NO_OPERATION
 
         mark_invalid = False
 
@@ -326,7 +329,7 @@ class Domain(ConfigurableEntity, RunnableEntity):
         try:
             self._entity.shutdown()
         except libvirt.libvirtError:
-            return False
+            return LifecycleResult.FAILURE
 
         while tmcount > 0:
             # The cast below is needed to convince type checkers that
@@ -342,13 +345,22 @@ class Domain(ConfigurableEntity, RunnableEntity):
             tmcount -= 1
             sleep(1)
 
-        if cast(bool, self.running) and force:
-            self.destroy(idempotent=True)
+        if cast(bool, self.running):
+            if force:
+                match self.destroy(idempotent=True):
+                    case LifecycleResult.SUCCESS:
+                        return LifecycleResult.FORCED
+                    case LifecycleResult.FAILURE:
+                        return LifecycleResult.FAILURE
+                    case LifecycleResult.NO_OPERATION:
+                        self._valid = False
+                        return LifecycleResult.SUCCESS
 
-            if not cast(bool, self.running):
-                self._valid = False
-
-        return not self.running
+                raise RuntimeError
+            else:
+                return LifecycleResult.TIMED_OUT
+        else:
+            return LifecycleResult.SUCCESS
 
 
 __all__ = [

@@ -21,7 +21,8 @@ from __future__ import annotations
 import libvirt
 
 from ..version import VersionNumber
-from .exceptions import (NotConnected, EntityNotRunning, InvalidConfig, InvalidEntity, InsufficientPrivileges, TimedOut)
+from .entity import LifecycleResult
+from .exceptions import (NotConnected, EntityNotRunning, InvalidConfig, InvalidEntity, InsufficientPrivileges)
 from .hypervisor import Hypervisor
 from .domain import Domain, DomainState
 from .storage_pool import StoragePool
@@ -46,7 +47,7 @@ __all__ = [
     'InvalidConfig',
     'InvalidEntity',
     'NotConnected',
-    'TimedOut',
+    'LifecycleResult',
     'Hypervisor',
     'Domain',
     'DomainState',

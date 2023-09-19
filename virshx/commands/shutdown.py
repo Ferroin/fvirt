@@ -13,7 +13,7 @@ from typing import cast
 import click
 
 from ._common import get_match_or_entity
-from ..libvirt import Hypervisor, EntityNotRunning, TimedOut, Domain
+from ..libvirt import Hypervisor, Domain, LifecycleResult
 from ..libvirt.domain import MATCH_ALIASES
 from ..util.match import MatchTarget, MatchTargetParam, MatchPatternParam, print_match_help
 
@@ -76,30 +76,43 @@ def shutdown(
         ))
 
         success = 0
+        skipped = 0
+        timed_out = 0
 
         for e in entities:
-            try:
-                if e.shutdown(timeout=timeout, force=force, idempotent=ctx.obj['idempotent']):
+            match e.shutdown(timeout=timeout, force=force, idempotent=ctx.obj['idempotent']):
+                case LifecycleResult.SUCCESS:
                     click.echo(f'Shut down domain "{ e.name }".')
                     success += 1
-                else:
+                case LifecycleResult.FAILURE:
                     click.echo(f'Failed to shut down domain "{ e.name }".')
 
                     if ctx.obj['fail_fast']:
                         break
-            except EntityNotRunning:
-                click.echo(f'Domain "{ e.name }" is not running, and thus cannot be shut down.')
+                case LifecycleResult.NO_OPERATION:
+                    click.echo(f'Domain "{ e.name }" is not running, and thus cannot be shut down.')
 
-                if ctx.obj['fail_fast']:
-                    break
-            except TimedOut:
-                click.echo(f'Timed out while waiting for domain "{ e.name }" to shut down.')
+                    skipped += 1
 
-                if ctx.obj['fail_fast']:
-                    break
+                    if ctx.obj['fail_fast']:
+                        break
+                case LifecycleResult.TIMED_OUT:
+                    click.echo(f'Timed out while waiting for domain "{ e.name }" to shut down.')
+
+                    timed_out += 1
+
+                    if ctx.obj['fail_fast']:
+                        break
+                case LifecycleResult.FORCED:
+                    click.echo(f'Timed out while waiting for domain "{ e.name }" to shut down, domain shut down forcibly.')
+
+                    success += 1
+                    timed_out += 1
+                case _:
+                    raise RuntimeError
 
         if success or (not entities and not ctx.obj['fail_if_no_match']):
-            click.echo(f'Successfully shut down { success } out of { len(entities) } domains.')
+            click.echo(f'Successfully shut down { success } out of { len(entities) } domains ({ skipped } already shut off, { timed_out } timed out).')
 
             if success != len(entities) and ctx.obj['fail_fast']:
                 ctx.exit(3)

@@ -13,7 +13,7 @@ from typing import cast
 import click
 
 from ._common import get_match_or_entity
-from ..libvirt import Hypervisor, EntityNotRunning, Domain
+from ..libvirt import Hypervisor, EntityNotRunning, Domain, LifecycleResult
 from ..libvirt.domain import MATCH_ALIASES
 from ..util.match import MatchTarget, MatchTargetParam, MatchPatternParam, print_match_help
 
@@ -65,25 +65,30 @@ def reset(
         ))
 
         success = 0
+        skipped = 0
 
         for e in entities:
             try:
-                if e.reset():
-                    click.echo(f'Reset domain "{ e.name }".')
-                    success += 1
-                else:
-                    click.echo(f'Failed to reset domain "{ e.name }".')
+                match e.reset():
+                    case LifecycleResult.SUCCESS:
+                        click.echo(f'Reset domain "{ e.name }".')
+                        success += 1
+                    case LifecycleResult.FAILURE:
+                        click.echo(f'Failed to reset domain "{ e.name }".')
 
-                    if ctx.obj['fail_fast']:
-                        break
+                        if ctx.obj['fail_fast']:
+                            break
+                    case _:
+                        raise RuntimeError
             except EntityNotRunning:
                 click.echo(f'Domain "{ e.name }" is not running, and thus cannot be reset.')
+                skipped += 1
 
                 if ctx.obj['fail_fast']:
                     break
 
         if success or (not entities and not ctx.obj['fail_if_no_match']):
-            click.echo(f'Successfully reset { success } out of { len(entities) } domains.')
+            click.echo(f'Successfully reset { success } out of { len(entities) } domains ({ skipped } not running).')
 
             if success != len(entities) and ctx.obj['fail_fast']:
                 ctx.exit(3)

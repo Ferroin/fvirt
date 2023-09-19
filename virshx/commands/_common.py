@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, cast
 
 import click
 
-from ..libvirt import Hypervisor
+from ..libvirt import Hypervisor, LifecycleResult
 
 from ..util.match import MatchTarget, MatchTargetParam, MatchPatternParam, matcher, print_match_help
 
@@ -81,22 +81,30 @@ def make_start_command(name: str, aliases: Mapping[str, MatchAlias], hvprop: str
             )
 
             success = 0
+            skipped = 0
 
             for e in entities:
-                if e.start(idempotent=ctx.obj['idempotent']):
-                    click.echo(f'Started { doc_name } "{ e.name }".')
-                    success += 1
-                else:
-                    if e.running:
+                match e.start(idempotent=ctx.obj['idempotent']):
+                    case LifecycleResult.SUCCESS:
+                        click.echo(f'Started { doc_name } "{ e.name }".')
+                        success += 1
+                    case LifecycleResult.NO_OPERATION:
                         click.echo(f'Domain "{ e.name }" is already running.')
-                    else:
+
+                        skipped += 1
+
+                        if ctx.obj['idempotent']:
+                            success += 1
+                    case LifecycleResult.FAILURE:
                         click.echo(f'Failed to start { doc_name } "{ e.name }".')
 
-                    if ctx.obj['fail_fast']:
-                        break
+                        if ctx.obj['fail_fast']:
+                            break
+                    case _:
+                        raise RuntimeError
 
             if success or (not entities and not fail_if_no_match):
-                click.echo(f'Successfully started { success } out of { len(entities) } { doc_name }s.')
+                click.echo(f'Successfully started { success } out of { len(entities) } { doc_name }s ({ skipped } already running).')
 
                 if success != len(entities) and ctx.obj['fail_fast']:
                     ctx.exit(3)
@@ -159,22 +167,30 @@ def make_stop_command(name: str, aliases: Mapping[str, MatchAlias], hvprop: str,
             )
 
             success = 0
+            skipped = 0
 
             for e in entities:
-                if e.destroy(idempotent=ctx.obj['idempotent']):
-                    click.echo(f'Stopped { doc_name } "{ e.name }".')
-                    success += 1
-                else:
-                    if not e.running:
-                        click.echo(f'Domain "{ e.name }" is already stopped.')
-                    else:
+                match e.destroy(idempotent=ctx.obj['idempotent']):
+                    case LifecycleResult.SUCCESS:
+                        click.echo(f'Stopped { doc_name } "{ e.name }".')
+                        success += 1
+                    case LifecycleResult.NO_OPERATION:
+                        click.echo(f'Domain "{ e.name }" is not running.')
+
+                        skipped += 1
+
+                        if ctx.obj['idempotent']:
+                            success += 1
+                    case LifecycleResult.FAILURE:
                         click.echo(f'Failed to stop { doc_name } "{ e.name }".')
 
-                    if ctx.obj['fail_fast']:
-                        break
+                        if ctx.obj['fail_fast']:
+                            break
+                    case _:
+                        raise RuntimeError
 
             if success or (not entities and not fail_if_no_match):
-                click.echo(f'Successfully stopped { success } out of { len(entities) } { doc_name }s.')
+                click.echo(f'Successfully stopped { success } out of { len(entities) } { doc_name }s ({ skipped } not running).')
 
                 if success != len(entities) and ctx.obj['fail_fast']:
                     ctx.exit(3)

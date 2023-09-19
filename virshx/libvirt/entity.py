@@ -5,8 +5,10 @@
 
 from __future__ import annotations
 
+import enum
+
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Self, Generic, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Self, Generic, TypeVar, Literal, cast
 from uuid import UUID
 
 import libvirt
@@ -106,6 +108,27 @@ class Entity(ABC):
             return None
 
         return UUID(get_uuid())
+
+
+class LifecycleResult(enum.Enum):
+    '''An enumeration indicating the result of an entity lifecycle operation.
+
+       SUCCESS indicates a successful operation.
+
+       FAILURE indicates a failed operation.
+
+       NO_OPERATION indicates that nothing was done because the Entity
+       is already in the requested state.
+
+       TIMED_OUT indicates that a timeout on the operation was exceeded.
+
+       FORCED indicates that the state transition was forced due to
+       initially failing.'''
+    SUCCESS = enum.auto()
+    FAILURE = enum.auto()
+    NO_OPERATION = enum.auto()
+    TIMED_OUT = enum.auto()
+    FORCED = enum.auto()
 
 
 class ConfigurableEntity(Entity):
@@ -265,29 +288,33 @@ class ConfigurableEntity(Entity):
         self.config = config
         return True
 
-    def undefine(self: Self) -> bool:
-        '''Idempotently attempt to undefine the entity.
+    def undefine(self: Self, /, *, idempotent: bool = False) -> \
+            Literal[LifecycleResult.SUCCESS, LifecycleResult.FAILURE, LifecycleResult.NO_OPERATION]:
+        '''Attempt to undefine the entity.
 
-           If the entity is already undefined, do nothing.
+           If the entity is already undefined and idempotent is False
+           (the default), return LifecycleResult.NO_OPERATION. If the
+           entity is already undefined and idempotent is True, return
+           LifecycleResult.SUCCESS.
 
            If the entity is not running, the Entity instance will become
            invalid and most methods and property access will raise a
            virshex.libvirt.InvalidEntity exception.
 
-           Returns True if the operation succeeds, or False if it fails
-           due to a libvirt error.'''
+           Returns LifecycleResult.SUCCESS if the operation succeeds, or
+           LifecycleResult.FAILURE if it fails due to a libvirt error.'''
         if not self.valid:
-            return True
+            return LifecycleResult.NO_OPERATION
 
         try:
             self._entity.undefine()
         except libvirt.libvirtError:
-            return False
+            return LifecycleResult.FAILURE
 
         if self._mark_invalid_on_undefine:
             self._valid = False
 
-        return True
+        return LifecycleResult.SUCCESS
 
     def applyXSLT(self: Self, xslt: etree.XSLT) -> None:
         '''Apply the given etree.XSLT object to the domain's configuration.
@@ -483,27 +510,34 @@ class RunnableEntity(Entity):
 
         return bool(self._entity.isPersistent())
 
-    def start(self: Self, /, *, idempotent: bool = False) -> bool:
+    def start(self: Self, /, *, idempotent: bool = False) -> \
+            Literal[LifecycleResult.SUCCESS, LifecycleResult.FAILURE, LifecycleResult.NO_OPERATION]:
         '''Attempt to start the entity.
 
-           If called on an entity that is already running, do nothing
-           and return the value of the idempotent parameter.
+           If called on an entity that is already running, do nothing and
+           return LifecycleResult.SUCCESS or LifecycleResult.NO_OPERATION
+           if the idempotent parameter is True or False respectively.
 
            If called on an entity that is not running, attempt to start
-           it, and return True if successful or False if unsuccessful.'''
+           it, and return LifecycleResult.SUCCESS if successful or
+           LifecycleResult.FAILUREif unsuccessful.'''
         self._check_valid()
 
         if self.running:
-            return idempotent
+            if idempotent:
+                return LifecycleResult.SUCCESS
+            else:
+                return LifecycleResult.NO_OPERATION
 
         try:
             self._entity.create()
         except libvirt.libvirtError:
-            return False
+            return LifecycleResult.FAILURE
 
-        return True
+        return LifecycleResult.SUCCESS
 
-    def destroy(self: Self, /, *, idempotent: bool = False) -> bool:
+    def destroy(self: Self, /, *, idempotent: bool = False) -> \
+            Literal[LifecycleResult.SUCCESS, LifecycleResult.FAILURE, LifecycleResult.NO_OPERATION]:
         '''Attempt to forcibly shut down the entity.
 
            If the entity is not running, do nothing and return the value
@@ -516,7 +550,10 @@ class RunnableEntity(Entity):
            invalid and most methods and property access will raise a
            virshex.libvirt.InvalidEntity exception.'''
         if not self.running or not self.valid:
-            return idempotent
+            if idempotent:
+                return LifecycleResult.SUCCESS
+            else:
+                return LifecycleResult.NO_OPERATION
 
         mark_invalid = False
 
@@ -526,16 +563,17 @@ class RunnableEntity(Entity):
         try:
             self._entity.destroy()
         except libvirt.libvirtError:
-            return False
+            return LifecycleResult.FAILURE
 
         if mark_invalid:
             self._valid = False
 
-        return True
+        return LifecycleResult.SUCCESS
 
 
 __all__ = [
     'Entity',
+    'LifecycleResult',
     'ConfigurableEntity',
     'ConfigProperty',
     'ConfigElementProperty',
