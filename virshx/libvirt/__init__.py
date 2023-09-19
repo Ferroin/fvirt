@@ -13,7 +13,7 @@
   make it overall nicer for us to interact with libvirt.
 
   The API_VERSION constant provides version information about the
-  underlying libvirt-python library as a virshx.common.VersionNumber
+  underlying libvirt-python library as a virshx.version.VersionNumber
   instance.'''
 
 from __future__ import annotations
@@ -21,7 +21,7 @@ from __future__ import annotations
 import libvirt
 
 from ..version import VersionNumber
-from .exceptions import (NotConnected, EntityNotRunning, InvalidConfig, InvalidEntity, InsufficientPrivileges)
+from .exceptions import (NotConnected, EntityNotRunning, InvalidConfig, InvalidEntity, InsufficientPrivileges, TimedOut)
 from .hypervisor import Hypervisor
 from .domain import Domain, DomainState
 from .storage_pool import StoragePool
@@ -46,6 +46,7 @@ __all__ = [
     'InvalidConfig',
     'InvalidEntity',
     'NotConnected',
+    'TimedOut',
     'Hypervisor',
     'Domain',
     'DomainState',

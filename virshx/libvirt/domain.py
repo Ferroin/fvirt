@@ -13,7 +13,7 @@ from uuid import UUID
 import libvirt
 
 from .entity import ConfigurableEntity, RunnableEntity, ConfigElementProperty, ConfigAttributeProperty
-from .exceptions import EntityNotRunning
+from .exceptions import EntityNotRunning, TimedOut
 from ..util.match_alias import MatchAlias
 
 if TYPE_CHECKING:
@@ -279,8 +279,8 @@ class Domain(ConfigurableEntity, RunnableEntity):
 
         return True
 
-    def shutdown(self: Self, /, *, timeout: int | None = None, idempotent: bool = False) -> bool:
-        '''Idempotently attempt to gracefully shut down the domain.
+    def shutdown(self: Self, /, *, timeout: int | None = None, force: bool = False, idempotent: bool = False) -> bool:
+        '''Attempt to gracefully shut down the domain.
 
            If the domain is not running, do nothing and return the value
            of the idempotent parameter.
@@ -289,9 +289,12 @@ class Domain(ConfigurableEntity, RunnableEntity):
            returning True on success or False on failure.
 
            If timeout is a non-negative integer, it specifies a timeout
-           in seconds that we should wait for the domain to shut
-           down. Exceeding the timeout will be treated as a failure to
-           shut down the domain and return False.
+           in seconds that we should wait for the domain to shut down. If
+           the timeout is exceeded and force is True, then the domain
+           will be forcibly stopped (equivalent to calling the destroy()
+           method) and True will be returned if that succeeds. If
+           the timeout is exceeded and force is False (the default),
+           a virshx.libvirt.TimedOut exception will be raised.
 
            The timeout is polled roughly once per second using time.sleep().
 
@@ -338,6 +341,12 @@ class Domain(ConfigurableEntity, RunnableEntity):
 
             tmcount -= 1
             sleep(1)
+
+        if cast(bool, self.running) and force:
+            self.destroy(idempotent=True)
+
+            if not cast(bool, self.running):
+                self._valid = False
 
         return not self.running
 

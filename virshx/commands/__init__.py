@@ -6,6 +6,7 @@
 from .domains import domains
 from .start import start
 from .stop import stop
+from .shutdown import shutdown
 from .reset import reset
 
 from .pools import pools
@@ -19,6 +20,7 @@ from .uri import uri
 COMMANDS = [
     domains,
     reset,
+    shutdown,
     start,
     start_pool,
     stop,

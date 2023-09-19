@@ -36,6 +36,11 @@ class InsufficientPrivileges(VirshxException):
     pass
 
 
+class TimedOut(VirshxException):
+    '''Raised when an operation with a timeout times out.'''
+    pass
+
+
 __all__ = [
     'VirshxException',
     'EntityNotRunning',
@@ -43,4 +48,5 @@ __all__ = [
     'InvalidConfig',
     'InvalidEntity',
     'NotConnected',
+    'TimedOut',
 ]
