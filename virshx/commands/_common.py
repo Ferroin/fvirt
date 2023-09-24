@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import click
 import libvirt
@@ -14,15 +14,16 @@ import libvirt
 from lxml import etree
 
 from ..libvirt import Hypervisor, LifecycleResult
+from ..libvirt.entity import Entity, RunnableEntity, ConfigurableEntity
 
 from ..util.match import MatchTarget, MatchTargetParam, MatchPatternParam, matcher, print_match_help
+from ..util.tables import render_table, Column, ColumnsParam, print_columns, tabulate_entities
 
 if TYPE_CHECKING:
     import re
 
     from collections.abc import Mapping, Sequence
 
-    from ..libvirt.entity import Entity, RunnableEntity, ConfigurableEntity
     from ..util.match_alias import MatchAlias
 
 
@@ -42,14 +43,14 @@ def get_match_or_entity(
     if match is not None:
         select = matcher(*match)
 
-        entities = cast(list[Entity], list(filter(select, getattr(hv, hvprop).__get__(hv))))
+        entities = cast(list[Entity], list(filter(select, getattr(hv, hvprop))))
 
         if not entities and ctx.obj['fail_if_no_match']:
             click.echo(f'No { doc_name }s found matching the specified criteria.', err=True)
             ctx.exit(2)
     elif entity is not None:
         try:
-            entities = cast(list[Entity], [getattr(hv, hvnameprop).__get__(hv)[entity]])
+            entities = cast(list[Entity], [getattr(hv, hvnameprop)[entity]])
         except KeyError:
             click.echo(f'"{ entity }" is not a defined { doc_name } on this hypervisor.', err=True)
             ctx.exit(2)
@@ -58,6 +59,140 @@ def get_match_or_entity(
         ctx.exit(1)
 
     return entities
+
+
+def make_list_command(
+        name: str,
+        aliases: Mapping[str, MatchAlias],
+        columns: Mapping[str, Column],
+        default_cols: Sequence[str],
+        hvprop: str,
+        doc_name: str,
+        ) -> click.Command:
+    '''Produce a click Command to list a given type of libvirt entity.'''
+    def cmd(
+            ctx: click.core.Context,
+            cols: list[str],
+            match: tuple[MatchTarget, re.Pattern] | None,
+            match_help: bool,
+            ) -> None:
+        if cols == ['list']:
+            print_columns(columns, default_cols)
+            ctx.exit(0)
+
+        if match_help:
+            print_match_help(aliases)
+            ctx.exit(0)
+
+        if match is not None:
+            select = matcher(*match)
+        else:
+            def select(x: Any) -> bool: return True
+
+        with Hypervisor(hvuri=ctx.obj['uri']) as hv:
+            entities = cast(list[Entity], list(filter(select, getattr(hv, hvprop))))
+
+            if not entities and ctx.obj['fail_if_no_match']:
+                ctx.fail(f'No { doc_name }s found matching the specified parameters.')
+
+            data = tabulate_entities(entities, columns, cols)
+
+        output = render_table(
+            data,
+            [columns[x] for x in cols],
+        )
+
+        click.echo(output)
+
+    cmd.__doc__ = f'''List { doc_name }s.
+
+    This will produce a (reasonably) nicely formatted table of { doc_name }s,
+    possibly limited by the specified matching parameters.'''
+
+    cmd = click.pass_context(cmd)  # type: ignore
+    cmd = click.option('--match-help', is_flag=True, default=False,
+                       help='Show help info about object matching.')(cmd)
+    cmd = click.option('--match', type=(MatchTargetParam(aliases)(), MatchPatternParam()),
+                       help='Limit { doc_name }s to operate on by match parameter. For more info, use `--match-help`')(cmd)
+    cmd = click.option('--columns', 'cols', type=ColumnsParam(columns, f'{ doc_name } columns')(), nargs=1,
+                       help=f'A comma separated list of columns to show when listing { doc_name }s. ' +
+                            'Use `--columns list` to list recognized column names.',
+                       default=default_cols)(cmd)
+    cmd = click.command(name=name)(cmd)
+
+    return cmd
+
+
+def make_sub_list_command(
+        name: str,
+        aliases: Mapping[str, MatchAlias],
+        columns: Mapping[str, Column],
+        default_cols: Sequence[str],
+        hvprop: str,
+        objprop: str,
+        doc_name: str,
+        obj_doc_name: str,
+        ) -> click.Command:
+    '''Produce a click Command to list a given type of libvirt entity.'''
+    def cmd(
+            ctx: click.core.Context,
+            cols: list[str],
+            match: tuple[MatchTarget, re.Pattern] | None,
+            match_help: bool,
+            name: str,
+            ) -> None:
+        if cols == ['list']:
+            print_columns(columns, default_cols)
+            ctx.exit(0)
+
+        if match_help:
+            print_match_help(aliases)
+            ctx.exit(0)
+
+        if match is not None:
+            select = matcher(*match)
+        else:
+            def select(x: Any) -> bool: return True
+
+        with Hypervisor(hvuri=ctx.obj['uri']) as hv:
+            try:
+                obj = getattr(hv, hvprop)[name]
+            except KeyError:
+                ctx.fail(f'No { obj_doc_name } with name "{ name }" is defined on this hypervisor.')
+
+            entities = filter(select, getattr(obj, objprop))
+
+            if not entities and ctx.obj['fail_if_no_match']:
+                ctx.fail('No { doc_name }s found matching the specified parameters.')
+
+            data = tabulate_entities(entities, columns, cols)
+
+        output = render_table(
+            data,
+            [columns[x] for x in cols],
+        )
+
+        click.echo(output)
+
+    cmd.__doc__ = f'''List { doc_name }s in a given { obj_doc_name }.
+
+    This will produce a (reasonably) nicely formatted table of { doc_name
+    }s in the { obj_doc_name } specified by NAME, possibly limited by
+    the specified matching parameters.'''
+
+    cmd = click.pass_context(cmd)  # type: ignore
+    cmd = click.argument('name', nargs=1, required=True)(cmd)
+    cmd = click.option('--match-help', is_flag=True, default=False,
+                       help='Show help info about object matching.')(cmd)
+    cmd = click.option('--match', type=(MatchTargetParam(aliases)(), MatchPatternParam()),
+                       help='Limit { doc_name }s to operate on by match parameter. For more info, use `--match-help`')(cmd)
+    cmd = click.option('--columns', 'cols', type=ColumnsParam(columns, f'{ doc_name } columns')(), nargs=1,
+                       help=f'A comma separated list of columns to show when listing { doc_name }s. ' +
+                            'Use `--columns list` to list recognized column names.',
+                       default=default_cols)(cmd)
+    cmd = click.command(name=name)(cmd)
+
+    return cmd
 
 
 def make_start_command(name: str, aliases: Mapping[str, MatchAlias], hvprop: str, hvnameprop: str, doc_name: str) -> click.Command:
@@ -316,6 +451,8 @@ def make_xslt_command(name: str, aliases: Mapping[str, MatchAlias], hvprop: str,
 
 __all__ = [
     'get_match_or_entity',
+    'make_list_command',
+    'make_sub_list_command',
     'make_start_command',
     'make_stop_command',
     'make_xslt_command',

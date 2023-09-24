@@ -13,7 +13,7 @@ import click
 from .terminal import TERM
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable
+    from collections.abc import Callable, Iterable, Mapping, Sequence
 
     from ..libvirt.entity import Entity
 
@@ -27,7 +27,7 @@ class Column:
     color: Callable[[Any], str] = lambda x: str(x)
 
 
-def ColumnsParam(cols: dict[str, Column], type_name: str) -> Type[click.ParamType]:
+def ColumnsParam(cols: Mapping[str, Column], type_name: str) -> Type[click.ParamType]:
     '''Factory funcion for creating types for column options.
 
        This will produce a subclass of click.ParamType for parsing a
@@ -60,7 +60,7 @@ def ColumnsParam(cols: dict[str, Column], type_name: str) -> Type[click.ParamTyp
     return ColumnsParam
 
 
-def print_columns(columns: dict[str, Column], defaults: list[str]) -> None:
+def print_columns(columns: Mapping[str, Column], defaults: Sequence[str]) -> None:
     '''Print out a list of supported columns.
 
        Takes the column definitions that would be passed to ColumnsParam
@@ -84,7 +84,7 @@ def color_bool(value: bool) -> str:
         return 'No'
 
 
-def tabulate_entities(domains: Iterable[Entity], columns: dict[str, Column], selected_cols: list[str]) -> list[list[str]]:
+def tabulate_entities(domains: Iterable[Entity], columns: Mapping[str, Column], selected_cols: Sequence[str]) -> Sequence[Sequence[str]]:
     '''Convert a list of domains to a list of values for columns.'''
     ret = []
 
@@ -107,7 +107,7 @@ def tabulate_entities(domains: Iterable[Entity], columns: dict[str, Column], sel
     return ret
 
 
-def render_table(items: list[list[str]], columns: list[Column]) -> str:
+def render_table(items: Sequence[Sequence[str]], columns: Sequence[Column]) -> str:
     '''Render a table of items.
 
        `items` should be a list of rows, where each row is a list of

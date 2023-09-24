@@ -5,18 +5,10 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
-
-import click
-
-from ..libvirt import Hypervisor
+from ._common import make_list_command
 from ..libvirt.storage_pool import MATCH_ALIASES
-from ..util.match import MatchTarget, MatchTargetParam, MatchPatternParam, matcher, print_match_help
-from ..util.tables import render_table, Column, ColumnsParam, color_bool, print_columns, tabulate_entities
+from ..util.tables import Column, color_bool
 from ..util.terminal import TERM
-
-if TYPE_CHECKING:
-    import re
 
 
 def color_state(value: bool) -> str:
@@ -55,54 +47,14 @@ DEFAULT_COLS = [
     'available',
 ]
 
-
-@click.command
-@click.option('--columns', type=ColumnsParam(COLUMNS, 'storage pool columns')(), nargs=1,
-              help='A comma separated list of columns to show when listing storage pools. Use `--columns list` to list recognized column names.',
-              default=DEFAULT_COLS)
-@click.option('--match', type=(MatchTargetParam(MATCH_ALIASES)(), MatchPatternParam()),
-              help='Limit listed storage pools by match parameter. For more info, use `--match-help`')
-@click.option('--match-help', is_flag=True, default=False,
-              help='Show help info about object matching.')
-@click.pass_context
-def pools(
-        ctx: click.core.Context,
-        columns: list[str],
-        match: tuple[MatchTarget, re.Pattern] | None,
-        match_help: bool,
-        ) -> None:
-    '''List storage pools.
-
-       This will produce a (reasonably) nicely formatted table of storage pools,
-       possibly limited by the specified matching parameters.'''
-    if columns == ['list']:
-        print_columns(COLUMNS, DEFAULT_COLS)
-        ctx.exit(0)
-
-    if match_help:
-        print_match_help(MATCH_ALIASES)
-        ctx.exit(0)
-
-    if match is not None:
-        select = matcher(*match)
-    else:
-        def select(x: Any) -> bool: return True
-
-    with Hypervisor(hvuri=ctx.obj['uri']) as hv:
-        pools = filter(select, hv.pools)
-
-        if not pools and ctx.obj['fail_if_no_match']:
-            ctx.fail('No storage pools found matching the specified parameters.')
-
-        data = tabulate_entities(pools, COLUMNS, columns)
-
-    output = render_table(
-        data,
-        [COLUMNS[x] for x in columns],
-    )
-
-    click.echo(output)
-
+pools = make_list_command(
+    name='pools',
+    aliases=MATCH_ALIASES,
+    columns=COLUMNS,
+    default_cols=DEFAULT_COLS,
+    hvprop='pools',
+    doc_name='storage pool',
+)
 
 __all__ = [
     'pools',
