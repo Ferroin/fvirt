@@ -1,7 +1,7 @@
 # Copyright (c) 2023 Austin S. Hemmelgarn
 # SPDX-License-Identifier: MITNFA
 
-'''Functions used in many commands.'''
+'''Functions used common to many commands.'''
 
 from __future__ import annotations
 
@@ -133,7 +133,7 @@ def make_sub_list_command(
         doc_name: str,
         obj_doc_name: str,
         ) -> click.Command:
-    '''Produce a click Command to list a given type of libvirt entity.'''
+    '''Produce a click Command to list a given type of libvirt entity that is itself part of another entity.'''
     def cmd(
             ctx: click.core.Context,
             cols: list[str],

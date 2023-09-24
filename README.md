@@ -44,13 +44,14 @@ over the official bindings, including:
 - Hypervisor objects provide iterator and mapping access to objects like
   domains and storage pools, including automatic connection management.
 - Storage pools provide iterator and mapping access to their volumes.
-- Object XML is directly accessible as lxml Element objects.
-- Things that should logically return an empty when nothing is matched
-  usually do so, in contrast to libvirt-python often returning None instead.
-- libvirt URIs are objects that can be easily modified to change things
-  like the driver or host.
 - Domain states are an enumerable (like they are in the C API) instead
   of just being an opaque number (like they are in libvirt-python).
+- Object XML is directly accessible as lxml Element objects.
+- Things that should logically return an empty sequence when nothing
+  is matched usually do so, in contrast to libvirt-python often returning
+  None instead.
+- libvirt URIs are objects that can be easily modified to change things
+  like the driver or host.
 - Most common properties of objects are accessible using regular attribute
   access instead of requiring either method calls or manual lookup in the
   object’s XML config. This includes writability for many of these
@@ -70,6 +71,8 @@ is because that functionality is what I specifically needed for my own
 usage, thus it was the first thing I implemented. I plan to expand this
 further to at least include netowrks and network interfaces, but it’s
 not a priority at the moment.
+
+Both of these may change in the future.
 
 ## Dependencies
 
