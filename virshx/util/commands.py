@@ -1,12 +1,12 @@
 # Copyright (c) 2023 Austin S. Hemmelgarn
 # SPDX-License-Identifier: MITNFA
 
-'''Functions used common to many commands.'''
+'''Functions for constructing commands and preforming things commonly done in commands.'''
 
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, TypeVar, ParamSpec, Concatenate, Any, cast
 
 import click
 import libvirt
@@ -16,15 +16,18 @@ from lxml import etree
 from ..libvirt import Hypervisor, LifecycleResult
 from ..libvirt.entity import Entity, RunnableEntity, ConfigurableEntity
 
-from ..util.match import MatchTarget, MatchTargetParam, MatchPatternParam, matcher, print_match_help
-from ..util.tables import render_table, Column, ColumnsParam, print_columns, tabulate_entities
+from .match import MatchTarget, MatchTargetParam, MatchPatternParam, matcher, print_match_help
+from .tables import render_table, Column, ColumnsParam, print_columns, tabulate_entities
 
 if TYPE_CHECKING:
     import re
 
-    from collections.abc import Mapping, Sequence
+    from collections.abc import Mapping, Sequence, Callable
 
     from ..util.match_alias import MatchAlias
+
+    T = TypeVar('T')
+    P = ParamSpec('P')
 
 
 def get_match_or_entity(
@@ -61,6 +64,28 @@ def get_match_or_entity(
     return entities
 
 
+def add_match_options(aliases: Mapping[str, MatchAlias], doc_name: str) -> \
+        Callable[[Callable[P, T]], Callable[Concatenate[bool, P], T]]:
+    '''Produce a decorator that adds matching arguments to a function that will be turned into a Click command.'''
+    def decorator(cmd: Callable[P, T]) -> Callable[Concatenate[bool, P], T]:
+        def inner(*args: P.args, match_help: bool, **kwargs: P.kwargs) -> T:
+            if match_help:
+                print_match_help(aliases)
+                kwargs['ctx'].exit(0)
+
+            return cmd(*args, **kwargs)
+
+        inner.__doc__ = cmd.__doc__
+        inner = click.option('--match-help', is_flag=True, default=False,
+                             help='Show help info about object matching.')(inner)
+        inner = click.option('--match', type=(MatchTargetParam(aliases)(), MatchPatternParam()),
+                             help=f'Limit { doc_name }s to operate on by match parameter. For more info, use `--match-help`')(inner)
+
+        return inner
+
+    return decorator
+
+
 def make_list_command(
         name: str,
         aliases: Mapping[str, MatchAlias],
@@ -74,14 +99,9 @@ def make_list_command(
             ctx: click.core.Context,
             cols: list[str],
             match: tuple[MatchTarget, re.Pattern] | None,
-            match_help: bool,
             ) -> None:
         if cols == ['list']:
             print_columns(columns, default_cols)
-            ctx.exit(0)
-
-        if match_help:
-            print_match_help(aliases)
             ctx.exit(0)
 
         if match is not None:
@@ -110,10 +130,7 @@ def make_list_command(
     possibly limited by the specified matching parameters.'''
 
     cmd = click.pass_context(cmd)  # type: ignore
-    cmd = click.option('--match-help', is_flag=True, default=False,
-                       help='Show help info about object matching.')(cmd)
-    cmd = click.option('--match', type=(MatchTargetParam(aliases)(), MatchPatternParam()),
-                       help='Limit { doc_name }s to operate on by match parameter. For more info, use `--match-help`')(cmd)
+    cmd = add_match_options(aliases, doc_name)(cmd)  # type: ignore
     cmd = click.option('--columns', 'cols', type=ColumnsParam(columns, f'{ doc_name } columns')(), nargs=1,
                        help=f'A comma separated list of columns to show when listing { doc_name }s. ' +
                             'Use `--columns list` to list recognized column names.',
@@ -138,15 +155,10 @@ def make_sub_list_command(
             ctx: click.core.Context,
             cols: list[str],
             match: tuple[MatchTarget, re.Pattern] | None,
-            match_help: bool,
             name: str,
             ) -> None:
         if cols == ['list']:
             print_columns(columns, default_cols)
-            ctx.exit(0)
-
-        if match_help:
-            print_match_help(aliases)
             ctx.exit(0)
 
         if match is not None:
@@ -182,10 +194,7 @@ def make_sub_list_command(
 
     cmd = click.pass_context(cmd)  # type: ignore
     cmd = click.argument('name', nargs=1, required=True)(cmd)
-    cmd = click.option('--match-help', is_flag=True, default=False,
-                       help='Show help info about object matching.')(cmd)
-    cmd = click.option('--match', type=(MatchTargetParam(aliases)(), MatchPatternParam()),
-                       help='Limit { doc_name }s to operate on by match parameter. For more info, use `--match-help`')(cmd)
+    cmd = add_match_options(aliases, doc_name)(cmd)  # type: ignore
     cmd = click.option('--columns', 'cols', type=ColumnsParam(columns, f'{ doc_name } columns')(), nargs=1,
                        help=f'A comma separated list of columns to show when listing { doc_name }s. ' +
                             'Use `--columns list` to list recognized column names.',
@@ -200,13 +209,8 @@ def make_start_command(name: str, aliases: Mapping[str, MatchAlias], hvprop: str
     def cmd(
             ctx: click.core.Context,
             match: tuple[MatchTarget, re.Pattern] | None,
-            match_help: bool,
-            fail_if_no_match: bool,
             name: str | None,
             ) -> None:
-        if match_help:
-            print_match_help(aliases)
-            ctx.exit(0)
 
         with Hypervisor(hvuri=ctx.obj['uri']) as hv:
             entities = cast(Sequence[RunnableEntity], get_match_or_entity(
@@ -242,7 +246,7 @@ def make_start_command(name: str, aliases: Mapping[str, MatchAlias], hvprop: str
                     case _:
                         raise RuntimeError
 
-            if success or (not entities and not fail_if_no_match):
+            if success or (not entities and not ctx.obj['fail_if_no_match']):
                 click.echo(f'Successfully started { success } out of { len(entities) } { doc_name }s ({ skipped } already running).')
 
                 if success != len(entities) and ctx.obj['fail_fast']:
@@ -272,10 +276,7 @@ def make_start_command(name: str, aliases: Mapping[str, MatchAlias], hvprop: str
 
     cmd = click.pass_context(cmd)  # type: ignore
     cmd = click.argument('name', nargs=1, required=False)(cmd)
-    cmd = click.option('--match-help', is_flag=True, default=False,
-                       help='Show help info about object matching.')(cmd)
-    cmd = click.option('--match', type=(MatchTargetParam(aliases)(), MatchPatternParam()),
-                       help='Limit { doc_name }s to operate on by match parameter. For more info, use `--match-help`')(cmd)
+    cmd = add_match_options(aliases, doc_name)(cmd)  # type: ignore
     cmd = click.command(name=name)(cmd)
 
     return cmd
@@ -286,14 +287,8 @@ def make_stop_command(name: str, aliases: Mapping[str, MatchAlias], hvprop: str,
     def cmd(
             ctx: click.core.Context,
             match: tuple[MatchTarget, re.Pattern] | None,
-            match_help: bool,
-            fail_if_no_match: bool,
             name: str | None,
             ) -> None:
-        if match_help:
-            print_match_help(aliases)
-            ctx.exit(0)
-
         with Hypervisor(hvuri=ctx.obj['uri']) as hv:
             entities = cast(Sequence[RunnableEntity], get_match_or_entity(
                 hv=hv,
@@ -328,7 +323,7 @@ def make_stop_command(name: str, aliases: Mapping[str, MatchAlias], hvprop: str,
                     case _:
                         raise RuntimeError
 
-            if success or (not entities and not fail_if_no_match):
+            if success or (not entities and not ctx.obj['fail_if_no_match']):
                 click.echo(f'Successfully stopped { success } out of { len(entities) } { doc_name }s ({ skipped } not running).')
 
                 if success != len(entities) and ctx.obj['fail_fast']:
@@ -358,10 +353,7 @@ def make_stop_command(name: str, aliases: Mapping[str, MatchAlias], hvprop: str,
 
     cmd = click.pass_context(cmd)  # type: ignore
     cmd = click.argument('name', nargs=1, required=False)(cmd)
-    cmd = click.option('--match-help', is_flag=True, default=False,
-                       help='Show help info about object matching.')(cmd)
-    cmd = click.option('--match', type=(MatchTargetParam(aliases)(), MatchPatternParam()),
-                       help='Limit { doc_name }s to operate on by match parameter. For more info, use `--match-help`')(cmd)
+    cmd = add_match_options(aliases, doc_name)(cmd)  # type: ignore
     cmd = click.command(name=name)(cmd)
 
     return cmd
@@ -372,14 +364,9 @@ def make_xslt_command(name: str, aliases: Mapping[str, MatchAlias], hvprop: str,
     def cmd(
             ctx: click.core.Context,
             match: tuple[MatchTarget, re.Pattern] | None,
-            match_help: bool,
             xslt: Path,
             name: str | None,
             ) -> None:
-        if match_help:
-            print_match_help(aliases)
-            ctx.exit(0)
-
         xform = etree.XSLT(etree.parse(xslt))
 
         with Hypervisor(hvuri=ctx.obj['uri']) as hv:
@@ -440,10 +427,7 @@ def make_xslt_command(name: str, aliases: Mapping[str, MatchAlias], hvprop: str,
     cmd = click.argument('name', nargs=1, required=False)(cmd)
     cmd = click.argument('xslt', nargs=1, required=True,
                          type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True, resolve_path=True))(cmd)
-    cmd = click.option('--match-help', is_flag=True, default=False,
-                       help='Show help info about object matching.')(cmd)
-    cmd = click.option('--match', type=(MatchTargetParam(aliases)(), MatchPatternParam()),
-                       help='Limit { doc_name }s to operate on by match parameter. For more info, use `--match-help`')(cmd)
+    cmd = add_match_options(aliases, doc_name)(cmd)  # type: ignore
     cmd = click.command(name=name)(cmd)
 
     return cmd
@@ -451,6 +435,7 @@ def make_xslt_command(name: str, aliases: Mapping[str, MatchAlias], hvprop: str,
 
 __all__ = [
     'get_match_or_entity',
+    'add_match_options',
     'make_list_command',
     'make_sub_list_command',
     'make_start_command',

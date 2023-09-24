@@ -7,11 +7,11 @@ from __future__ import annotations
 
 from typing import Any
 
-from ._common import make_list_command
-from ..libvirt import DomainState
-from ..libvirt.domain import MATCH_ALIASES
-from ..util.tables import Column, color_bool
-from ..util.terminal import TERM
+from ...libvirt import DomainState
+from ...libvirt.domain import MATCH_ALIASES
+from ...util.commands import make_list_command
+from ...util.tables import Column, color_bool
+from ...util.terminal import TERM
 
 
 def color_state(state: DomainState) -> str:

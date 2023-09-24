@@ -5,8 +5,8 @@
 
 from __future__ import annotations
 
-from ._common import make_sub_list_command
 from ..libvirt.volume import MATCH_ALIASES
+from ..util.commands import make_sub_list_command
 from ..util.tables import Column
 
 COLUMNS = {

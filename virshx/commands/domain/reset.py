@@ -5,24 +5,23 @@
 
 from __future__ import annotations
 
-import re
-
 from collections.abc import Sequence
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 import click
 
-from ._common import get_match_or_entity
-from ..libvirt import Hypervisor, EntityNotRunning, Domain, LifecycleResult
-from ..libvirt.domain import MATCH_ALIASES
-from ..util.match import MatchTarget, MatchTargetParam, MatchPatternParam, print_match_help
+from ...libvirt import Hypervisor, EntityNotRunning, Domain, LifecycleResult
+from ...libvirt.domain import MATCH_ALIASES
+from ...util.commands import get_match_or_entity, add_match_options
+
+if TYPE_CHECKING:
+    import re
+
+    from ...util.match import MatchTarget
 
 
 @click.command
-@click.option('--match', type=(MatchTargetParam(MATCH_ALIASES)(), MatchPatternParam()),
-              help='Limit domains to operate on by match parameter. For more info, use `--match-help`')
-@click.option('--match-help', is_flag=True, default=False,
-              help='Show help info about object matching.')
+@add_match_options(MATCH_ALIASES, 'domain')
 @click.argument('name', nargs=1, required=False)
 @click.pass_context
 def reset(
@@ -49,10 +48,6 @@ def reset(
        This command does not support virshx's idempotent mode. Behavior
        will be identical no matter whether idempotent mode is enabled
        or not.'''
-    if match_help:
-        print_match_help(MATCH_ALIASES)
-        ctx.exit(0)
-
     with Hypervisor(hvuri=ctx.obj['uri']) as hv:
         entities = cast(Sequence[Domain], get_match_or_entity(
             hv=hv,

@@ -5,10 +5,10 @@
 
 from __future__ import annotations
 
-from ._common import make_list_command
-from ..libvirt.storage_pool import MATCH_ALIASES
-from ..util.tables import Column, color_bool
-from ..util.terminal import TERM
+from ...libvirt.storage_pool import MATCH_ALIASES
+from ...util.commands import make_list_command
+from ...util.tables import Column, color_bool
+from ...util.terminal import TERM
 
 
 def color_state(value: bool) -> str:

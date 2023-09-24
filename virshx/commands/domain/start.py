@@ -5,8 +5,8 @@
 
 from __future__ import annotations
 
-from ._common import make_start_command
-from ..libvirt.domain import MATCH_ALIASES
+from ...libvirt.domain import MATCH_ALIASES
+from ...util.commands import make_start_command
 
 start = make_start_command(
     name='start',

@@ -3,36 +3,20 @@
 
 '''Individual commands for the virshx CLI interface.'''
 
-from .domains import domains
-from .start import start
-from .stop import stop
-from .shutdown import shutdown
-from .reset import reset
-from .xslt import xslt
-
-from .pools import pools
-from .start_pool import start_pool
-from .stop_pool import stop_pool
-from .xslt_pool import xslt_pool
+from .domain import COMMANDS as DOMAIN_COMMANDS
+from .pool import COMMANDS as POOL_COMMANDS
 
 from .volumes import volumes
 
 from .uri import uri
 
 COMMANDS = [
-    domains,
-    pools,
-    reset,
-    shutdown,
-    start,
-    start_pool,
-    stop,
-    stop_pool,
     uri,
     volumes,
-    xslt,
-    xslt_pool,
 ]
+
+COMMANDS += DOMAIN_COMMANDS
+COMMANDS += POOL_COMMANDS
 
 __all__ = [
     'COMMANDS',

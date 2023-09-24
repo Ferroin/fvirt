@@ -5,8 +5,8 @@
 
 from __future__ import annotations
 
-from ._common import make_start_command
-from ..libvirt.storage_pool import MATCH_ALIASES
+from ...libvirt.storage_pool import MATCH_ALIASES
+from ...util.commands import make_start_command
 
 start_pool = make_start_command(
     name='start-pool',

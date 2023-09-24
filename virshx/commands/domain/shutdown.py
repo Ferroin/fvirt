@@ -5,24 +5,23 @@
 
 from __future__ import annotations
 
-import re
-
 from collections.abc import Sequence
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 import click
 
-from ._common import get_match_or_entity
-from ..libvirt import Hypervisor, Domain, LifecycleResult
-from ..libvirt.domain import MATCH_ALIASES
-from ..util.match import MatchTarget, MatchTargetParam, MatchPatternParam, print_match_help
+from ...libvirt import Hypervisor, Domain, LifecycleResult
+from ...libvirt.domain import MATCH_ALIASES
+from ...util.commands import get_match_or_entity, add_match_options
+
+if TYPE_CHECKING:
+    import re
+
+    from ...util.match import MatchTarget
 
 
 @click.command
-@click.option('--match', type=(MatchTargetParam(MATCH_ALIASES)(), MatchPatternParam()),
-              help='Limit domains to operate on by match parameter. For more info, use `--match-help`')
-@click.option('--match-help', is_flag=True, default=False,
-              help='Show help info about object matching.')
+@add_match_options(MATCH_ALIASES, 'domain')
 @click.option('--timeout', type=click.IntRange(min=0), default=0,
               help='Specify a timeout in seconds within which the domain must shut down. A value of 0 means no timeout.')
 @click.option('--force', is_flag=True, default=False,
@@ -32,7 +31,6 @@ from ..util.match import MatchTarget, MatchTargetParam, MatchPatternParam, print
 def shutdown(
         ctx: click.core.Context,
         match: tuple[MatchTarget, re.Pattern] | None,
-        match_help: bool,
         timeout: int,
         force: bool,
         name: str | None,
@@ -60,10 +58,6 @@ def shutdown(
        This command supports virshx's idempotent logic. In idempotent
        mode, failing to shut down a domain because it is not running
        will not be treated as an error.'''
-    if match_help:
-        print_match_help(MATCH_ALIASES)
-        ctx.exit(0)
-
     with Hypervisor(hvuri=ctx.obj['uri']) as hv:
         entities = cast(Sequence[Domain], get_match_or_entity(
             hv=hv,
