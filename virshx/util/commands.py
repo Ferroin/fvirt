@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import TYPE_CHECKING, TypeVar, ParamSpec, Concatenate, Any, cast
+from uuid import UUID
 
 import click
 import libvirt
@@ -28,6 +29,48 @@ if TYPE_CHECKING:
 
     T = TypeVar('T')
     P = ParamSpec('P')
+
+
+def get_entity(
+        *,
+        hv: Hypervisor,
+        hvprop: str,
+        entity: str,
+        ctx: click.core.Context,
+        doc_name: str,
+        ) -> Entity:
+    '''Look up an entity by name, UUID, or possibly ID.
+
+       If the entity cannot be found, fail the calling command with a
+       message indicating this.'''
+    ret: Entity | None = None
+
+    by_name = getattr(hv, f'{ hvprop }_by_name')
+    ret = by_name.get(entity, None)
+
+    if ret is None:
+        try:
+            uuid = UUID(entity)
+        except ValueError:
+            pass
+        else:
+            by_uuid = getattr(hv, f'{ hvprop }_by_uuid')
+            ret = by_uuid.get(uuid, None)
+
+    if ret is None:
+        try:
+            ID = int(entity)
+        except ValueError:
+            pass
+        else:
+            by_id = getattr(hv, f'{ hvprop }_by_id', dict())
+            ret = by_id.get(ID, None)
+
+    if ret is None:
+        click.echo(f'No { doc_name } found with name, UUID, or ID equal to { entity } on this hypervisor.', err=True)
+        ctx.exit(2)
+
+    return ret
 
 
 def get_match_or_entity(
@@ -52,11 +95,13 @@ def get_match_or_entity(
             click.echo(f'No { doc_name }s found matching the specified criteria.', err=True)
             ctx.exit(2)
     elif entity is not None:
-        try:
-            entities = cast(list[Entity], [getattr(hv, hvnameprop)[entity]])
-        except KeyError:
-            click.echo(f'"{ entity }" is not a defined { doc_name } on this hypervisor.', err=True)
-            ctx.exit(2)
+        entities = [get_entity(
+                        hv=hv,
+                        hvprop=hvprop,
+                        entity=entity,
+                        ctx=ctx,
+                        doc_name=doc_name,
+                    )]
     else:
         click.echo(f'Either match parameters or a { doc_name } name is required.', err=True)
         ctx.exit(1)
