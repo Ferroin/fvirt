@@ -5,9 +5,13 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
 import click
+import libvirt
+
+from lxml import etree
 
 from ..libvirt import Hypervisor, LifecycleResult
 
@@ -18,7 +22,7 @@ if TYPE_CHECKING:
 
     from collections.abc import Mapping, Sequence
 
-    from ..libvirt.entity import RunnableEntity
+    from ..libvirt.entity import Entity, RunnableEntity, ConfigurableEntity
     from ..util.match_alias import MatchAlias
 
 
@@ -31,21 +35,21 @@ def get_match_or_entity(
         entity: str | None,
         ctx: click.core.Context,
         doc_name: str,
-        ) -> Sequence[RunnableEntity]:
+        ) -> Sequence[Entity]:
     '''Get a list of entities based on the given parameters.'''
-    entities: list[RunnableEntity] = []
+    entities: list[Entity] = []
 
     if match is not None:
         select = matcher(*match)
 
-        entities = cast(list[RunnableEntity], list(filter(select, getattr(hv, hvprop).__get__(hv))))
+        entities = cast(list[Entity], list(filter(select, getattr(hv, hvprop).__get__(hv))))
 
         if not entities and ctx.obj['fail_if_no_match']:
             click.echo(f'No { doc_name }s found matching the specified criteria.', err=True)
             ctx.exit(2)
     elif entity is not None:
         try:
-            entities = cast(list[RunnableEntity], [getattr(hv, hvnameprop).__get__(hv)[entity]])
+            entities = cast(list[Entity], [getattr(hv, hvnameprop).__get__(hv)[entity]])
         except KeyError:
             click.echo(f'"{ entity }" is not a defined { doc_name } on this hypervisor.', err=True)
             ctx.exit(2)
@@ -70,7 +74,7 @@ def make_start_command(name: str, aliases: Mapping[str, MatchAlias], hvprop: str
             ctx.exit(0)
 
         with Hypervisor(hvuri=ctx.obj['uri']) as hv:
-            entities = get_match_or_entity(
+            entities = cast(Sequence[RunnableEntity], get_match_or_entity(
                 hv=hv,
                 hvprop=hvprop,
                 hvnameprop=hvnameprop,
@@ -78,7 +82,7 @@ def make_start_command(name: str, aliases: Mapping[str, MatchAlias], hvprop: str
                 entity=name,
                 ctx=ctx,
                 doc_name=doc_name,
-            )
+            ))
 
             success = 0
             skipped = 0
@@ -156,7 +160,7 @@ def make_stop_command(name: str, aliases: Mapping[str, MatchAlias], hvprop: str,
             ctx.exit(0)
 
         with Hypervisor(hvuri=ctx.obj['uri']) as hv:
-            entities = get_match_or_entity(
+            entities = cast(Sequence[RunnableEntity], get_match_or_entity(
                 hv=hv,
                 hvprop=hvprop,
                 hvnameprop=hvnameprop,
@@ -164,7 +168,7 @@ def make_stop_command(name: str, aliases: Mapping[str, MatchAlias], hvprop: str,
                 entity=name,
                 ctx=ctx,
                 doc_name=doc_name,
-            )
+            ))
 
             success = 0
             skipped = 0
@@ -228,8 +232,91 @@ def make_stop_command(name: str, aliases: Mapping[str, MatchAlias], hvprop: str,
     return cmd
 
 
+def make_xslt_command(name: str, aliases: Mapping[str, MatchAlias], hvprop: str, hvnameprop: str, doc_name: str) -> click.Command:
+    '''Produce a click Command to modify a given type of libvirt entity with an XSLT document.'''
+    def cmd(
+            ctx: click.core.Context,
+            match: tuple[MatchTarget, re.Pattern] | None,
+            match_help: bool,
+            xslt: Path,
+            name: str | None,
+            ) -> None:
+        if match_help:
+            print_match_help(aliases)
+            ctx.exit(0)
+
+        xform = etree.XSLT(etree.parse(xslt))
+
+        with Hypervisor(hvuri=ctx.obj['uri']) as hv:
+            entities = cast(Sequence[ConfigurableEntity], get_match_or_entity(
+                hv=hv,
+                hvprop=hvprop,
+                hvnameprop=hvnameprop,
+                match=match,
+                entity=name,
+                ctx=ctx,
+                doc_name=doc_name,
+            ))
+
+            success = 0
+
+            for e in entities:
+                try:
+                    e.applyXSLT(xform)
+                except libvirt.libvirtError:
+                    click.echo(f'Failed to modify { doc_name } "{ e.name }".')
+
+                    if ctx.obj['fail_fast']:
+                        break
+                else:
+                    click.echo(f'Successfully modified { doc_name } "{ e.name }".')
+                    success += 1
+
+            if success or (not entities and not ctx.obj['fail_if_no_match']):
+                click.echo(f'Successfully modified { success } out of { len(entities) } { doc_name }s.')
+
+                if success != len(entities) and ctx.obj['fail_fast']:
+                    ctx.exit(3)
+            else:
+                click.echo(f'Failed to modified any { doc_name }s.')
+                ctx.exit(3)
+
+    cmd.__doc__ = f'''Apply an XSLT document to one or more { doc_name }s.
+
+    XSLT must be a path to a valid XSLT document. It must specify an
+    output element, and the output element must specify an encoding
+    of UTF-8. Note that xsl:strip-space directives may cause issues
+    in the XSLT processor.
+
+    Either a specific { doc_name } name to modify should be specified as
+    NAME, or matching parameters should be specified using the --match
+    option, which will then cause all matching { doc_name }s to be modified.
+
+    This command supports virshx's fail-fast logic. In fail-fast mode,
+    the first { doc_name } which the XSLT document fails to apply to will
+    cause the operation to stop, and any failure will result in a
+    non-zero exit code.
+
+    This command does not support virshx's idempotent mode. It's
+    behavior will not change regardless of whether idempotent mode
+    is enabled or not.'''
+
+    cmd = click.pass_context(cmd)  # type: ignore
+    cmd = click.argument('name', nargs=1, required=False)(cmd)
+    cmd = click.argument('xslt', nargs=1, required=True,
+                         type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True, resolve_path=True))(cmd)
+    cmd = click.option('--match-help', is_flag=True, default=False,
+                       help='Show help info about object matching.')(cmd)
+    cmd = click.option('--match', type=(MatchTargetParam(aliases)(), MatchPatternParam()),
+                       help='Limit { doc_name }s to operate on by match parameter. For more info, use `--match-help`')(cmd)
+    cmd = click.command(name=name)(cmd)
+
+    return cmd
+
+
 __all__ = [
     'get_match_or_entity',
     'make_start_command',
     'make_stop_command',
+    'make_xslt_command',
 ]

@@ -39,12 +39,12 @@ def shutdown(
         ) -> None:
     '''Gracefully shut down one or more running domains.
 
-       Either a specific domain name to reset should be specified as
-       NAME, or matching parameters should be specified using the
+       Either a specific domain name to shut down should be specified
+       as NAME, or matching parameters should be specified using the
        --match option, which will then cause all running domains that
-       are matched to be reset.
+       are matched to be shut down.
 
-       If more than one domain is requested to be reset, a failure
+       If more than one domain is requested to be shut down, a failure
        resetting any domain will result in a non-zero exit code even if
        some domains were started.
 
@@ -112,7 +112,9 @@ def shutdown(
                     raise RuntimeError
 
         if success or (not entities and not ctx.obj['fail_if_no_match']):
-            click.echo(f'Successfully shut down { success } out of { len(entities) } domains ({ skipped } already shut off, { timed_out } timed out).')
+            click.echo(
+                f'Successfully shut down { success } out of { len(entities) } domains ({ skipped } already shut off, { timed_out } timed out).'
+            )
 
             if success != len(entities) and ctx.obj['fail_fast']:
                 ctx.exit(3)

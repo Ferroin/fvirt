@@ -319,6 +319,9 @@ class ConfigurableEntity(Entity):
     def applyXSLT(self: Self, xslt: etree.XSLT) -> None:
         '''Apply the given etree.XSLT object to the domain's configuration.
 
+           The XSLT document must specify an xsl:output element, and it
+           must use a UTF-8 encoding for the output.
+
            This handles reading the config, applying the transformation,
            and then saving the config, all as one operation.'''
         self.configRaw = str(xslt(self.config))
