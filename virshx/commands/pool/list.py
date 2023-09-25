@@ -47,8 +47,8 @@ DEFAULT_COLS = [
     'available',
 ]
 
-pools = make_list_command(
-    name='pools',
+list_pools = make_list_command(
+    name='list',
     aliases=MATCH_ALIASES,
     columns=COLUMNS,
     default_cols=DEFAULT_COLS,
@@ -57,5 +57,5 @@ pools = make_list_command(
 )
 
 __all__ = [
-    'pools',
+    'list_pools',
 ]

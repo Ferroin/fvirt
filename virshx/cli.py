@@ -29,7 +29,13 @@ def cli(
         idempotent: bool,
         fail_if_no_match: bool,
         ) -> None:
-    '''Extra tooling to supplemnt virsh.'''
+    '''A supplementary frontend for libvirt.
+
+       Most commands are grouped by the type of libvirt object they
+       operate on.
+
+       For more information about a specific command, run that command
+       with the --help option.'''
     ctx.ensure_object(dict)
     ctx.obj['uri'] = URI.from_string(connect)
     ctx.obj['fail_fast'] = fail_fast

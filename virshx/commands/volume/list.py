@@ -5,9 +5,9 @@
 
 from __future__ import annotations
 
-from ..libvirt.volume import MATCH_ALIASES
-from ..util.commands import make_sub_list_command
-from ..util.tables import Column
+from ...libvirt.volume import MATCH_ALIASES
+from ...util.commands import make_sub_list_command
+from ...util.tables import Column
 
 COLUMNS = {
     'name': Column(title='Name', prop='name'),
@@ -25,17 +25,18 @@ DEFAULT_COLS = [
     'capacity',
 ]
 
-volumes = make_sub_list_command(
-    name='volumes',
+list_volumes = make_sub_list_command(
+    name='list',
     aliases=MATCH_ALIASES,
     columns=COLUMNS,
     default_cols=DEFAULT_COLS,
     hvprop='pools',
     objprop='volumes',
+    ctx_key='pool',
     doc_name='volume',
     obj_doc_name='storage pool',
 )
 
 __all__ = [
-    'volumes',
+    'list_volumes',
 ]

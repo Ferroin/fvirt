@@ -192,6 +192,7 @@ def make_sub_list_command(
         default_cols: Sequence[str],
         hvprop: str,
         objprop: str,
+        ctx_key: str,
         doc_name: str,
         obj_doc_name: str,
         ) -> click.Command:
@@ -200,7 +201,6 @@ def make_sub_list_command(
             ctx: click.core.Context,
             cols: list[str],
             match: tuple[MatchTarget, re.Pattern] | None,
-            name: str,
             ) -> None:
         if cols == ['list']:
             print_columns(columns, default_cols)
@@ -213,7 +213,13 @@ def make_sub_list_command(
 
         with Hypervisor(hvuri=ctx.obj['uri']) as hv:
             try:
-                obj = getattr(hv, hvprop)[name]
+                obj = get_entity(
+                    hv=hv,
+                    hvprop=hvprop,
+                    ctx=ctx,
+                    doc_name=obj_doc_name,
+                    entity=ctx.obj[ctx_key],
+                )
             except KeyError:
                 ctx.fail(f'No { obj_doc_name } with name "{ name }" is defined on this hypervisor.')
 
@@ -238,7 +244,6 @@ def make_sub_list_command(
     the specified matching parameters.'''
 
     cmd = click.pass_context(cmd)  # type: ignore
-    cmd = click.argument('name', nargs=1, required=True)(cmd)
     cmd = add_match_options(aliases, doc_name)(cmd)  # type: ignore
     cmd = click.option('--columns', 'cols', type=ColumnsParam(columns, f'{ doc_name } columns')(), nargs=1,
                        help=f'A comma separated list of columns to show when listing { doc_name }s. ' +

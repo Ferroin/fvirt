@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from ...util.match import MatchTarget
 
 
-@click.command
+@click.command(name='shutdown')
 @add_match_options(MATCH_ALIASES, 'domain')
 @click.option('--timeout', type=click.IntRange(min=0), default=0,
               help='Specify a timeout in seconds within which the domain must shut down. A value of 0 means no timeout.')

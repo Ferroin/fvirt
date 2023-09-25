@@ -72,8 +72,8 @@ DEFAULT_COLS = [
     'autostart',
 ]
 
-domains = make_list_command(
-    name='domains',
+list_domains = make_list_command(
+    name='list',
     aliases=MATCH_ALIASES,
     columns=COLUMNS,
     default_cols=DEFAULT_COLS,
@@ -82,5 +82,5 @@ domains = make_list_command(
 )
 
 __all__ = [
-    'domains',
+    'list_domains',
 ]

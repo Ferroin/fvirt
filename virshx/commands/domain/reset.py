@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from ...util.match import MatchTarget
 
 
-@click.command
+@click.command(name='reset')
 @add_match_options(MATCH_ALIASES, 'domain')
 @click.argument('name', nargs=1, required=False)
 @click.pass_context

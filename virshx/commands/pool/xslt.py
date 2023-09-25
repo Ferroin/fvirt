@@ -8,8 +8,8 @@ from __future__ import annotations
 from ...libvirt.storage_pool import MATCH_ALIASES
 from ...util.commands import make_xslt_command
 
-xslt_pool = make_xslt_command(
-    name='xslt-pool',
+xslt = make_xslt_command(
+    name='xslt',
     aliases=MATCH_ALIASES,
     hvprop='pools',
     hvnameprop='pools_by_name',
@@ -17,5 +17,5 @@ xslt_pool = make_xslt_command(
 )
 
 __all__ = [
-    'xslt_pool'
+    'xslt'
 ]

@@ -3,18 +3,27 @@
 
 '''Storage pool related commands for the virshx CLI interface.'''
 
-from .pools import pools
-from .start_pool import start_pool
-from .stop_pool import stop_pool
-from .xslt_pool import xslt_pool
+from __future__ import annotations
 
-COMMANDS = [
-    pools,
-    start_pool,
-    stop_pool,
-    xslt_pool,
-]
+import click
+
+from .list import list_pools
+from .start import start
+from .stop import stop
+from .xslt import xslt
+
+
+@click.group
+@click.pass_context
+def pool(ctx: click.core.Context) -> None:
+    '''Perform various operations on libvirt storage pools.'''
+
+
+pool.add_command(list_pools)
+pool.add_command(start)
+pool.add_command(stop)
+pool.add_command(xslt)
 
 __all__ = [
-    'COMMANDS',
+    'pool',
 ]
