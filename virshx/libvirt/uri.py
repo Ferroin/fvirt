@@ -147,6 +147,8 @@ class URI:
                 uri = f'{ uri }://'
             else:
                 uri = f'{ uri }+{ self.transport.value }://'
+        else:
+            uri = f'{ uri }://'
 
         if self.user is not None:
             uri = f'{ uri }{ self.user }@'

@@ -298,7 +298,7 @@ class HVEntityMap(HVEntityAccess, Mapping):
         with self._hv as hv:
             assert hv._connection is not None
 
-            match getattr(hv._connection, self._lookup_func)():
+            match getattr(hv._connection, self._lookup_func)(key):
                 case None:
                     raise KeyError(key)
                 case entity:
@@ -421,7 +421,7 @@ class HVStoragePoolAccess(HVEntityAccess):
 
     @property
     def _list_func(self: Self) -> str:
-        return 'listStoragePools'
+        return 'listAllStoragePools'
 
     @property
     def _entity_class(self: Self) -> type:
