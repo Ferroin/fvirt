@@ -70,6 +70,20 @@ class Hypervisor:
     def __exit__(self: Self, _exc_type: type | None, _exc_value: BaseException | None, _traceback: TracebackType | None) -> None:
         self.close()
 
+    def __define_entity(self: Self, entity_class: type[Entity], method: str, config: str, flags: int = 0) -> Entity:
+        if self.read_only:
+            raise InsufficientPrivileges
+
+        if self._connection is None:
+            raise NotConnected
+
+        try:
+            entity = getattr(self._connection, method)(config, flags)
+        except libvirt.LibvirtError:
+            raise InvalidConfig
+
+        return entity_class(entity, self)
+
     @property
     def read_only(self: Self) -> bool:
         return self.__read_only
@@ -178,18 +192,32 @@ class Hypervisor:
            libvirt domain configuration.
 
            Returns a Domain instance for the defined domain on success.'''
-        if self.read_only:
-            raise InsufficientPrivileges
+        return cast(Domain, self.__define_entity(Domain, 'defineXMLFlags', config, 0))
 
-        if self._connection is None:
-            raise NotConnected
+    def createDomain(self: Self, config: str, paused: bool = False, reset_nvram: bool = False) -> Domain:
+        '''Define and start a domain from an XML config string.
 
-        try:
-            dom = self._connection.defineXMLFlags(config, 0)
-        except libvirt.LibvirtError:
-            raise InvalidConfig
+           If `paused` is True, the domain will be started in the paused state.
 
-        return Domain(dom, self)
+           If `reset_nvram` is True, any existing NVRAM file will be
+           reset to a pristine state prior to starting the domain.
+
+           Raises virshx.libvirt.NotConnected if called on a Hypervisor
+           instance that is not connected.
+
+           Raises virshx.libvirt.InvalidConfig if config is not a valid
+           libvirt domain configuration.
+
+           Returns a Domain instance for the defined domain on success.'''
+        flags = 0
+
+        if paused:
+            flags |= libvirt.VIR_DOMAIN_START_PAUSED
+
+        if reset_nvram:
+            flags |= libvirt.VIR_DOMAIN_START_RESET_NVRAM
+
+        return cast(Domain, self.__define_entity(Domain, 'createXML', config, flags))
 
     def defineStoragePool(self: Self, config: str) -> StoragePool:
         '''Define a storage pool from an XML config string.
@@ -201,18 +229,7 @@ class Hypervisor:
            libvirt storage pool configuration.
 
            Returns a StoragePool instance for the defined storage pool on success.'''
-        if self.read_only:
-            raise InsufficientPrivileges
-
-        if self._connection is None:
-            raise NotConnected
-
-        try:
-            pool = self._connection.storagePoolDefineXML(config, 0)
-        except libvirt.LibvirtError:
-            raise InvalidConfig
-
-        return StoragePool(pool, self)
+        return cast(StoragePool, self.__define_entity(StoragePool, 'storagePoolDefineXML', config, 0))
 
 
 class HVEntityAccess(ABC, Sized):
