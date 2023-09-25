@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import click
 
+from .define import define
 from .list import list_domains
 from .reset import reset
 from .shutdown import shutdown
@@ -21,6 +22,7 @@ def domain(ctx: click.core.Context) -> None:
     '''Perform various operations on libvirt domains.'''
 
 
+domain.add_command(define)
 domain.add_command(list_domains)
 domain.add_command(reset)
 domain.add_command(shutdown)

@@ -196,23 +196,6 @@ class StoragePool(ConfigurableEntity, RunnableEntity):
 
         return Volume(vol, self._conn, self)
 
-    def getVolumeByName(self: Self, name: str) -> Volume | None:
-        '''Get a Volume by name.
-
-           Returns None if no volume matches the name.
-
-           This requires an exact match.'''
-        self._check_valid()
-
-        if self.auto_refresh:
-            self.refresh()
-
-        match self._entity.getStorageVolByName(name):
-            case None:
-                return None
-            case vol:
-                return Volume(vol, self._conn, self)
-
 
 class VolumesByName(Mapping):
     '''A simple mapping of names to volumes.'''

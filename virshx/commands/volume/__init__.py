@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import click
 
+from .define import define
 from .list import list_volumes
 
 
@@ -20,11 +21,15 @@ def volume(ctx: click.core.Context, pool: str) -> None:
        of the volume subcommands require specifying the pool name with
        the POOL argument.
 
+       See the pool command for operations on storage pools instead
+       of volumes.
+
        Note that the POOL argument _must_ come before the subcommand,
        not after it.'''
     ctx.obj['pool'] = pool
 
 
+volume.add_command(define)
 volume.add_command(list_volumes)
 
 __all__ = [

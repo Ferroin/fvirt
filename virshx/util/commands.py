@@ -14,7 +14,7 @@ import libvirt
 
 from lxml import etree
 
-from ..libvirt import Hypervisor, LifecycleResult
+from ..libvirt import Hypervisor, LifecycleResult, InvalidConfig, InsufficientPrivileges
 from ..libvirt.entity import Entity, RunnableEntity, ConfigurableEntity
 
 from .match import MatchTarget, MatchTargetParam, MatchPatternParam, matcher, print_match_help
@@ -254,6 +254,102 @@ def make_sub_list_command(
     return cmd
 
 
+def make_define_command(
+        name: str,
+        define_method: str,
+        doc_name: str,
+        parent: str | None = None,
+        parent_name: str | None = None,
+        ctx_key: str | None = None,
+        ) -> click.Command:
+    '''Produce a click Command to define a given type of libvirt entity.'''
+    parent_args = {parent, parent_name, ctx_key}
+
+    if None in parent_args and parent_args != {None}:
+        raise ValueError('Either both of parent and parent_name must be specified, or neither must be specified.')
+
+    def cmd(
+            ctx: click.core.Context,
+            confpath: Sequence[str],
+            ) -> None:
+        success = 0
+
+        for cpath in confpath:
+            with click.open_file(cpath, mode='r') as config:
+                confdata = config.read()
+
+            with Hypervisor(hvuri=ctx.obj['uri']) as hv:
+                if parent is not None:
+                    assert parent_name is not None
+
+                    define_object: Entity | Hypervisor = get_entity(
+                        hv=hv,
+                        hvprop=parent,
+                        ctx=ctx,
+                        doc_name=parent_name,
+                        entity=ctx.obj[ctx_key],
+                    )
+                else:
+                    define_object = hv
+
+                try:
+                    entity = getattr(define_object, define_method)(confdata)
+                except InsufficientPrivileges:
+                    ctx.fail(f'Specified hypervisor connection is read-only, unable to define { doc_name }')
+                except InvalidConfig:
+                    click.echo(f'The configuration at { cpath } is not valid for a { doc_name }.')
+
+                    if ctx.obj['fail_fast']:
+                        break
+
+                click.echo(f'Successfully defined { doc_name }: { entity.name }')
+                success += 1
+
+        if success or (not confpath):
+            click.echo(f'Successfully defineded { success } out of { len(confpath) } { doc_name }s.')
+
+            if success != len(confpath):
+                ctx.exit(3)
+        else:
+            click.echo('Failed to define any { doc_name }s.')
+            ctx.exit(3)
+
+    if parent is not None:
+        header = f'''Define one or more new { doc_name }s in the specified { parent_name }.
+
+        The NAME argument should indicate which { parent_name } to create the { doc_name }s in.\n\n'''
+    else:
+        header = f'''Define one or more new { doc_name }s.\n\n'''
+
+    trailer = f'''The CONFIGPATH argument should point to a valid XML configuration
+    for a { doc_name }. If more than one CONFIGPATH is specified, each
+    should correspond to a separate { doc_name } to be defined.
+
+    If a specified configuration describes a { doc_name } that already
+    exists, it will silently overwrite the the existing configuration
+    for that { doc_name }.
+
+    If more than one { doc_name } is requested to be defined, a failure
+    defining any { doc_name } will result in a non-zero exit code even if
+    some { doc_name }s were defined.
+
+    This command supports virshx's fail-fast logic. In fail-fast mode, the
+    first { doc_name } that fails to be defined will cause the operation
+    to stop, and any failure will result in a non-zero exit code.
+
+    This command does not support virshx's idempotent mode.'''
+
+    cmd.__doc__ = f'{ header }{ trailer }'
+
+    cmd = click.pass_context(cmd)  # type: ignore
+    cmd = click.argument('configpath', nargs=-1)(cmd)
+    if parent is not None:
+        cmd = click.argument('name', nargs=1, required=True)(cmd)
+    cmd = click.command(name=name)(cmd)
+
+    return cmd
+
+
 def make_start_command(name: str, aliases: Mapping[str, MatchAlias], hvprop: str, hvnameprop: str, doc_name: str) -> click.Command:
     '''Produce a click Command to start a given type of libvirt entity.'''
     def cmd(
@@ -488,6 +584,7 @@ __all__ = [
     'add_match_options',
     'make_list_command',
     'make_sub_list_command',
+    'make_define_command',
     'make_start_command',
     'make_stop_command',
     'make_xslt_command',

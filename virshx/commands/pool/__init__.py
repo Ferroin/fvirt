@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import click
 
+from .define import define
 from .list import list_pools
 from .start import start
 from .stop import stop
@@ -19,6 +20,7 @@ def pool(ctx: click.core.Context) -> None:
     '''Perform various operations on libvirt storage pools.'''
 
 
+pool.add_command(define)
 pool.add_command(list_pools)
 pool.add_command(start)
 pool.add_command(stop)
