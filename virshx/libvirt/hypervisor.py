@@ -194,13 +194,18 @@ class Hypervisor:
            Returns a Domain instance for the defined domain on success.'''
         return cast(Domain, self.__define_entity(Domain, 'defineXMLFlags', config, 0))
 
-    def createDomain(self: Self, config: str, paused: bool = False, reset_nvram: bool = False) -> Domain:
+    def createDomain(self: Self, config: str, paused: bool = False, reset_nvram: bool = False, auto_destroy: bool = False) -> Domain:
         '''Define and start a domain from an XML config string.
 
            If `paused` is True, the domain will be started in the paused state.
 
            If `reset_nvram` is True, any existing NVRAM file will be
            reset to a pristine state prior to starting the domain.
+
+           If `auto_destroy` is True, the created domain will be
+           automatically destroyed (forcibly stopped) when there are no
+           longer any references to it or when the Hypervisor connection
+           is closed.
 
            Raises virshx.libvirt.NotConnected if called on a Hypervisor
            instance that is not connected.
@@ -216,6 +221,9 @@ class Hypervisor:
 
         if reset_nvram:
             flags |= libvirt.VIR_DOMAIN_START_RESET_NVRAM
+
+        if auto_destroy:
+            flags |= libvirt.VIR_DOMAIN_START_AUTO_DESTROY
 
         return cast(Domain, self.__define_entity(Domain, 'createXML', config, flags))
 
