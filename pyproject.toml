@@ -1,14 +1,14 @@
 [tool.poetry]
-name = "virshx"
+name = "fvirt"
 version = "0.0.1"
-description = "The extended libvirt shell."
+description = "A small CLI frontend for libvirt."
 authors = ["Austin S. Hemmelgarn <ahferroin7@gmail.com>"]
 license = "MITNFA"
 readme = "README.md"
-repository = "https://github.com/Ferroin/virshx"
+repository = "https://github.com/Ferroin/fvirt"
 
 [tool.poetry.scripts]
-virshx = "virshx.cli:cli"
+fvirt = "fvirt.cli:cli"
 
 [tool.poetry.dependencies]
 python = "^3.11"
