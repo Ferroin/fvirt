@@ -350,6 +350,106 @@ def make_define_command(
     return cmd
 
 
+def make_lifecycle_command(
+        name: str,
+        method: str,
+        aliases: Mapping[str, MatchAlias],
+        hvprop: str,
+        hvnameprop: str,
+        doc_name: str,
+        doc_method: tuple[str, str, str, str],
+        ) -> click.Command:
+    '''Produce a click Command to perform a given lifecycle operation on a given type of libvirt entity.'''
+    def cmd(
+            ctx: click.core.Context,
+            match: tuple[MatchTarget, re.Pattern] | None,
+            name: str | None,
+            ) -> None:
+        with Hypervisor(hvuri=ctx.obj['uri']) as hv:
+            entities = cast(Sequence[RunnableEntity], get_match_or_entity(
+                hv=hv,
+                hvprop=hvprop,
+                hvnameprop=hvnameprop,
+                match=match,
+                entity=name,
+                ctx=ctx,
+                doc_name=doc_name,
+            ))
+
+            success = 0
+            skipped = 0
+
+            for e in entities:
+                match e.destroy(idempotent=ctx.obj['idempotent']):
+                    case LifecycleResult.SUCCESS:
+                        click.echo(f'{ doc_method[2].capitalize() } { doc_name } "{ e.name }".')
+                        success += 1
+                    case LifecycleResult.NO_OPERATION:
+                        click.echo(f'{ doc_name.capitalize() } "{ e.name }" is { doc_method[3] }.')
+
+                        skipped += 1
+
+                        if ctx.obj['idempotent']:
+                            success += 1
+                    case LifecycleResult.FAILURE:
+                        click.echo(f'Failed to { doc_method[0] } { doc_name } "{ e.name }".')
+
+                        if ctx.obj['fail_fast']:
+                            break
+                    case _:
+                        raise RuntimeError
+
+            if success or (not entities and not ctx.obj['fail_if_no_match']):
+                click.echo(
+                    f'Successfully { doc_method[2] } { success } out of { len(entities) } { doc_name }s ({ skipped } already { doc_method[3] }).'
+                )
+
+                if success != len(entities) and ctx.obj['fail_fast']:
+                    ctx.exit(3)
+            else:
+                click.echo('Failed to { doc_method[0] } any { doc_name }s.')
+                ctx.exit(3)
+
+    cmd.__doc__ = f'''{ doc_method[0].capitalize() } one or more { doc_name }s.
+
+    Either a specific { doc_name } name to { doc_method[0] } should be specified
+    as NAME, or matching parameters should be specified using the --match
+    option, which will then cause all active { doc_name }s that match
+    to be { doc_method[2] }.
+
+    If more than one { doc_name } is requested to be { doc_method[2] }, a failure
+    { doc_method[1] } any { doc_name } will result in a non-zero exit code even if
+    some { doc_name }s were { doc_method[2] }.
+
+    This command supports virshx's fail-fast logic. In fail-fast mode, the
+    first { doc_name } that fails to be { doc_method[2] } will cause the operation
+    to stop, and any failure will result in a non-zero exit code.
+
+    This command supports virshx's idempotent logic. In idempotent mode,
+    failing to { doc_method[0] } a { doc_name } because it is already not defined
+    will not be treated as an error.'''
+
+    cmd = click.pass_context(cmd)  # type: ignore
+    cmd = click.argument('name', nargs=1, required=False)(cmd)
+    cmd = add_match_options(aliases, doc_name)(cmd)  # type: ignore
+    cmd = click.command(name=name)(cmd)
+
+    return cmd
+
+
+def make_undefine_command(name: str, aliases: Mapping[str, MatchAlias], hvprop: str, hvnameprop: str, doc_name: str) -> click.Command:
+    '''Produce a click Command to stop a given type of libvirt entity.'''
+    return make_lifecycle_command(
+        name=name,
+        method='undefine',
+        aliases=aliases,
+        hvprop=hvprop,
+        hvnameprop=hvnameprop,
+        doc_name=doc_name,
+        doc_method=('undefine', 'undefining', 'undefined', 'not defined'),
+    )
+
+
 def make_start_command(name: str, aliases: Mapping[str, MatchAlias], hvprop: str, hvnameprop: str, doc_name: str) -> click.Command:
     '''Produce a click Command to start a given type of libvirt entity.'''
     def cmd(
@@ -430,79 +530,15 @@ def make_start_command(name: str, aliases: Mapping[str, MatchAlias], hvprop: str
 
 def make_stop_command(name: str, aliases: Mapping[str, MatchAlias], hvprop: str, hvnameprop: str, doc_name: str) -> click.Command:
     '''Produce a click Command to stop (destroy) a given type of libvirt entity.'''
-    def cmd(
-            ctx: click.core.Context,
-            match: tuple[MatchTarget, re.Pattern] | None,
-            name: str | None,
-            ) -> None:
-        with Hypervisor(hvuri=ctx.obj['uri']) as hv:
-            entities = cast(Sequence[RunnableEntity], get_match_or_entity(
-                hv=hv,
-                hvprop=hvprop,
-                hvnameprop=hvnameprop,
-                match=match,
-                entity=name,
-                ctx=ctx,
-                doc_name=doc_name,
-            ))
-
-            success = 0
-            skipped = 0
-
-            for e in entities:
-                match e.destroy(idempotent=ctx.obj['idempotent']):
-                    case LifecycleResult.SUCCESS:
-                        click.echo(f'Stopped { doc_name } "{ e.name }".')
-                        success += 1
-                    case LifecycleResult.NO_OPERATION:
-                        click.echo(f'Domain "{ e.name }" is not running.')
-
-                        skipped += 1
-
-                        if ctx.obj['idempotent']:
-                            success += 1
-                    case LifecycleResult.FAILURE:
-                        click.echo(f'Failed to stop { doc_name } "{ e.name }".')
-
-                        if ctx.obj['fail_fast']:
-                            break
-                    case _:
-                        raise RuntimeError
-
-            if success or (not entities and not ctx.obj['fail_if_no_match']):
-                click.echo(f'Successfully stopped { success } out of { len(entities) } { doc_name }s ({ skipped } not running).')
-
-                if success != len(entities) and ctx.obj['fail_fast']:
-                    ctx.exit(3)
-            else:
-                click.echo('Failed to stop any { doc_name }s.')
-                ctx.exit(3)
-
-    cmd.__doc__ = f'''Forcibly stop active { doc_name }s.
-
-    Either a specific { doc_name } name to stop should be specified as
-    NAME, or matching parameters should be specified using the
-    --match option, which will then cause all active { doc_name }s that
-    match to be stopped.
-
-    If more than one { doc_name } is requested to be stopped, a failure
-    stopping any { doc_name } will result in a non-zero exit code even if
-    some { doc_name }s were stopped.
-
-    This command supports virshx's fail-fast logic. In fail-fast mode,
-    the first { doc_name } that fails to stop will cause the operation to
-    stop, and any failure will result in a non-zero exit code.
-
-    This command supports virshx's idempotent logic. In idempotent
-    mode, failing to stop a { doc_name } because it is already stopped
-    will not be treated as an error.'''
-
-    cmd = click.pass_context(cmd)  # type: ignore
-    cmd = click.argument('name', nargs=1, required=False)(cmd)
-    cmd = add_match_options(aliases, doc_name)(cmd)  # type: ignore
-    cmd = click.command(name=name)(cmd)
-
-    return cmd
+    return make_lifecycle_command(
+        name=name,
+        method='destroy',
+        aliases=aliases,
+        hvprop=hvprop,
+        hvnameprop=hvnameprop,
+        doc_name=doc_name,
+        doc_method=('stop', 'stopping', 'stopped', 'running'),
+    )
 
 
 def make_xslt_command(name: str, aliases: Mapping[str, MatchAlias], hvprop: str, hvnameprop: str, doc_name: str) -> click.Command:
@@ -585,6 +621,7 @@ __all__ = [
     'make_list_command',
     'make_sub_list_command',
     'make_define_command',
+    'make_undefine_command',
     'make_start_command',
     'make_stop_command',
     'make_xslt_command',

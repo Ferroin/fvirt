@@ -14,6 +14,7 @@ from .reset import reset
 from .shutdown import shutdown
 from .start import start
 from .stop import stop
+from .undefine import undefine
 from .xslt import xslt
 
 
@@ -30,6 +31,7 @@ domain.add_command(reset)
 domain.add_command(shutdown)
 domain.add_command(start)
 domain.add_command(stop)
+domain.add_command(undefine)
 domain.add_command(xslt)
 
 __all__ = [
