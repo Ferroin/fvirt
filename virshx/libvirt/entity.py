@@ -31,10 +31,16 @@ class Entity(ABC):
 
        This provides a handful of common functions, as well as some
        abstract properties that need to be defined by subclasses.'''
+    __slots__ = [
+        '__conn',
+        '__entity',
+        '__valid',
+    ]
+
     def __init__(self: Self, entity: Any, conn: Hypervisor) -> None:
-        self._conn = conn
-        self._entity = entity
-        self._valid = True
+        self.__conn = conn
+        self.__entity = entity
+        self.__valid = True
 
     def __format__(self: Self, format_spec: str) -> str:
         fmt_args: dict[str, Any] = dict()
@@ -77,6 +83,16 @@ class Entity(ABC):
         return False
 
     @property
+    def _entity(self: Self) -> Any:
+        '''The underlying libvirt object that this class is wrapping.
+
+           This is provided so that users can work around our bindings
+           not providing some function they need, but it’s usage is
+           generally discouraged as calling certain methods will cause
+           the encapsulating Entity instance to stop working correctly.'''
+        return self.__entity
+
+    @property
     def valid(self: Self) -> bool:
         '''Whether the Entity is valid or not.
 
@@ -88,7 +104,7 @@ class Entity(ABC):
 
            If this is false, calling most methods or accessing most
            properties will raise a virshex.libvirt.InvalidEntity error.'''
-        return self._valid
+        return self.__valid
 
     @property
     def name(self: Self) -> str:
@@ -136,7 +152,7 @@ class ConfigurableEntity(Entity):
     @property
     def _define_target(self: Self) -> Any:
         '''The object that will be used to define new instances of this entity.'''
-        return self._conn
+        return self.__conn
 
     @property
     @abstractmethod
@@ -177,7 +193,7 @@ class ConfigurableEntity(Entity):
         if not self._define_method:
             raise ValueError('No method specified to redefine entity.')
 
-        if self._conn.read_only:
+        if self.__conn.read_only:
             raise InsufficientPrivileges
 
         define = getattr(self._define_target, self._define_method, None)
@@ -185,9 +201,9 @@ class ConfigurableEntity(Entity):
         if define is None:
             raise RuntimeError(f'Could not find define method { self._define_method } on target instance.')
 
-        self._entity = define(config)._entity
+        self.__entity = define(config).__entity
 
-        self._valid = True
+        self.__valid = True
 
     @property
     def config(self: Self) -> etree._Element:
@@ -216,7 +232,7 @@ class ConfigurableEntity(Entity):
 
         self._check_valid()
 
-        if self._conn.read_only:
+        if self.__conn.read_only:
             raise InsufficientPrivileges
 
         self.updateConfigElement('./name', name)
@@ -239,7 +255,7 @@ class ConfigurableEntity(Entity):
 
         self._check_valid()
 
-        if self._conn.read_only:
+        if self.__conn.read_only:
             raise InsufficientPrivileges
 
         config = self.config
@@ -274,7 +290,7 @@ class ConfigurableEntity(Entity):
 
         self._check_valid()
 
-        if self._conn.read_only:
+        if self.__conn.read_only:
             raise InsufficientPrivileges
 
         config = self.config
@@ -312,7 +328,7 @@ class ConfigurableEntity(Entity):
             return LifecycleResult.FAILURE
 
         if self._mark_invalid_on_undefine:
-            self._valid = False
+            self.__valid = False
 
         return LifecycleResult.SUCCESS
 

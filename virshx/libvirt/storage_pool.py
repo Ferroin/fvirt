@@ -137,7 +137,7 @@ class StoragePool(ConfigurableEntity, RunnableEntity):
     def autostart(self: Self, value: Any) -> None:
         self._check_valid()
 
-        if self._conn.read_only:
+        if self.__conn.read_only:
             raise InsufficientPrivileges
 
         value = int(bool(value))
@@ -183,10 +183,10 @@ class StoragePool(ConfigurableEntity, RunnableEntity):
            success.'''
         self._check_valid()
 
-        if self._conn.read_only:
+        if self.__conn.read_only:
             raise InsufficientPrivileges
 
-        if not self._conn:
+        if not self.__conn:
             raise NotConnected
 
         try:
@@ -194,7 +194,7 @@ class StoragePool(ConfigurableEntity, RunnableEntity):
         except libvirt.libvirtError:
             raise InvalidConfig
 
-        return Volume(vol, self._conn, self)
+        return Volume(vol, self.__conn, self)
 
 
 class VolumesByName(Mapping):
@@ -223,7 +223,7 @@ class VolumesByName(Mapping):
         except libvirt.libvirtError:
             raise KeyError(key)
 
-        return Volume(vol, self._pool._conn, self._pool)
+        return Volume(vol, self._pool.__conn, self._pool)
 
     def __check_access(self: Self) -> None:
         if not self._pool.valid:
@@ -255,7 +255,7 @@ class Volumes(Iterable, Sized):
     def __iter__(self: Self) -> Iterator[Volume]:
         self.__check_access()
 
-        return iter([Volume(x, self._pool._conn, self._pool) for x in self._pool._entity.listAllVolumes()])
+        return iter([Volume(x, self._pool.__conn, self._pool) for x in self._pool._entity.listAllVolumes()])
 
     def __check_access(self: Self) -> None:
         if not self._pool.valid:

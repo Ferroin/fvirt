@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Self, cast
 
 import libvirt
 
-from .entity import ConfigurableEntity, ConfigProperty
+from .entity import ConfigurableEntity, ConfigProperty, LifecycleResult
 from ..util.match_alias import MatchAlias
 
 if TYPE_CHECKING:
@@ -109,48 +109,45 @@ class Volume(ConfigurableEntity):
            The exact meaning of this is dependent on the storage pool backend.'''
         return cast(str, self._entity.path())
 
-    def delete(self: Self) -> bool:
+    def delete(self: Self, idempotent: bool = True) -> LifecycleResult:
         '''Remove the volume from the storage pool.
 
            This may or may not also delete the actual data of the volume.
 
-           This is idempotent if successful.
-
-           Returns True if the operation was successful, or False if it
-           failed due to a libvirt error.
+           This is idempotent if successful and idempotent is True.
 
            After a successful operation, the Volume instance will become
            invalid and most methods and property access will raise a
            virshex.libvirt.InvalidEntity exception.'''
         if not self.valid:
-            return True
+            if idempotent:
+                return LifecycleResult.SUCCESS
+            else:
+                return LifecycleResult.FAILURE
 
         try:
             self._entity.delete()
         except libvirt.libvirtError:
-            return False
+            return LifecycleResult.FAILURE
 
         self._valid = False
 
-        return True
+        return LifecycleResult.SUCCESS
 
-    def wipe(self: Self) -> bool:
+    def wipe(self: Self) -> LifecycleResult:
         '''Wipe the data in the volume.
 
            This only ensures that subsequent accesses through libvirt
-           will not read back the original data, not that th edata is
-           securely erased on physical media.
-
-           Returns True if the operation was successful, or False if it
-           failed due to a libvirt error.'''
+           will not read back the original data, not that the data is
+           securely erased on physical media.'''
         self._check_valid()
 
         try:
             self._entity.wipe()
         except libvirt.libvirtError:
-            return False
+            return LifecycleResult.FAILURE
 
-        return True
+        return LifecycleResult.SUCCESS
 
     def resize(
             self: Self,
@@ -160,7 +157,8 @@ class Volume(ConfigurableEntity):
             delta: bool = False,
             shrink: bool = False,
             allocate: bool = False,
-            ) -> bool:
+            idempotent: bool = True,
+            ) -> LifecycleResult:
         '''Resize the volume to the specified capacity.
 
            `capacity` must be a non-negative integer. It may be rounded
@@ -179,10 +177,7 @@ class Volume(ConfigurableEntity):
            total volume size.
 
            If `allocate` is True, then new space will be explicitly
-           allocated for the volume to accomodate the resize operation.
-
-           Returns True if the operation was successful, or False if it
-           failed due to a libvirt error.'''
+           allocated for the volume to accomodate the resize operation.'''
         self._check_valid()
 
         if not isinstance(capacity, int):
@@ -203,12 +198,24 @@ class Volume(ConfigurableEntity):
         if delta:
             flags |= libvirt.VIR_STORAGE_VOL_RESIZE_DELTA
 
+            if capacity == 0:
+                if idempotent:
+                    return LifecycleResult.SUCCESS
+                else:
+                    return LifecycleResult.NO_OPERATION
+        else:
+            if capacity == self.capacity:
+                if idempotent:
+                    return LifecycleResult.SUCCESS
+                else:
+                    return LifecycleResult.NO_OPERATION
+
         try:
             self._entity.resize(capacity, flags)
         except libvirt.libvirtError:
-            return False
+            return LifecycleResult.FAILURE
 
-        return True
+        return LifecycleResult.SUCCESS
 
 
 __all__ = [

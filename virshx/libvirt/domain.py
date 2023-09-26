@@ -187,7 +187,7 @@ class Domain(ConfigurableEntity, RunnableEntity):
     def _config_flags(self: Self) -> int:
         flags: int = libvirt.VIR_DOMAIN_XML_INACTIVE
 
-        if not self._conn.read_only:
+        if not self.__conn.read_only:
             flags |= libvirt.VIR_DOMAIN_XML_SECURE
 
         return flags
@@ -338,7 +338,7 @@ class Domain(ConfigurableEntity, RunnableEntity):
             # it's value changing.
             if not cast(bool, self.running):
                 if mark_invalid:
-                    self._valid = False
+                    self.__valid = False
 
                 break
 
@@ -353,7 +353,7 @@ class Domain(ConfigurableEntity, RunnableEntity):
                     case LifecycleResult.FAILURE:
                         return LifecycleResult.FAILURE
                     case LifecycleResult.NO_OPERATION:
-                        self._valid = False
+                        self.__valid = False
                         return LifecycleResult.SUCCESS
 
                 raise RuntimeError
