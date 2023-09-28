@@ -10,6 +10,8 @@ import click
 from .libvirt import API_VERSION, URI
 from .version import VERSION
 from .commands import COMMANDS
+from .util.match import MATCH_HELP
+from .util.commands import make_help_command
 
 
 @click.group
@@ -34,8 +36,8 @@ def cli(
        Most commands are grouped by the type of libvirt object they
        operate on.
 
-       For more information about a specific command, run that command
-       with the --help option.'''
+       For more information about a specific command, run that `fvirt
+       help <command>`.'''
     ctx.ensure_object(dict)
     ctx.obj['uri'] = URI.from_string(connect)
     ctx.obj['fail_fast'] = fail_fast
@@ -45,6 +47,13 @@ def cli(
 
 for cmd in COMMANDS:
     cli.add_command(cmd)
+
+cli.add_command(make_help_command(cli, 'fvirt', {
+    'matching': (
+        'Information about fvirt object matching syntax.',
+        MATCH_HELP,
+    ),
+}))
 
 __all__ = [
     'cli',

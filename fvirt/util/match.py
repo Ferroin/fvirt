@@ -38,6 +38,9 @@ The match pattern may be any Python regular expression, as supported by the
 `re` module in the Python standard library. Capture groups are ignored
 in match patterns, but all other features of Python regular expressions
 are fully supported.
+
+To see a list of recognized match aliases for a given subcommand, run
+`fvirt <subcommand> help aliases`
 '''
 
 DEFAULT_MATCH = re.compile('.*')
@@ -134,15 +137,16 @@ def matcher(target: MatchTarget, pattern: re.Pattern) -> Callable[[ConfigurableE
     return match
 
 
-def print_match_help(aliases: Mapping[str, MatchAlias]) -> None:
-    '''Handle printing out lists of aliases help info for match options.'''
-    click.echo(MATCH_HELP)
-    output = 'The following target aliases are recognized in place of an XPath expression for this command:\n'
+def make_alias_help(aliases: Mapping[str, MatchAlias], group_name: str) -> str:
+    '''Construct help text about the recongized aliases.'''
+    ret = f''''{ group_name }' subcommands recognize the following match aliases:\n'''
+
+    pad = max([len(x) for x in aliases.keys()])
 
     for name, alias in aliases.items():
-        output += f'  - { name }: { alias.desc }\n'
+        ret += f'  { name }: { " " * (pad - len(name)) }{ alias.desc }\n'
 
-    click.echo(output)
+    return ret.rstrip()
 
 
 __all__ = [
@@ -150,5 +154,5 @@ __all__ = [
     'MatchTargetParam',
     'MatchPatternParam',
     'matcher',
-    'print_match_help',
+    'make_alias_help',
 ]

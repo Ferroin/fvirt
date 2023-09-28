@@ -10,6 +10,10 @@ import click
 from .define import define
 from .list import list_volumes
 
+from ...libvirt.volume import MATCH_ALIASES
+from ...util.commands import make_help_command
+from ...util.match import make_alias_help
+
 
 @click.group
 @click.argument('pool', nargs=1, required=True)
@@ -31,6 +35,13 @@ def volume(ctx: click.core.Context, pool: str) -> None:
 
 volume.add_command(define)
 volume.add_command(list_volumes)
+
+volume.add_command(make_help_command(volume, 'volume', {
+    'aliases': (
+        'List recognized match aliases for matching volumes.',
+        make_alias_help(MATCH_ALIASES, 'volume'),
+    ),
+}))
 
 __all__ = [
     'volume',

@@ -5,6 +5,8 @@
 
 from __future__ import annotations
 
+import functools
+
 from pathlib import Path
 from typing import TYPE_CHECKING, TypeVar, ParamSpec, Concatenate, Any, cast
 from uuid import UUID
@@ -17,7 +19,7 @@ from lxml import etree
 from ..libvirt import Hypervisor, LifecycleResult, InvalidConfig, InsufficientPrivileges
 from ..libvirt.entity import Entity, RunnableEntity, ConfigurableEntity
 
-from .match import MatchTarget, MatchTargetParam, MatchPatternParam, matcher, print_match_help
+from .match import MatchTarget, MatchTargetParam, MatchPatternParam, matcher
 from .tables import render_table, Column, ColumnsParam, print_columns, tabulate_entities
 
 if TYPE_CHECKING:
@@ -110,25 +112,73 @@ def get_match_or_entity(
 
 
 def add_match_options(aliases: Mapping[str, MatchAlias], doc_name: str) -> \
-        Callable[[Callable[P, T]], Callable[Concatenate[bool, P], T]]:
+        Callable[[Callable[P, T]], Callable[P, T]]:
     '''Produce a decorator that adds matching arguments to a function that will be turned into a Click command.'''
-    def decorator(cmd: Callable[P, T]) -> Callable[Concatenate[bool, P], T]:
-        def inner(*args: P.args, match_help: bool, **kwargs: P.kwargs) -> T:
-            if match_help:
-                print_match_help(aliases)
-                kwargs['ctx'].exit(0)
-
+    def decorator(cmd: Callable[P, T]) -> Callable[P, T]:
+        @click.option('--match', type=(MatchTargetParam(aliases)(), MatchPatternParam()),
+                      help=f'Limit { doc_name }s to operate on by match parameter. For more info, see `fvirt help matching`')
+        @functools.wraps(cmd)
+        def inner(*args: P.args, **kwargs: P.kwargs) -> T:
             return cmd(*args, **kwargs)
-
-        inner.__doc__ = cmd.__doc__
-        inner = click.option('--match-help', is_flag=True, default=False,
-                             help='Show help info about object matching.')(inner)
-        inner = click.option('--match', type=(MatchTargetParam(aliases)(), MatchPatternParam()),
-                             help=f'Limit { doc_name }s to operate on by match parameter. For more info, use `--match-help`')(inner)
 
         return inner
 
     return decorator
+
+
+def make_help_command(group: click.Group, group_name: str, extra_topics: Mapping[str, tuple[str, str]]) -> click.Command:
+    '''Produce a help command for the given group with the specified extra topics.'''
+    ADDITIONAL_TOPIC_LIST = ''
+
+    for topic in extra_topics:
+        ADDITIONAL_TOPIC_LIST += f'  { topic }: { extra_topics[topic][0] }\n'
+
+    ADDITIONAL_TOPIC_LIST = ADDITIONAL_TOPIC_LIST.rstrip()
+
+    def cmd(ctx: click.Context, topic: str) -> None:
+        TOPIC_LIST = 'Recognized subcommands:\n'
+
+        for cmd in group.commands:
+            TOPIC_LIST += f'  { cmd }: { group.commands[cmd].get_short_help_str() }\n'
+
+        if extra_topics:
+            TOPIC_LIST = f'\nAdditional help topics:\n{ ADDITIONAL_TOPIC_LIST }'
+
+        TOPIC_LIST = TOPIC_LIST.rstrip()
+
+        match topic:
+            case '':
+                ctx.info_name = group_name
+                click.echo(group.get_help(ctx))
+                ctx.exit(0)
+            case t if t in extra_topics:
+                click.echo(extra_topics[t][1])
+                ctx.exit(0)
+            case t:
+                subcmd = group.get_command(ctx, topic)
+
+                if subcmd is None:
+                    click.echo(f'{ topic } is not a recognized help topic.')
+                    click.echo(TOPIC_LIST)
+                    ctx.exit(1)
+                else:
+                    ctx.info_name = topic
+                    click.echo(subcmd.get_help(ctx))
+                    if t == 'help':
+                        click.echo(f'\n{ TOPIC_LIST }')
+                    ctx.exit(0)
+
+    cmd.__doc__ = f'''Print help for the { group_name } command.
+
+    Without any arguments, prints the high-level help for the command itself.
+
+    With an argument, prints help about that specific subcommand or topic.'''
+
+    cmd = click.pass_context(cmd)  # type: ignore
+    cmd = click.argument('topic', default='')(cmd)
+    cmd = click.command(name='help')(cmd)
+
+    return cmd
 
 
 def make_list_command(
@@ -618,6 +668,7 @@ def make_xslt_command(name: str, aliases: Mapping[str, MatchAlias], hvprop: str,
 __all__ = [
     'get_match_or_entity',
     'add_match_options',
+    'make_help_command',
     'make_list_command',
     'make_sub_list_command',
     'make_define_command',

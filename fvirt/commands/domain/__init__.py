@@ -17,6 +17,10 @@ from .stop import stop
 from .undefine import undefine
 from .xslt import xslt
 
+from ...libvirt.domain import MATCH_ALIASES
+from ...util.commands import make_help_command
+from ...util.match import make_alias_help
+
 
 @click.group
 @click.pass_context
@@ -33,6 +37,13 @@ domain.add_command(start)
 domain.add_command(stop)
 domain.add_command(undefine)
 domain.add_command(xslt)
+
+domain.add_command(make_help_command(domain, 'domain', {
+    'aliases': (
+        'List recognized match aliases for matching domains.',
+        make_alias_help(MATCH_ALIASES, 'domain'),
+    ),
+}))
 
 __all__ = [
     'domain',
