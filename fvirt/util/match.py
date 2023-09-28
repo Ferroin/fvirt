@@ -141,10 +141,11 @@ def make_alias_help(aliases: Mapping[str, MatchAlias], group_name: str) -> str:
     '''Construct help text about the recongized aliases.'''
     ret = f''''{ group_name }' subcommands recognize the following match aliases:\n'''
 
-    pad = max([len(x) for x in aliases.keys()])
+    pad = max([len(x) for x in aliases.keys()]) + 2
 
     for name, alias in aliases.items():
-        ret += f'  { name }: { " " * (pad - len(name)) }{ alias.desc }\n'
+        ret += click.wrap_text(f'{ name }{ " " * (pad - len(name) - 2) }  { alias.desc }', initial_indent='  ', subsequent_indent=(' ' * (pad + 2)))
+        ret += '\n'
 
     return ret.rstrip()
 

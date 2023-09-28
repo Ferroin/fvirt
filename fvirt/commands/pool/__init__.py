@@ -19,7 +19,7 @@ from ...util.commands import make_help_command
 from ...util.match import make_alias_help
 
 
-@click.group
+@click.group(short_help='Perform various operations on libvirt storage pools.')
 @click.pass_context
 def pool(ctx: click.core.Context) -> None:
     '''Perform various operations on libvirt storage pools.'''

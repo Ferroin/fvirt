@@ -15,22 +15,14 @@ from ...util.commands import make_help_command
 from ...util.match import make_alias_help
 
 
-@click.group
-@click.argument('pool', nargs=1, required=True)
+@click.group(short_help='Perform various operations on libvirt volumes.')
 @click.pass_context
-def volume(ctx: click.core.Context, pool: str) -> None:
+def volume(ctx: click.core.Context) -> None:
     '''Perform various operations on libvirt volumes.
 
        Each volume is inherently part of a specific storage pool. All
        of the volume subcommands require specifying the pool name with
-       the POOL argument.
-
-       See the pool command for operations on storage pools instead
-       of volumes.
-
-       Note that the POOL argument _must_ come before the subcommand,
-       not after it.'''
-    ctx.obj['pool'] = pool
+       the POOL argument.'''
 
 
 volume.add_command(define)

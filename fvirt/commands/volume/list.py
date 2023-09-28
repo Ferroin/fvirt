@@ -31,8 +31,8 @@ list_volumes = make_sub_list_command(
     columns=COLUMNS,
     default_cols=DEFAULT_COLS,
     hvprop='pools',
+    hvmetavar='POOL',
     objprop='volumes',
-    ctx_key='pool',
     doc_name='volume',
     obj_doc_name='storage pool',
 )

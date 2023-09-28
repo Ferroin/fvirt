@@ -13,7 +13,7 @@ define = make_define_command(
     doc_name='volume',
     parent='pools',
     parent_name='storage pool',
-    ctx_key='pool',
+    parent_metavar='POOL',
 )
 
 __all__ = [

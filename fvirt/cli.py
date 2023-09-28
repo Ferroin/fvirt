@@ -16,7 +16,7 @@ from .util.commands import make_help_command
 RECOGNIZED_DRIVERS = sorted(list({e.value for e in Driver}))
 RECOGNIZED_TRANSPORTS = sorted(list({e.value for e in Transport if e.value}))
 
-CONNECTION_HELP = f'''
+CONNECTION_HELP = click.wrap_text('''
 fvirt uses standard libvirt connection URI syntax, just like virsh and
 most other libvirt frontends do. Actual connection handling is done by
 libvirt itself, not fvirt, so barring the case of fvirt not recognizing
@@ -24,28 +24,15 @@ a driver or transport, any valid libvirt URI should just work.
 
 When run without an explicit --connect option (or if an empty string
 is given to the --connect option), fvirt leverages libvirt’s existing
-default URI selection logic, which works as follows:
-
-1. If the environment variable LIBVIRT_DEFAULT_URI is set, use the value
-   of that.
-2. Otherwise, if the client configuration includes a uri_default
-   parameter, then use that value.
-3. Finally, if a default has still not been found, try each supported
-   hypervisor in turn and use the first one that works (preferring system
-   instnces over session instances if running as the root user).
-
-Because this logic is provided by libvirt itself, fvirt should use the
-exact same default URI in any given situation that would be used by virsh,
-virt-manager, and virt-install.
+default URI selection logic. Because this logic is provided by libvirt
+itself, fvirt should use the exact same default URI in any given situation
+that would be used by virsh, virt-manager, and virt-install.
 
 fvirt does not (currently) support URI aliases.
+'''.lstrip().rstrip(), preserve_paragraphs=True)
 
-The following libvirt drivers are recognized by fvirt:
-{ ", ".join(RECOGNIZED_DRIVERS) }
-
-The following libvirt transports are recognized by fvirt:
-{ ", ".join(RECOGNIZED_TRANSPORTS) }
-'''.lstrip().rstrip()
+CONNECTION_HELP += f'\n\nSupported drivers:\n{ click.wrap_text(" ".join(RECOGNIZED_DRIVERS), initial_indent="  ", subsequent_indent="  ") }'
+CONNECTION_HELP += f'\n\nSupported transports:\n{ click.wrap_text(" ".join(RECOGNIZED_TRANSPORTS), initial_indent="  ", subsequent_indent="  ") }'
 
 
 @click.group
@@ -87,7 +74,7 @@ for cmd in COMMANDS:
 cli.add_command(make_help_command(cli, 'fvirt', {
     'matching': (
         'Information about fvirt object matching syntax.',
-        MATCH_HELP,
+        click.wrap_text(MATCH_HELP, preserve_paragraphs=True),
     ),
     'connections': (
         'Information about how fvirt handles hypervisor connections.',

@@ -8,7 +8,7 @@ from __future__ import annotations
 import functools
 
 from pathlib import Path
-from typing import TYPE_CHECKING, TypeVar, ParamSpec, Concatenate, Any, cast
+from typing import TYPE_CHECKING, TypeVar, ParamSpec, Any, cast
 from uuid import UUID
 
 import click
@@ -127,24 +127,28 @@ def add_match_options(aliases: Mapping[str, MatchAlias], doc_name: str) -> \
 
 
 def make_help_command(group: click.Group, group_name: str, extra_topics: Mapping[str, tuple[str, str]]) -> click.Command:
-    '''Produce a help command for the given group with the specified extra topics.'''
-    ADDITIONAL_TOPIC_LIST = ''
+    '''Produce a help command for the given group with the specified extra topics.
 
-    for topic in extra_topics:
-        ADDITIONAL_TOPIC_LIST += f'  { topic }: { extra_topics[topic][0] }\n'
+       The extra topics must be pre-formatted.'''
+    def _print_topics(ctx: click.core.Context, cmds: Sequence[tuple[str, str]]) -> None:
+        cmds_width = max([len(x[0]) for x in cmds]) + 2
 
-    ADDITIONAL_TOPIC_LIST = ADDITIONAL_TOPIC_LIST.rstrip()
+        click.echo('')
+        click.echo('Recognized subcommands:')
+        for cmd in cmds:
+            output = f'{ cmd[0] }{ " " * (cmds_width - len(cmd[0]) - 2) }  { cmd[1] }'
+            click.echo(click.wrap_text(output, initial_indent='  ', subsequent_indent=(' ' * (cmds_width + 2))))
+
+        topics_width = max([len(k) for k in extra_topics.keys()]) + 2
+
+        click.echo('')
+        click.echo('Additional help topics:')
+        for topic in extra_topics:
+            output = f'{ topic }{ " " * (topics_width - len(topic) - 2) }  { extra_topics[topic][0] }'
+            click.echo(click.wrap_text(output, initial_indent='  ', subsequent_indent=(' ' * (topics_width + 2))))
 
     def cmd(ctx: click.Context, topic: str) -> None:
-        TOPIC_LIST = 'Recognized subcommands:\n'
-
-        for cmd in group.commands:
-            TOPIC_LIST += f'  { cmd }: { group.commands[cmd].get_short_help_str() }\n'
-
-        if extra_topics:
-            TOPIC_LIST = f'\nAdditional help topics:\n{ ADDITIONAL_TOPIC_LIST }'
-
-        TOPIC_LIST = TOPIC_LIST.rstrip()
+        cmds = {k: v.get_short_help_str() for k, v in group.commands.items()}
 
         match topic:
             case '':
@@ -159,13 +163,13 @@ def make_help_command(group: click.Group, group_name: str, extra_topics: Mapping
 
                 if subcmd is None:
                     click.echo(f'{ topic } is not a recognized help topic.')
-                    click.echo(TOPIC_LIST)
+                    _print_topics(ctx, [(k, v) for k, v in cmds.items()])
                     ctx.exit(1)
                 else:
                     ctx.info_name = topic
                     click.echo(subcmd.get_help(ctx))
                     if t == 'help':
-                        click.echo(f'\n{ TOPIC_LIST }')
+                        _print_topics(ctx, [(k, v) for k, v in cmds.items()])
                     ctx.exit(0)
 
     cmd.__doc__ = f'''Print help for the { group_name } command.
@@ -225,7 +229,7 @@ def make_list_command(
     possibly limited by the specified matching parameters.'''
 
     cmd = click.pass_context(cmd)  # type: ignore
-    cmd = add_match_options(aliases, doc_name)(cmd)  # type: ignore
+    cmd = add_match_options(aliases, doc_name)(cmd)
     cmd = click.option('--columns', 'cols', type=ColumnsParam(columns, f'{ doc_name } columns')(), nargs=1,
                        help=f'A comma separated list of columns to show when listing { doc_name }s. ' +
                             'Use `--columns list` to list recognized column names.',
@@ -242,7 +246,7 @@ def make_sub_list_command(
         default_cols: Sequence[str],
         hvprop: str,
         objprop: str,
-        ctx_key: str,
+        hvmetavar: str,
         doc_name: str,
         obj_doc_name: str,
         ) -> click.Command:
@@ -251,6 +255,7 @@ def make_sub_list_command(
             ctx: click.core.Context,
             cols: list[str],
             match: tuple[MatchTarget, re.Pattern] | None,
+            name: str,
             ) -> None:
         if cols == ['list']:
             print_columns(columns, default_cols)
@@ -268,7 +273,7 @@ def make_sub_list_command(
                     hvprop=hvprop,
                     ctx=ctx,
                     doc_name=obj_doc_name,
-                    entity=ctx.obj[ctx_key],
+                    entity=name,
                 )
             except KeyError:
                 ctx.fail(f'No { obj_doc_name } with name "{ name }" is defined on this hypervisor.')
@@ -289,12 +294,13 @@ def make_sub_list_command(
 
     cmd.__doc__ = f'''List { doc_name }s in a given { obj_doc_name }.
 
-    This will produce a (reasonably) nicely formatted table of { doc_name
-    }s in the { obj_doc_name } specified by NAME, possibly limited by
-    the specified matching parameters.'''
+    This will produce a (reasonably) nicely formatted table of {
+    doc_name }s in the { obj_doc_name } specified by { hvmetavar },
+    possibly limited by the specified matching parameters.'''
 
     cmd = click.pass_context(cmd)  # type: ignore
-    cmd = add_match_options(aliases, doc_name)(cmd)  # type: ignore
+    cmd = click.argument('name', metavar=hvmetavar, nargs=1, required=True)(cmd)
+    cmd = add_match_options(aliases, doc_name)(cmd)
     cmd = click.option('--columns', 'cols', type=ColumnsParam(columns, f'{ doc_name } columns')(), nargs=1,
                        help=f'A comma separated list of columns to show when listing { doc_name }s. ' +
                             'Use `--columns list` to list recognized column names.',
@@ -310,10 +316,10 @@ def make_define_command(
         doc_name: str,
         parent: str | None = None,
         parent_name: str | None = None,
-        ctx_key: str | None = None,
+        parent_metavar: str | None = None,
         ) -> click.Command:
     '''Produce a click Command to define a given type of libvirt entity.'''
-    parent_args = {parent, parent_name, ctx_key}
+    parent_args = {parent, parent_name, parent_metavar}
 
     if None in parent_args and parent_args != {None}:
         raise ValueError('Either both of parent and parent_name must be specified, or neither must be specified.')
@@ -321,6 +327,7 @@ def make_define_command(
     def cmd(
             ctx: click.core.Context,
             confpath: Sequence[str],
+            name: str | None = None,
             ) -> None:
         success = 0
 
@@ -331,13 +338,14 @@ def make_define_command(
             with Hypervisor(hvuri=ctx.obj['uri']) as hv:
                 if parent is not None:
                     assert parent_name is not None
+                    assert name is not None
 
                     define_object: Entity | Hypervisor = get_entity(
                         hv=hv,
                         hvprop=parent,
                         ctx=ctx,
                         doc_name=parent_name,
-                        entity=ctx.obj[ctx_key],
+                        entity=name,
                     )
                 else:
                     define_object = hv
@@ -367,7 +375,7 @@ def make_define_command(
     if parent is not None:
         header = f'''Define one or more new { doc_name }s in the specified { parent_name }.
 
-        The NAME argument should indicate which { parent_name } to create the { doc_name }s in.\n\n'''
+        The { parent_metavar } argument should indicate which { parent_name } to create the { doc_name }s in.\n\n'''
     else:
         header = f'''Define one or more new { doc_name }s.\n\n'''
 
@@ -394,7 +402,7 @@ def make_define_command(
     cmd = click.pass_context(cmd)  # type: ignore
     cmd = click.argument('configpath', nargs=-1)(cmd)
     if parent is not None:
-        cmd = click.argument('name', nargs=1, required=True)(cmd)
+        cmd = click.argument('name', metavar=parent_metavar, nargs=1, required=True)(cmd)
     cmd = click.command(name=name)(cmd)
 
     return cmd
