@@ -7,16 +7,51 @@ from __future__ import annotations
 
 import click
 
-from .libvirt import API_VERSION, URI
+from .libvirt import API_VERSION, URI, Driver, Transport
 from .version import VERSION
 from .commands import COMMANDS
 from .util.match import MATCH_HELP
 from .util.commands import make_help_command
 
+RECOGNIZED_DRIVERS = sorted(list({e.value for e in Driver}))
+RECOGNIZED_TRANSPORTS = sorted(list({e.value for e in Transport if e.value}))
+
+CONNECTION_HELP = f'''
+fvirt uses standard libvirt connection URI syntax, just like virsh and
+most other libvirt frontends do. Actual connection handling is done by
+libvirt itself, not fvirt, so barring the case of fvirt not recognizing
+a driver or transport, any valid libvirt URI should just work.
+
+When run without an explicit --connect option (or if an empty string
+is given to the --connect option), fvirt leverages libvirt’s existing
+default URI selection logic, which works as follows:
+
+1. If the environment variable LIBVIRT_DEFAULT_URI is set, use the value
+   of that.
+2. Otherwise, if the client configuration includes a uri_default
+   parameter, then use that value.
+3. Finally, if a default has still not been found, try each supported
+   hypervisor in turn and use the first one that works (preferring system
+   instnces over session instances if running as the root user).
+
+Because this logic is provided by libvirt itself, fvirt should use the
+exact same default URI in any given situation that would be used by virsh,
+virt-manager, and virt-install.
+
+fvirt does not (currently) support URI aliases.
+
+The following libvirt drivers are recognized by fvirt:
+{ ", ".join(RECOGNIZED_DRIVERS) }
+
+The following libvirt transports are recognized by fvirt:
+{ ", ".join(RECOGNIZED_TRANSPORTS) }
+'''.lstrip().rstrip()
+
 
 @click.group
 @click.version_option(version=f'{ VERSION }, using libvirt-python { API_VERSION }')
-@click.option('--connect', '-c', '--uri', nargs=1, type=str, default='', help='hypervisor connection URI', metavar='URI')
+@click.option('--connect', '-c', '--uri', nargs=1, type=str, default='',
+              help='Specify the hypervisor connection URI', metavar='URI')
 @click.option('--fail-fast/--no-fail-fast', default=False,
               help='If operating on multiple objects, fail as soon as one operation fails instead of attempting all operations.')
 @click.option('--idempotent/--no-idempotent', default=True,
@@ -38,6 +73,7 @@ def cli(
 
        For more information about a specific command, run that `fvirt
        help <command>`.'''
+    ctx.max_content_width = 80
     ctx.ensure_object(dict)
     ctx.obj['uri'] = URI.from_string(connect)
     ctx.obj['fail_fast'] = fail_fast
@@ -52,6 +88,10 @@ cli.add_command(make_help_command(cli, 'fvirt', {
     'matching': (
         'Information about fvirt object matching syntax.',
         MATCH_HELP,
+    ),
+    'connections': (
+        'Information about how fvirt handles hypervisor connections.',
+        CONNECTION_HELP,
     ),
 }))
 
