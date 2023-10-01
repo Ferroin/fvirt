@@ -5,18 +5,15 @@
 
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
-from collections.abc import Iterable, Iterator, Sized, Mapping
-from typing import Self, Any, cast
+from typing import Self, cast
 from types import TracebackType
-from uuid import UUID
 
 import libvirt
 
-from .domain import Domain
+from .domain import Domain, DomainAccess
 from .entity import Entity
 from .exceptions import NotConnected, InvalidConfig, InsufficientPrivileges
-from .storage_pool import StoragePool
+from .storage_pool import StoragePool, StoragePoolAccess
 from .uri import URI
 
 
@@ -44,14 +41,9 @@ class Hypervisor:
         self.__read_only = bool(read_only)
         self.__conn_count = 0
 
-        self.__domains = Domains(self)
-        self.__domains_by_name = DomainsByName(self)
-        self.__domains_by_uuid = DomainsByUUID(self)
-        self.__domains_by_id = DomainsByID(self)
+        self.__domains = DomainAccess(self)
 
-        self.__pools = StoragePools(self)
-        self.__pools_by_name = StoragePoolsByName(self)
-        self.__pools_by_uuid = StoragePoolsByUUID(self)
+        self.__pools = StoragePoolAccess(self)
 
     def __repr__(self: Self) -> str:
         return f'<fvirt.libvirt.Hypervisor: uri={ str(self.uri) }, ro={ self.read_only }, conns={ self.__conn_count }>'
@@ -95,53 +87,18 @@ class Hypervisor:
             return URI.from_string(self._connection.getURI())
 
     @property
-    def domains(self: Self) -> Domains:
-        '''Iterator access to all domains defined by the Hypervisor.
+    def domains(self: Self) -> DomainAccess:
+        '''Entity access to all domains defined by the Hypervisor.
 
            Automatically manages a connection when accessed.'''
         return self.__domains
 
     @property
-    def domains_by_name(self: Self) -> DomainsByName:
-        '''Mapping access by name to all domains in the hypervisor.
-
-           Automatically manages a connection when accessed.'''
-        return self.__domains_by_name
-
-    @property
-    def domains_by_uuid(self: Self) -> DomainsByUUID:
-        '''Mapping access by UUID to all domains in the hypervisor.
-
-           Automatically manages a connection when accessed.'''
-        return self.__domains_by_uuid
-
-    @property
-    def domains_by_id(self: Self) -> DomainsByID:
-        '''Mapping access by id to running domains in the hypervisor.
-
-           Automatically manages a connection when accessed.'''
-        return self.__domains_by_id
-
-    @property
-    def pools(self: Self) -> StoragePools:
-        '''Iterator access to all pools defined by the Hypervisor.
+    def pools(self: Self) -> StoragePoolAccess:
+        '''Entity access to all pools defined by the Hypervisor.
 
            Automatically manages a connection when accessed.'''
         return self.__pools
-
-    @property
-    def pools_by_name(self: Self) -> StoragePoolsByName:
-        '''Mapping access by name to all storage pools in the hypervisor.
-
-           Automatically manages a connection when accessed.'''
-        return self.__pools_by_name
-
-    @property
-    def pools_by_uuid(self: Self) -> StoragePoolsByUUID:
-        '''Mapping access by UUID to all storage pools in the hypervisor.
-
-           Automatically manages a connection when accessed.'''
-        return self.__pools_by_uuid
 
     def open(self: Self) -> Self:
         '''Open the connection represented by this Hypervisor instance.
@@ -240,227 +197,6 @@ class Hypervisor:
         return cast(StoragePool, self.__define_entity(StoragePool, 'storagePoolDefineXML', config, 0))
 
 
-class HVEntityAccess(ABC, Sized):
-    '''Abstract base class for entity access protocols.'''
-    def __init__(self: Self, hv: Hypervisor) -> None:
-        self._hv = hv
-
-    def __repr__(self: Self) -> str:
-        return f'<fvirt.libvirt.{ type(self).__name__ }: hv={ repr(self._hv) }>'
-
-    def __len__(self: Self) -> int:
-        total = 0
-
-        for func in self._count_funcs:
-            total += cast(int, getattr(self._hv._connection, func)())
-
-        return total
-
-    @property
-    @abstractmethod
-    def _count_funcs(self: Self) -> Iterable[str]:
-        '''An iterable of virConnect methods to call to get counts of the entities.
-
-           This usually should be the pair of `numOf` and `numOfDefined`
-           methods corresponding to the type of entity.'''
-
-    @property
-    @abstractmethod
-    def _list_func(self: Self) -> str:
-        '''The name of the function used to list all of the entities.'''
-
-    @property
-    @abstractmethod
-    def _entity_class(self: Self) -> type:
-        '''The class used to encapsulate the entities.'''
-
-
-class HVEntityIterator(HVEntityAccess, Iterable):
-    '''ABC for entity iterators.'''
-    def __iter__(self: Self) -> Iterator[Entity]:
-        with self._hv as hv:
-            assert hv._connection is not None
-
-            match getattr(hv._connection, self._list_func)():
-                case None:
-                    return iter([])
-                case entities:
-                    return iter([self._entity_class(x, hv) for x in entities])
-
-
-class HVEntityMap(HVEntityAccess, Mapping):
-    '''ABC for mappings of entities on a hypervisor.'''
-    def __iter__(self: Self) -> Iterator[str]:
-        with self._hv as hv:
-            assert hv._connection is not None
-
-            match getattr(hv._connection, self._list_func)():
-                case None:
-                    return iter([])
-                case entities:
-                    return iter([x.name() for x in entities])
-
-    def __getitem__(self: Self, key: Any) -> Entity:
-        key = self._coerce_key(key)
-
-        with self._hv as hv:
-            assert hv._connection is not None
-
-            match getattr(hv._connection, self._lookup_func)(key):
-                case None:
-                    raise KeyError(key)
-                case entity:
-                    return cast(Entity, self._entity_class(entity, hv))
-
-    @abstractmethod
-    def _get_key(self: Self, entity: Any) -> Any:
-        '''Get the key for a given entity.'''
-
-    @abstractmethod
-    def _coerce_key(self: Self, key: Any) -> Any:
-        '''Method used to coerce keys to the type expected by the lookup method.'''
-
-    @property
-    @abstractmethod
-    def _lookup_func(self: Self) -> str:
-        '''Name of the lookup method called on virConnect to find an entity.'''
-
-
-class HVNameMap(HVEntityMap):
-    '''Mapping access by name.'''
-    def _get_key(self: Self, entity: Any) -> str:
-        return cast(str, entity.name())
-
-    def _coerce_key(self: Self, key: Any) -> str:
-        if not isinstance(key, str):
-            raise KeyError(key)
-
-        return key
-
-
-class HVUUIDMap(HVEntityMap):
-    '''Mapping access by UUID.
-
-       On access, accepts either a UUID string, a big-endian bytes object
-       representing the raw bytes of the UUID, or a pre-constructed
-       UUID object. Strings and bytes are parsed as UUIDs using the uuid.UUID
-       class from the Python standard library, with keys that evaulate
-       to an equivalent uuid.UUID object being treated as identical.
-
-       If a string or bytes object is used as a key and it cannot be
-       converted to a UUID object, a ValueError will be raised.
-
-       When iterating keys, only uuid.UUID objects will be returned.'''
-    def _get_key(self: Self, entity: Any) -> UUID:
-        return UUID(entity.uuidString())
-
-    def _coerce_key(self: Self, key: Any) -> str:
-        match key:
-            case str():
-                pass
-            case bytes():
-                key = str(UUID(bytes=key))
-            case UUID():
-                key = str(key)
-            case _:
-                raise KeyError(key)
-
-        return cast(str, key)
-
-
-class HVDomainAccess(HVEntityAccess):
-    '''Domain access mixin.'''
-    @property
-    def _count_funcs(self: Self) -> Iterable[str]:
-        return {'numOfDomains', 'numOfDefinedDomains'}
-
-    @property
-    def _list_func(self: Self) -> str:
-        return 'listAllDomains'
-
-    @property
-    def _entity_class(self: Self) -> type:
-        return Domain
-
-
-class Domains(HVEntityIterator, HVDomainAccess):
-    '''Iterator access to domains in a Hypervisor.'''
-
-
-class DomainsByName(HVNameMap, HVDomainAccess):
-    '''A simple mapping of domain names to Domain instances.'''
-    @property
-    def _lookup_func(self: Self) -> str:
-        return 'lookupByName'
-
-
-class DomainsByUUID(HVUUIDMap, HVDomainAccess):
-    '''A simple mapping of domain UUIDs to Domain instances.'''
-    @property
-    def _lookup_func(self: Self) -> str:
-        return 'lookupByUUIDString'
-
-
-class DomainsByID(HVEntityMap, HVDomainAccess):
-    '''A simple mapping of domain IDs to Domain instances.'''
-    @property
-    def _count_funcs(self: Self) -> Iterable[str]:
-        return {'numOfDomains'}
-
-    @property
-    def _lookup_func(self: Self) -> str:
-        return 'lookupByID'
-
-    def _get_key(self: Self, entity: Any) -> int:
-        return cast(int, entity.ID())
-
-    def _coerce_key(self: Self, key: Any) -> int:
-        if not isinstance(key, int):
-            raise KeyError(key)
-
-        return key
-
-
-class HVStoragePoolAccess(HVEntityAccess):
-    '''Storage pool access mixin.'''
-    @property
-    def _count_funcs(self: Self) -> Iterable[str]:
-        return {'numOfStoragePools', 'numOfDefinedStoragePools'}
-
-    @property
-    def _list_func(self: Self) -> str:
-        return 'listAllStoragePools'
-
-    @property
-    def _entity_class(self: Self) -> type:
-        return StoragePool
-
-
-class StoragePools(HVEntityIterator, HVStoragePoolAccess):
-    '''Iterator access to domains in a Hypervisor.'''
-
-
-class StoragePoolsByName(HVNameMap, HVStoragePoolAccess):
-    '''A simple mapping of domain names to StoragePool instances.'''
-    @property
-    def _lookup_func(self: Self) -> str:
-        return 'storagePoolLookupByName'
-
-
-class StoragePoolsByUUID(HVUUIDMap, HVStoragePoolAccess):
-    '''A simple mapping of domain UUIDs to StoragePool instances.'''
-    @property
-    def _lookup_func(self: Self) -> str:
-        return 'storagePoolLookupByUUIDString'
-
-
 __all__ = [
     'Hypervisor',
-    'Domains',
-    'DomainsByName',
-    'DomainsByUUID',
-    'DomainsByID',
-    'StoragePools',
-    'StoragePoolsByName',
-    'StoragePoolsByUUID',
 ]

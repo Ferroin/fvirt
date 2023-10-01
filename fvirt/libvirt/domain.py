@@ -7,16 +7,19 @@ from __future__ import annotations
 
 from enum import Enum, verify, UNIQUE, CONTINUOUS
 from time import sleep
-from typing import TYPE_CHECKING, Self, Literal, cast
+from typing import TYPE_CHECKING, Self, Literal, Any, cast
 from uuid import UUID
 
 import libvirt
 
 from .entity import ConfigurableEntity, RunnableEntity, ConfigElementProperty, ConfigAttributeProperty, LifecycleResult
+from .entity_access import BaseEntityAccess, EntityAccess, EntityMap, NameMap, UUIDMap
 from .exceptions import EntityNotRunning
 from ..util.match_alias import MatchAlias
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
+
     from .hypervisor import Hypervisor
 
 
@@ -363,7 +366,86 @@ class Domain(ConfigurableEntity, RunnableEntity):
             return LifecycleResult.SUCCESS
 
 
+class Domains(BaseEntityAccess):
+    '''Domain access mixin for Entity access protocol.'''
+    @property
+    def _count_funcs(self: Self) -> Iterable[str]:
+        return {'numOfDomains', 'numOfDefinedDomains'}
+
+    @property
+    def _list_func(self: Self) -> str:
+        return 'listAllDomains'
+
+    @property
+    def _entity_class(self: Self) -> type:
+        return Domain
+
+
+class DomainsByName(NameMap, Domains):
+    '''Immutabkle mapping returning domains on a Hypervisor based on their names.'''
+    @property
+    def _lookup_func(self: Self) -> str:
+        return 'lookupByName'
+
+
+class DomainsByUUID(UUIDMap, Domains):
+    '''Immutabkle mapping returning domains on a Hypervisor based on their UUIDs.'''
+    @property
+    def _lookup_func(self: Self) -> str:
+        return 'lookupByUUIDString'
+
+
+class DomainsByID(EntityMap, Domains):
+    '''Immutabkle mapping returning running domains on a Hypervisor based on their IDs.'''
+    @property
+    def _count_funcs(self: Self) -> Iterable[str]:
+        return {'numOfDomains'}
+
+    @property
+    def _lookup_func(self: Self) -> str:
+        return 'lookupByID'
+
+    def _get_key(self: Self, entity: Any) -> int:
+        return cast(int, entity.ID())
+
+    def _coerce_key(self: Self, key: Any) -> int:
+        if not isinstance(key, int):
+            raise KeyError(key)
+
+        return key
+
+
+class DomainAccess(EntityAccess, Domains):
+    '''Class used for accessing domains on a Hypervisor.
+
+       DomainAccess instances are iterable, returning the domains on
+       the Hyopervisor in the order that libvirt returns them.
+
+       DomainAccess instances are also sized, with len(instance) returning
+       the total number of domains on the Hypervisor.'''
+    def __init__(self: Self, parent: Hypervisor) -> None:
+        self.__by_name = DomainsByName(parent)
+        self.__by_uuid = DomainsByUUID(parent)
+        self.__by_id = DomainsByID(parent)
+
+    @property
+    def by_name(self: Self) -> DomainsByName:
+        '''Mapping access to domains by name.'''
+        return self.__by_name
+
+    @property
+    def by_uuid(self: Self) -> DomainsByUUID:
+        '''Mapping access to domains by UUID.'''
+        return self.__by_uuid
+
+    @property
+    def by_id(self: Self) -> DomainsByID:
+        '''Mapping access to domains by ID.'''
+        return self.__by_id
+
+
 __all__ = [
     'Domain',
+    'DomainState',
     'MATCH_ALIASES',
 ]

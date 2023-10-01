@@ -16,7 +16,7 @@ import libvirt
 from lxml import etree
 
 from ..util.units import unit_to_bytes
-from .exceptions import InvalidEntity, InsufficientPrivileges
+from .exceptions import InvalidEntity, InsufficientPrivileges, NotConnected
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -30,15 +30,26 @@ class Entity(ABC):
     '''ABC used by all fvirt libvirt object wrappers.
 
        This provides a handful of common functions, as well as some
-       abstract properties that need to be defined by subclasses.'''
+       abstract properties that need to be defined by subclasses.
+
+       Entities support the context manager protocol. Entering an
+       entity’s context will ensure that the Hypervisor instance it
+       is tied to is connected, and that the entity itself is valid.'''
     __slots__ = [
         '__conn',
+        '__parent',
         '__entity',
         '__valid',
     ]
 
-    def __init__(self: Self, entity: Any, conn: Hypervisor) -> None:
-        self.__conn = conn
+    def __init__(self: Self, entity: Any, parent: Hypervisor | Entity) -> None:
+        if isinstance(parent, Entity):
+            self.__conn = parent._hv
+            self.__parent: Entity | None = parent
+        else:
+            self.__conn = parent
+            self.__parent = None
+
         self.__entity = entity
         self.__valid = True
 
@@ -56,6 +67,17 @@ class Entity(ABC):
                 fmt_args[prop] = prop_value
 
         return format_spec.format(**fmt_args)
+
+    def __enter__(self: Self) -> Self:
+        self._check_valid()
+
+        if self.__conn._connection is None:
+            raise NotConnected
+
+        return self
+
+    def __exit__(self: Self, *args: Any, **kwargs: Any) -> None:
+        pass
 
     def _check_valid(self: Self) -> None:
         '''Check that the instance is still valid.
@@ -91,6 +113,13 @@ class Entity(ABC):
            generally discouraged as calling certain methods will cause
            the encapsulating Entity instance to stop working correctly.'''
         return self.__entity
+
+    @property
+    def _hv(self: Self) -> Hypervisor:
+        '''The hypervisor instance this entity is tied to.
+
+           API users should generally not need to access this at all.'''
+        return self.__conn
 
     @property
     def valid(self: Self) -> bool:

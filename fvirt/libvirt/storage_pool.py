@@ -11,8 +11,9 @@ from typing import TYPE_CHECKING, Self, Any, cast
 import libvirt
 
 from .entity import ConfigurableEntity, RunnableEntity, ConfigProperty
+from .entity_access import BaseEntityAccess, EntityAccess, NameMap, UUIDMap
 from .exceptions import EntityNotRunning, InsufficientPrivileges, InvalidConfig, InvalidEntity, NotConnected
-from .volume import Volume
+from .volume import Volume, VolumeAccess
 from ..util.match_alias import MatchAlias
 
 if TYPE_CHECKING:
@@ -85,8 +86,7 @@ class StoragePool(ConfigurableEntity, RunnableEntity):
         super().__init__(pool, conn)
 
         self.__auto_refresh = False
-        self.__volumes = Volumes(self)
-        self.__volumes_by_name = VolumesByName(self)
+        self.__volumes = VolumeAccess(self)
 
     def __repr__(self: Self) -> str:
         if self.valid:
@@ -110,14 +110,9 @@ class StoragePool(ConfigurableEntity, RunnableEntity):
         return 0
 
     @property
-    def volumes(self: Self) -> Volumes:
+    def volumes(self: Self) -> VolumeAccess:
         '''An iterable of the volumes in the pool.'''
         return self.__volumes
-
-    @property
-    def volumes_by_name(self: Self) -> VolumesByName:
-        '''A mapping of volume names to volumes in the pool.'''
-        return self.__volumes_by_name
 
     @property
     def numVolumes(self: Self) -> int:
@@ -197,79 +192,59 @@ class StoragePool(ConfigurableEntity, RunnableEntity):
         return Volume(vol, self.__conn, self)
 
 
-class VolumesByName(Mapping):
-    '''A simple mapping of names to volumes.'''
-    def __init__(self: Self, pool: StoragePool) -> None:
-        self._pool = pool
+class StoragePools(BaseEntityAccess):
+    '''Storage pool access mixin.'''
+    @property
+    def _count_funcs(self: Self) -> Iterable[str]:
+        return {'numOfStoragePools', 'numOfDefinedStoragePools'}
 
-    def __repr__(self: Self) -> str:
-        return repr(dict(self))
+    @property
+    def _list_func(self: Self) -> str:
+        return 'listAllStoragePools'
 
-    def __len__(self: Self) -> int:
-        self.__check_access()
-
-        return cast(int, self._pool._entity.numOfVolumes())
-
-    def __iter__(self: Self) -> Iterator[str]:
-        self.__check_access()
-
-        return iter(cast(list[str], self._pool._entity.listVolumes()))
-
-    def __getitem__(self: Self, key: str) -> Volume:
-        self.__check_access()
-
-        try:
-            vol = self._pool._entity.storageVolLookupByName(key)
-        except libvirt.libvirtError:
-            raise KeyError(key)
-
-        return Volume(vol, self._pool.__conn, self._pool)
-
-    def __check_access(self: Self) -> None:
-        if not self._pool.valid:
-            raise InvalidEntity(self._pool)
-
-        if not self._pool.running:
-            raise EntityNotRunning(self._pool)
-
-        if self._pool.auto_refresh:
-            self._pool.refresh()
+    @property
+    def _entity_class(self: Self) -> type:
+        return StoragePool
 
 
-class Volumes(Iterable, Sized):
-    '''Iterator access to volumes in a Pool.'''
-    def __init__(self: Self, pool: StoragePool) -> None:
-        self._pool = pool
+class StoragePoolsByName(NameMap, StoragePools):
+    '''Immutabkle mapping returning storage pools on a Hypervisor based on their names.'''
+    @property
+    def _lookup_func(self: Self) -> str:
+        return 'storagePoolLookupByName'
 
-    def __repr__(self: Self) -> str:
-        if self._pool.valid:
-            return f'<fvirt.libvirt.Volumes: pool={ self._pool.name }>'
-        else:
-            return '<fvirt.libvirt.Volumes: pool=INVALID>'
 
-    def __len__(self: Self) -> int:
-        self.__check_access()
+class StoragePoolsByUUID(UUIDMap, StoragePools):
+    '''Immutabkle mapping returning storage pools on a Hypervisor based on their UUIDs.'''
+    @property
+    def _lookup_func(self: Self) -> str:
+        return 'storagePoolLookupByUUIDString'
 
-        return cast(int, self._pool._entity.numOfVolumes())
 
-    def __iter__(self: Self) -> Iterator[Volume]:
-        self.__check_access()
+class StoragePoolAccess(EntityAccess, StoragePools):
+    '''Class used for accessing storage pools on a Hypervisor.
 
-        return iter([Volume(x, self._pool.__conn, self._pool) for x in self._pool._entity.listAllVolumes()])
+       StoragePoolAccess instances are iterable, returning the storage
+       pools on the Hyopervisor in the order that libvirt returns them.
 
-    def __check_access(self: Self) -> None:
-        if not self._pool.valid:
-            raise InvalidEntity(self._pool)
+       StoragePoolAccess instances are also sized, with len(instance)
+       returning the total number of storage pools on the Hypervisor.'''
+    def __init__(self: Self, parent: Hypervisor) -> None:
+        self.__by_name = StoragePoolsByName(parent)
+        self.__by_uuid = StoragePoolsByUUID(parent)
 
-        if not self._pool.running:
-            raise EntityNotRunning(self._pool)
+    @property
+    def by_name(self: Self) -> StoragePoolsByName:
+        '''Mapping access to storage pools by name.'''
+        return self.__by_name
 
-        if self._pool.auto_refresh:
-            self._pool.refresh()
+    @property
+    def by_uuid(self: Self) -> StoragePoolsByUUID:
+        '''Mapping access to storage pools by UUID.'''
+        return self.__by_uuid
 
 
 __all__ = [
     'StoragePool',
-    'Volumes',
-    'VolumesByName',
+    'StoragePoolAccess',
 ]

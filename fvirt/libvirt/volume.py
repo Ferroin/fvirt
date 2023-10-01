@@ -10,9 +10,12 @@ from typing import TYPE_CHECKING, Self, cast
 import libvirt
 
 from .entity import ConfigurableEntity, ConfigProperty, LifecycleResult
+from .entity_access import BaseEntityAccess, EntityAccess, EntityMap, NameMap
 from ..util.match_alias import MatchAlias
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
+
     from .hypervisor import Hypervisor
     from .storage_pool import StoragePool
 
@@ -218,7 +221,47 @@ class Volume(ConfigurableEntity):
         return LifecycleResult.SUCCESS
 
 
+class Volumes(BaseEntityAccess):
+    '''Volume access mixin for Entity access protocol.'''
+    @property
+    def _count_funcs(self: Self) -> Iterable[str]:
+        return {'numOfVolumes'}
+
+    @property
+    def _list_func(self: Self) -> str:
+        return 'listAllVolumes'
+
+    @property
+    def _entity_class(self: Self) -> type:
+        return Volume
+
+
+class VolumesByName(NameMap, Volumes):
+    '''Immutabkle mapping returning volumes on a StoragePool based on their names.'''
+    @property
+    def _lookup_func(self: Self) -> str:
+        return 'lookupByName'
+
+
+class VolumeAccess(EntityAccess, Volumes):
+    '''Class used for accessing volumes on a StoragePool.
+
+       VolumeAccess instances are iterable, returning the volumes in
+       the StoragePool in the order that libvirt returns them.
+
+       VolumeAccess instances are also sized, with len(instance) returning
+       the total number of volumes on the StoragePool.'''
+    def __init__(self: Self, parent: StoragePool) -> None:
+        self.__by_name = VolumesByName(parent)
+
+    @property
+    def by_name(self: Self) -> VolumesByName:
+        '''Mapping access to volumes by name.'''
+        return self.__by_name
+
+
 __all__ = [
     'Volume',
+    'VolumeAccess',
     'MATCH_ALIASES',
 ]
