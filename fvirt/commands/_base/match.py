@@ -1,7 +1,7 @@
 # copyright (c) 2023 austin s. hemmelgarn
 # spdx-license-identifier: mitnfa
 
-'''Base class used for fvirt commands that j.'''
+'''Base class used for fvirt commands that use object matching.'''
 
 from __future__ import annotations
 
@@ -77,9 +77,7 @@ class MatchCommand(Command):
             hidden: bool = False,
             deprecated: bool = False,
             ) -> None:
-        params = tuple(params)
-
-        params = params + (click.Option(
+        params = tuple(params) + (click.Option(
             param_decls=('--match',),
             type=(MatchTargetParam(aliases)(), MatchPatternParam()),
             nargs=2,
@@ -93,7 +91,7 @@ class MatchCommand(Command):
             epilog=epilog,
             short_help=short_help,
             callback=callback,
-            params=list(params),
+            params=params,
             context_settings=context_settings,
             hidden=hidden,
             deprecated=deprecated,

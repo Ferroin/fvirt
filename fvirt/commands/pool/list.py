@@ -5,8 +5,9 @@
 
 from __future__ import annotations
 
+from .._base.list import ListCommand
+
 from ...libvirt.storage_pool import MATCH_ALIASES
-from ...util.commands import make_list_command
 from ...util.tables import Column, color_bool
 from ...util.terminal import TERM
 
@@ -36,7 +37,7 @@ COLUMNS = {
     'target': Column(title='Target', prop='target'),
 }
 
-DEFAULT_COLS = [
+DEFAULT_COLS = (
     'name',
     'type',
     'format',
@@ -45,9 +46,9 @@ DEFAULT_COLS = [
     'volumes',
     'capacity',
     'available',
-]
+)
 
-list_pools = make_list_command(
+list_pools = ListCommand(
     name='list',
     aliases=MATCH_ALIASES,
     columns=COLUMNS,

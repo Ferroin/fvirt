@@ -7,9 +7,10 @@ from __future__ import annotations
 
 from typing import Any
 
+from .._base.list import ListCommand
+
 from ...libvirt import DomainState
 from ...libvirt.domain import MATCH_ALIASES
-from ...util.commands import make_list_command
 from ...util.tables import Column, color_bool
 from ...util.terminal import TERM
 
@@ -64,15 +65,15 @@ COLUMNS = {
     'title': Column(title='Domain Title', prop='title'),
 }
 
-DEFAULT_COLS = [
+DEFAULT_COLS = (
     'id',
     'name',
     'state',
     'persistent',
     'autostart',
-]
+)
 
-list_domains = make_list_command(
+list_domains = ListCommand(
     name='list',
     aliases=MATCH_ALIASES,
     columns=COLUMNS,
