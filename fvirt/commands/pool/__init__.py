@@ -5,8 +5,6 @@
 
 from __future__ import annotations
 
-import click
-
 from .define import define
 from .list import list_pools
 from .start import start
@@ -14,30 +12,25 @@ from .stop import stop
 from .undefine import undefine
 from .xslt import xslt
 
+from .._base.group import Group
+
 from ...libvirt.volume import MATCH_ALIASES
-from ...util.commands import make_help_command
-from ...util.match_params import make_alias_help
 
-
-@click.group(short_help='Perform various operations on libvirt storage pools.')
-@click.pass_context
-def pool(ctx: click.core.Context) -> None:
-    '''Perform various operations on libvirt storage pools.'''
-
-
-pool.add_command(define)
-pool.add_command(list_pools)
-pool.add_command(start)
-pool.add_command(stop)
-pool.add_command(undefine)
-pool.add_command(xslt)
-
-pool.add_command(make_help_command(pool, 'pool', {
-    'aliases': (
-        'List recognized match aliases for matching with storage pools.',
-        make_alias_help(MATCH_ALIASES, 'pool'),
+pool = Group(
+    name='pool',
+    doc_name='storage pool',
+    help='Perform various operations on libvirt storage pools.',
+    callback=lambda x: None,
+    commands=(
+        define,
+        list_pools,
+        start,
+        stop,
+        undefine,
+        xslt,
     ),
-}))
+    aliases=MATCH_ALIASES,
+)
 
 __all__ = [
     'pool',

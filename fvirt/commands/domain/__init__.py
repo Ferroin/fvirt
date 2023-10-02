@@ -5,8 +5,6 @@
 
 from __future__ import annotations
 
-import click
-
 from .create import create
 from .define import define
 from .list import list_domains
@@ -17,33 +15,27 @@ from .stop import stop
 from .undefine import undefine
 from .xslt import xslt
 
+from .._base.group import Group
+
 from ...libvirt.domain import MATCH_ALIASES
-from ...util.commands import make_help_command
-from ...util.match_params import make_alias_help
 
-
-@click.group(short_help='Perform various operations on libvirt domains.')
-@click.pass_context
-def domain(ctx: click.core.Context) -> None:
-    '''Perform various operations on libvirt domains.'''
-
-
-domain.add_command(create)
-domain.add_command(define)
-domain.add_command(list_domains)
-domain.add_command(reset)
-domain.add_command(shutdown)
-domain.add_command(start)
-domain.add_command(stop)
-domain.add_command(undefine)
-domain.add_command(xslt)
-
-domain.add_command(make_help_command(domain, 'domain', {
-    'aliases': (
-        'List recognized match aliases for matching domains.',
-        make_alias_help(MATCH_ALIASES, 'domain'),
+domain = Group(
+    name='domain',
+    help='Perform various operations on libvirt domains.',
+    callback=lambda x: None,
+    commands=(
+        create,
+        define,
+        list_domains,
+        reset,
+        shutdown,
+        start,
+        stop,
+        undefine,
+        xslt,
     ),
-}))
+    aliases=MATCH_ALIASES,
+)
 
 __all__ = [
     'domain',

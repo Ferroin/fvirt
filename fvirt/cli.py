@@ -11,7 +11,8 @@ from .libvirt import API_VERSION, URI, Driver, Transport
 from .version import VERSION
 from .commands import COMMANDS
 from .util.match import MATCH_HELP
-from .util.commands import make_help_command
+from .commands._base.group import Group
+from .commands._base.help import HelpTopic
 
 RECOGNIZED_DRIVERS = sorted(list({e.value for e in Driver}))
 RECOGNIZED_TRANSPORTS = sorted(list({e.value for e in Transport if e.value}))
@@ -34,33 +35,29 @@ fvirt does not (currently) support URI aliases.
 CONNECTION_HELP += f'\n\nSupported drivers:\n{ click.wrap_text(" ".join(RECOGNIZED_DRIVERS), initial_indent="  ", subsequent_indent="  ") }'
 CONNECTION_HELP += f'\n\nSupported transports:\n{ click.wrap_text(" ".join(RECOGNIZED_TRANSPORTS), initial_indent="  ", subsequent_indent="  ") }'
 
+FVIRT_HELP = '''
+A lightweight frontend for libvirt.
 
-@click.group
-@click.version_option(version=f'{ VERSION }, using libvirt-python { API_VERSION }')
-@click.option('--connect', '-c', '--uri', nargs=1, type=str, default='',
-              help='Specify the hypervisor connection URI', metavar='URI')
-@click.option('--fail-fast/--no-fail-fast', default=False,
-              help='If operating on multiple objects, fail as soon as one operation fails instead of attempting all operations.')
-@click.option('--idempotent/--no-idempotent', default=True,
-              help='Make operations idempotent when possible.')
-@click.option('--fail-if-no-match/--no-fail-if-no-match', default=False,
-              help='If using the --match option, return with a non-zero exit status if no match is found.')
-@click.pass_context
-def cli(
-        ctx: click.core.Context,
+Most commands are grouped by the type of libvirt object they
+operate on.
+
+For more information about a specific command, run that `fvirt
+help COMMAND`.
+'''.lstrip().rstrip()
+
+
+def cb(
+        ctx: click.Context,
         connect: str,
         fail_fast: bool,
         idempotent: bool,
         fail_if_no_match: bool,
+        version: bool,
         ) -> None:
-    '''A lightweight frontend for libvirt.
+    if version:
+        click.echo(f'fvirt { VERSION }, using libvirt-python { API_VERSION }')
+        ctx.exit(0)
 
-       Most commands are grouped by the type of libvirt object they
-       operate on.
-
-       For more information about a specific command, run that `fvirt
-       help <command>`.'''
-    ctx.max_content_width = 80
     ctx.ensure_object(dict)
     ctx.obj['uri'] = URI.from_string(connect)
     ctx.obj['fail_fast'] = fail_fast
@@ -68,19 +65,54 @@ def cli(
     ctx.obj['fail_if_no_match'] = fail_if_no_match
 
 
-for cmd in COMMANDS:
-    cli.add_command(cmd)
-
-cli.add_command(make_help_command(cli, 'fvirt', {
-    'matching': (
-        'Information about fvirt object matching syntax.',
-        click.wrap_text(MATCH_HELP, preserve_paragraphs=True),
+cli = Group(
+    name='fvirt',
+    help=FVIRT_HELP,
+    callback=cb,
+    commands=COMMANDS,
+    params=(
+        click.Option(
+            param_decls=('--connect', '-c', '--uri'),
+            type=str,
+            default='',
+            help='Specify the libvirt connection URI to use.',
+            metavar='URI',
+        ),
+        click.Option(
+            param_decls=('--fail-fast/--no-fail-fast',),
+            default=False,
+            help='If operating on multiple objects, fail as soon as one operation fails instead of attempting all operations.',
+        ),
+        click.Option(
+            param_decls=('--idempotent/--no-idempotent',),
+            default=True,
+            help='Make operations idempotent when possible. Enabled by default.',
+        ),
+        click.Option(
+            param_decls=('--fail-if-no-match/--no-fail-if-no-match',),
+            default=False,
+            help='If using the --match option, return with a non-zero exist status if no match is found.',
+        ),
+        click.Option(
+            param_decls=('--version', '-V'),
+            is_flag=True,
+            default=False,
+            help='Print the fvirt version.',
+        ),
     ),
-    'connections': (
-        'Information about how fvirt handles hypervisor connections.',
-        CONNECTION_HELP,
+    help_topics=(
+        HelpTopic(
+            name='matching',
+            description='Information about fvirt object matcing syntax',
+            help_text=click.wrap_text(MATCH_HELP, preserve_paragraphs=True),
+        ),
+        HelpTopic(
+            name='connections',
+            description='Information about how fvirt handles hypervisor connections.',
+            help_text=CONNECTION_HELP,
+        ),
     ),
-}))
+)
 
 __all__ = [
     'cli',
