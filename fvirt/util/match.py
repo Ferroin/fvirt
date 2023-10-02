@@ -8,16 +8,11 @@ from __future__ import annotations
 import re
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Self, Type, Any
-
-import click
+from typing import TYPE_CHECKING, Self
 
 from lxml import etree
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping, Callable
-
-    from .match_alias import MatchAlias
     from ..libvirt.entity import ConfigurableEntity
 
 
@@ -47,8 +42,30 @@ DEFAULT_MATCH = re.compile('.*')
 
 
 @dataclass(kw_only=True, slots=True)
+class MatchAlias:
+    '''Class representing the target of a match alias.
+
+       The `property` property is the name of the object property that
+       the alias should resolve to the value of.
+
+       The `desc` property should be a short description of what the
+       alias matches. It will be included in the output printed by the
+       fvirt.util.match.handle_match_parameters() function when the
+       user asks for a list of recognized aliases.'''
+    property: str
+    desc: str
+
+
+@dataclass(kw_only=True, slots=True)
 class MatchTarget:
-    '''Class representing a target for matching.'''
+    '''Class representing a target for matching.
+
+       This encapsulates value lookup logic irrespective of whether the
+       target is an xpath specification or a simple property name from
+       a match alias.
+
+       If both an xpath and property target are specified, the xpath
+       target takes precedence.'''
     xpath: etree.XPath | None = None
     property: str | None = None
 
@@ -77,83 +94,8 @@ class MatchTarget:
             return ''
 
 
-def MatchTargetParam(aliases: Mapping[str, MatchAlias]) -> Type[click.ParamType]:
-    '''Factory function for creating types for match tagets.
-
-       This will produce a subclass of click.ParamType for parsing the
-       first parameter that should be passed to the `--match` argument
-       and converting it to a usable MatchTarget instance, based on the
-       mapping of aliases.
-
-       The resultant class can be used with the `type` argument for
-       click.option decorators to properly parse match targets for the
-       `--match` option.'''
-    class MatchTargetParam(click.ParamType):
-        name = 'match-target'
-
-        def convert(self: Self, value: str | MatchTarget, param: Any, ctx: click.core.Context | None) -> MatchTarget:
-            if isinstance(value, str):
-                if value in aliases:
-                    ret = MatchTarget(property=aliases[value].property)
-                else:
-                    ret = MatchTarget(xpath=etree.XPath(value, smart_strings=False))
-            else:
-                ret = value
-
-            return ret
-
-    return MatchTargetParam
-
-
-class MatchPatternParam(click.ParamType):
-    '''Class for processing match patterns.
-
-       When used as a type for a Click option, this produces a re.Pattern
-       object for use with the fvirt.util.match.matcher() function.'''
-    name = 'pattern'
-
-    def convert(self: Self, value: str | re.Pattern | None, param: Any, ctx: click.core.Context | None) -> re.Pattern:
-        if isinstance(value, str):
-            try:
-                return re.compile(value)
-            except re.error:
-                self.fail(f'"{ value }" is not a valid pattern.', param, ctx)
-        elif value is None:
-            return DEFAULT_MATCH
-        else:
-            return value
-
-
-def matcher(target: MatchTarget, pattern: re.Pattern) -> Callable[[ConfigurableEntity], bool]:
-    '''Produce a function that checks whether a given entity matches a given target and pattern.
-
-       The produced function is usable with Python’s `filter()`
-       builtin and similar functions that need a simple boolean matching
-       function.'''
-    def match(entity: ConfigurableEntity) -> bool:
-        value = target.get_value(entity)
-        return pattern.match(value) is not None
-
-    return match
-
-
-def make_alias_help(aliases: Mapping[str, MatchAlias], group_name: str) -> str:
-    '''Construct help text about the recongized aliases.'''
-    ret = f''''{ group_name }' subcommands recognize the following match aliases:\n'''
-
-    pad = max([len(x) for x in aliases.keys()]) + 2
-
-    for name, alias in aliases.items():
-        ret += click.wrap_text(f'{ name }{ " " * (pad - len(name) - 2) }  { alias.desc }', initial_indent='  ', subsequent_indent=(' ' * (pad + 2)))
-        ret += '\n'
-
-    return ret.rstrip()
-
-
 __all__ = [
+    'MatchAlias',
     'MatchTarget',
-    'MatchTargetParam',
-    'MatchPatternParam',
-    'matcher',
-    'make_alias_help',
+    'MATCH_HELP',
 ]

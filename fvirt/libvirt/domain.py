@@ -15,7 +15,7 @@ import libvirt
 from .entity import ConfigurableEntity, RunnableEntity, ConfigElementProperty, ConfigAttributeProperty, LifecycleResult
 from .entity_access import BaseEntityAccess, EntityAccess, EntityMap, NameMap, UUIDMap
 from .exceptions import EntityNotRunning
-from ..util.match_alias import MatchAlias
+from ..util.match import MatchAlias
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -427,6 +427,25 @@ class DomainAccess(EntityAccess, Domains):
         self.__by_name = DomainsByName(parent)
         self.__by_uuid = DomainsByUUID(parent)
         self.__by_id = DomainsByID(parent)
+        super().__init__(parent)
+
+    def get(self: Self, key: str) -> Domain | None:
+        '''Look up a domain by a general identifier.
+
+           This tries, in order, looking up by name, then by UUID,
+           then by ID. If it can't find a domain based on that key,
+           it returns None.'''
+        ret = cast(Domain | None, super().get(key))
+
+        if ret is None:
+            try:
+                ID = int(key)
+            except ValueError:
+                pass
+            else:
+                ret = self.by_id.get(ID, None)
+
+        return ret
 
     @property
     def by_name(self: Self) -> DomainsByName:

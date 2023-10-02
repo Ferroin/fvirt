@@ -10,10 +10,13 @@ from collections.abc import Iterable, Iterator, Sized, Mapping
 from typing import TYPE_CHECKING, Self, Any, cast
 from uuid import UUID
 
-from .entity import Entity
+from .entity import Entity, ConfigurableEntity
 
 if TYPE_CHECKING:
+    import re
+
     from .hypervisor import Hypervisor
+    from ..util.match import MatchTarget
 
 
 class BaseEntityAccess(ABC, Sized):
@@ -28,14 +31,14 @@ class BaseEntityAccess(ABC, Sized):
         total = 0
 
         with self._parent:
-            link = self.__get_parent_link()
+            link = self._get_parent_link()
 
             for func in self._count_funcs:
                 total += cast(int, getattr(link, func)())
 
         return total
 
-    def __get_parent_link(self: Self) -> Any:
+    def _get_parent_link(self: Self) -> Any:
         if hasattr(self._parent, '_connection'):
             link = self._parent
             assert link._connection is not None
@@ -68,7 +71,7 @@ class EntityMap(BaseEntityAccess, Mapping):
     '''ABC for mappings of entities on a hypervisor.'''
     def __iter__(self: Self) -> Iterator[str]:
         with self._parent:
-            link = self.__get_parent_link()
+            link = self._get_parent_link()
 
             match getattr(link, self._list_func)():
                 case None:
@@ -80,7 +83,7 @@ class EntityMap(BaseEntityAccess, Mapping):
         key = self._coerce_key(key)
 
         with self._parent:
-            link = self.__get_parent_link()
+            link = self._get_parent_link()
 
             match getattr(link, self._lookup_func)(key):
                 case None:
@@ -151,10 +154,38 @@ class EntityAccess(BaseEntityAccess, Iterable):
        iteration order is explicitly not specified.'''
     def __iter__(self: Self) -> Iterator[Entity]:
         with self._parent:
-            link = self.__get_parent_link()
+            link = self._get_parent_link()
 
             match getattr(link, self._list_func)():
                 case None:
                     return iter([])
                 case entities:
                     return iter(self._entity_class(x, self._parent) for x in entities)
+
+    def get(self: Self, key: str) -> Entity | None:
+        '''Look up an entity by a general identifier.
+
+           This tries, in order, looking up by name and then by UUID. If
+           it can't find an entity based on that key, it returns None.'''
+        ret: Entity | None = None
+
+        if hasattr(self, 'by_name'):
+            ret = self.by_name.get(key, None)
+
+        if ret is None and hasattr(self, 'by_uuid'):
+            try:
+                uuid = UUID(key)
+            except ValueError:
+                pass
+            else:
+                ret = self.by_uuid.get(uuid, None)
+
+        return ret
+
+    def match(self: Self, match: tuple[MatchTarget, re.Pattern]) -> Iterable[ConfigurableEntity]:
+        '''Return an iterable of entities that match given match parameters.'''
+        def f(entity: ConfigurableEntity) -> bool:
+            value = match[0].get_value(entity)
+            return match[1].match(value) is not None
+
+        return filter(f, self)

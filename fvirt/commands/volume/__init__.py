@@ -12,7 +12,7 @@ from .list import list_volumes
 
 from ...libvirt.volume import MATCH_ALIASES
 from ...util.commands import make_help_command
-from ...util.match import make_alias_help
+from ...util.match_params import make_alias_help
 
 
 @click.group(short_help='Perform various operations on libvirt volumes.')

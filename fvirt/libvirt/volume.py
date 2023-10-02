@@ -10,8 +10,8 @@ from typing import TYPE_CHECKING, Self, cast
 import libvirt
 
 from .entity import ConfigurableEntity, ConfigProperty, LifecycleResult
-from .entity_access import BaseEntityAccess, EntityAccess, EntityMap, NameMap
-from ..util.match_alias import MatchAlias
+from .entity_access import BaseEntityAccess, EntityAccess, NameMap
+from ..util.match import MatchAlias
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -253,6 +253,7 @@ class VolumeAccess(EntityAccess, Volumes):
        the total number of volumes on the StoragePool.'''
     def __init__(self: Self, parent: StoragePool) -> None:
         self.__by_name = VolumesByName(parent)
+        super().__init__(parent)
 
     @property
     def by_name(self: Self) -> VolumesByName:

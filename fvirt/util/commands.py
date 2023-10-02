@@ -8,8 +8,7 @@ from __future__ import annotations
 import functools
 
 from pathlib import Path
-from typing import TYPE_CHECKING, TypeVar, ParamSpec, Any, cast
-from uuid import UUID
+from typing import TYPE_CHECKING, TypeVar, ParamSpec, cast
 
 import click
 import libvirt
@@ -19,7 +18,7 @@ from lxml import etree
 from ..libvirt import Hypervisor, LifecycleResult, InvalidConfig, InsufficientPrivileges
 from ..libvirt.entity import Entity, RunnableEntity, ConfigurableEntity
 
-from .match import MatchTarget, MatchTargetParam, MatchPatternParam, matcher
+from .match_params import MatchTargetParam, MatchPatternParam
 from .tables import render_table, Column, ColumnsParam, print_columns, tabulate_entities
 
 if TYPE_CHECKING:
@@ -27,52 +26,10 @@ if TYPE_CHECKING:
 
     from collections.abc import Mapping, Sequence, Callable
 
-    from ..util.match_alias import MatchAlias
+    from .match import MatchTarget, MatchAlias
 
     T = TypeVar('T')
     P = ParamSpec('P')
-
-
-def get_entity(
-        *,
-        hv: Hypervisor,
-        hvprop: str,
-        entity: str,
-        ctx: click.core.Context,
-        doc_name: str,
-        ) -> Entity:
-    '''Look up an entity by name, UUID, or possibly ID.
-
-       If the entity cannot be found, fail the calling command with a
-       message indicating this.'''
-    ret: Entity | None = None
-
-    by_name = getattr(hv, f'{ hvprop }_by_name')
-    ret = by_name.get(entity, None)
-
-    if ret is None:
-        try:
-            uuid = UUID(entity)
-        except ValueError:
-            pass
-        else:
-            by_uuid = getattr(hv, f'{ hvprop }_by_uuid')
-            ret = by_uuid.get(uuid, None)
-
-    if ret is None:
-        try:
-            ID = int(entity)
-        except ValueError:
-            pass
-        else:
-            by_id = getattr(hv, f'{ hvprop }_by_id', dict())
-            ret = by_id.get(ID, None)
-
-    if ret is None:
-        click.echo(f'No { doc_name } found with name, UUID, or ID equal to { entity } on this hypervisor.', err=True)
-        ctx.exit(2)
-
-    return ret
 
 
 def get_match_or_entity(
@@ -89,21 +46,19 @@ def get_match_or_entity(
     entities: list[Entity] = []
 
     if match is not None:
-        select = matcher(*match)
-
-        entities = cast(list[Entity], list(filter(select, getattr(hv, hvprop))))
+        entities = list(getattr(hv, hvprop).match(match))
 
         if not entities and ctx.obj['fail_if_no_match']:
             click.echo(f'No { doc_name }s found matching the specified criteria.', err=True)
             ctx.exit(2)
     elif entity is not None:
-        entities = [get_entity(
-                        hv=hv,
-                        hvprop=hvprop,
-                        entity=entity,
-                        ctx=ctx,
-                        doc_name=doc_name,
-                    )]
+        item = getattr(hv, hvprop).get(entity)
+
+        if item is None:
+            click.echo(f'No { doc_name }s found with a name, UUID, or ID of "{ entity }" found.')
+            ctx.exit(2)
+
+        entities = [item]
     else:
         click.echo(f'Either match parameters or a { doc_name } name is required.', err=True)
         ctx.exit(1)
@@ -203,13 +158,11 @@ def make_list_command(
             print_columns(columns, default_cols)
             ctx.exit(0)
 
-        if match is not None:
-            select = matcher(*match)
-        else:
-            def select(x: Any) -> bool: return True
-
         with Hypervisor(hvuri=ctx.obj['uri']) as hv:
-            entities = cast(list[Entity], list(filter(select, getattr(hv, hvprop))))
+            if match is None:
+                entities = getattr(hv, hvprop)
+            else:
+                entities = getattr(hv, hvprop).match(match)
 
             if not entities and ctx.obj['fail_if_no_match']:
                 ctx.fail(f'No { doc_name }s found matching the specified parameters.')
@@ -261,24 +214,16 @@ def make_sub_list_command(
             print_columns(columns, default_cols)
             ctx.exit(0)
 
-        if match is not None:
-            select = matcher(*match)
-        else:
-            def select(x: Any) -> bool: return True
-
         with Hypervisor(hvuri=ctx.obj['uri']) as hv:
-            try:
-                obj = get_entity(
-                    hv=hv,
-                    hvprop=hvprop,
-                    ctx=ctx,
-                    doc_name=obj_doc_name,
-                    entity=name,
-                )
-            except KeyError:
-                ctx.fail(f'No { obj_doc_name } with name "{ name }" is defined on this hypervisor.')
+            obj = getattr(hv, hvprop).get(name)
 
-            entities = filter(select, getattr(obj, objprop))
+            if obj is None:
+                ctx.fail(f'No { obj_doc_name } with name, UUID, or ID of "{ name }" is defined on this hypervisor.')
+
+            if match is None:
+                entities = getattr(obj, objprop)
+            else:
+                entities = getattr(obj, objprop).match(match)
 
             if not entities and ctx.obj['fail_if_no_match']:
                 ctx.fail('No { doc_name }s found matching the specified parameters.')
@@ -340,13 +285,10 @@ def make_define_command(
                     assert parent_name is not None
                     assert name is not None
 
-                    define_object: Entity | Hypervisor = get_entity(
-                        hv=hv,
-                        hvprop=parent,
-                        ctx=ctx,
-                        doc_name=parent_name,
-                        entity=name,
-                    )
+                    define_object: Entity | Hypervisor = getattr(hv, parent).get(name)
+
+                    if define_object is None:
+                        ctx.fail(f'No { parent_name } with name, UUID, or ID of "{ name }" is defined on this hypervisor.')
                 else:
                     define_object = hv
 
@@ -489,7 +431,7 @@ def make_lifecycle_command(
 
     cmd = click.pass_context(cmd)  # type: ignore
     cmd = click.argument('name', nargs=1, required=False)(cmd)
-    cmd = add_match_options(aliases, doc_name)(cmd)  # type: ignore
+    cmd = add_match_options(aliases, doc_name)(cmd)
     cmd = click.command(name=name)(cmd)
 
     return cmd
@@ -580,7 +522,7 @@ def make_start_command(name: str, aliases: Mapping[str, MatchAlias], hvprop: str
 
     cmd = click.pass_context(cmd)  # type: ignore
     cmd = click.argument('name', nargs=1, required=False)(cmd)
-    cmd = add_match_options(aliases, doc_name)(cmd)  # type: ignore
+    cmd = add_match_options(aliases, doc_name)(cmd)
     cmd = click.command(name=name)(cmd)
 
     return cmd
@@ -667,7 +609,7 @@ def make_xslt_command(name: str, aliases: Mapping[str, MatchAlias], hvprop: str,
     cmd = click.argument('name', nargs=1, required=False)(cmd)
     cmd = click.argument('xslt', nargs=1, required=True,
                          type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True, resolve_path=True))(cmd)
-    cmd = add_match_options(aliases, doc_name)(cmd)  # type: ignore
+    cmd = add_match_options(aliases, doc_name)(cmd)
     cmd = click.command(name=name)(cmd)
 
     return cmd

@@ -5,16 +5,16 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Iterator, Sized, Mapping
-from typing import TYPE_CHECKING, Self, Any, cast
+from collections.abc import Iterable
+from typing import TYPE_CHECKING, Self, Any
 
 import libvirt
 
 from .entity import ConfigurableEntity, RunnableEntity, ConfigProperty
 from .entity_access import BaseEntityAccess, EntityAccess, NameMap, UUIDMap
-from .exceptions import EntityNotRunning, InsufficientPrivileges, InvalidConfig, InvalidEntity, NotConnected
+from .exceptions import InsufficientPrivileges, InvalidConfig, NotConnected
 from .volume import Volume, VolumeAccess
-from ..util.match_alias import MatchAlias
+from ..util.match import MatchAlias
 
 if TYPE_CHECKING:
     from .hypervisor import Hypervisor
@@ -232,6 +232,7 @@ class StoragePoolAccess(EntityAccess, StoragePools):
     def __init__(self: Self, parent: Hypervisor) -> None:
         self.__by_name = StoragePoolsByName(parent)
         self.__by_uuid = StoragePoolsByUUID(parent)
+        super().__init__(parent)
 
     @property
     def by_name(self: Self) -> StoragePoolsByName:
