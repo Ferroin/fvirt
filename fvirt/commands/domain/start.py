@@ -6,13 +6,13 @@
 from __future__ import annotations
 
 from ...libvirt.domain import MATCH_ALIASES
-from ...util.commands import make_start_command
 
-start = make_start_command(
+from .._base.lifecycle import StartCommand
+
+start = StartCommand(
     name='start',
     aliases=MATCH_ALIASES,
     hvprop='domains',
-    hvnameprop='domains_by_name',
     doc_name='domain',
 )
 

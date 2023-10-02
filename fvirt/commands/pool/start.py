@@ -6,13 +6,13 @@
 from __future__ import annotations
 
 from ...libvirt.storage_pool import MATCH_ALIASES
-from ...util.commands import make_start_command
 
-start = make_start_command(
+from .._base.lifecycle import StartCommand
+
+start = StartCommand(
     name='start',
     aliases=MATCH_ALIASES,
     hvprop='pools',
-    hvnameprop='pools_by_name',
     doc_name='storage pool',
 )
 

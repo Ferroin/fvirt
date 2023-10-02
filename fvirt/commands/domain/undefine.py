@@ -6,13 +6,13 @@
 from __future__ import annotations
 
 from ...libvirt.domain import MATCH_ALIASES
-from ...util.commands import make_undefine_command
 
-undefine = make_undefine_command(
+from .._base.lifecycle import UndefineCommand
+
+undefine = UndefineCommand(
     name='undefine',
     aliases=MATCH_ALIASES,
     hvprop='domains',
-    hvnameprop='domains_by_name',
     doc_name='domain',
 )
 
