@@ -235,84 +235,9 @@ def make_define_command(
     return cmd
 
 
-def make_xslt_command(name: str, aliases: Mapping[str, MatchAlias], hvprop: str, hvnameprop: str, doc_name: str) -> click.Command:
-    '''Produce a click Command to modify a given type of libvirt entity with an XSLT document.'''
-    def cmd(
-            ctx: click.core.Context,
-            match: tuple[MatchTarget, re.Pattern] | None,
-            xslt: Path,
-            name: str | None,
-            ) -> None:
-        xform = etree.XSLT(etree.parse(xslt))
-
-        with Hypervisor(hvuri=ctx.obj['uri']) as hv:
-            entities = cast(Sequence[ConfigurableEntity], get_match_or_entity(
-                hv=hv,
-                hvprop=hvprop,
-                hvnameprop=hvnameprop,
-                match=match,
-                entity=name,
-                ctx=ctx,
-                doc_name=doc_name,
-            ))
-
-            success = 0
-
-            for e in entities:
-                try:
-                    e.applyXSLT(xform)
-                except libvirt.libvirtError:
-                    click.echo(f'Failed to modify { doc_name } "{ e.name }".')
-
-                    if ctx.obj['fail_fast']:
-                        break
-                else:
-                    click.echo(f'Successfully modified { doc_name } "{ e.name }".')
-                    success += 1
-
-            if success or (not entities and not ctx.obj['fail_if_no_match']):
-                click.echo(f'Successfully modified { success } out of { len(entities) } { doc_name }s.')
-
-                if success != len(entities) and ctx.obj['fail_fast']:
-                    ctx.exit(3)
-            else:
-                click.echo(f'Failed to modified any { doc_name }s.')
-                ctx.exit(3)
-
-    cmd.__doc__ = f'''Apply an XSLT document to one or more { doc_name }s.
-
-    XSLT must be a path to a valid XSLT document. It must specify an
-    output element, and the output element must specify an encoding
-    of UTF-8. Note that xsl:strip-space directives may cause issues
-    in the XSLT processor.
-
-    Either a specific { doc_name } name to modify should be specified as
-    NAME, or matching parameters should be specified using the --match
-    option, which will then cause all matching { doc_name }s to be modified.
-
-    This command supports fvirt's fail-fast logic. In fail-fast mode,
-    the first { doc_name } which the XSLT document fails to apply to will
-    cause the operation to stop, and any failure will result in a
-    non-zero exit code.
-
-    This command does not support fvirt's idempotent mode. It's
-    behavior will not change regardless of whether idempotent mode
-    is enabled or not.'''
-
-    cmd = click.pass_context(cmd)  # type: ignore
-    cmd = click.argument('name', nargs=1, required=False)(cmd)
-    cmd = click.argument('xslt', nargs=1, required=True,
-                         type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True, resolve_path=True))(cmd)
-    cmd = add_match_options(aliases, doc_name)(cmd)
-    cmd = click.command(name=name)(cmd)
-
-    return cmd
-
-
 __all__ = [
     'get_match_or_entity',
     'add_match_options',
     'make_help_command',
     'make_define_command',
-    'make_xslt_command',
 ]

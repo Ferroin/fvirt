@@ -5,14 +5,15 @@
 
 from __future__ import annotations
 
-from ...libvirt.domain import MATCH_ALIASES
-from ...util.commands import make_xslt_command
+from .._base.xslt import XSLTCommand
 
-xslt = make_xslt_command(
+from ...libvirt.domain import MATCH_ALIASES
+
+xslt = XSLTCommand(
     name='xslt',
     aliases=MATCH_ALIASES,
     hvprop='domains',
-    hvnameprop='domains_by_name',
+    metavar='DOMAIN',
     doc_name='domain',
 )
 

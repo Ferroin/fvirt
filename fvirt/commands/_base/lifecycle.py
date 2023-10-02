@@ -116,26 +116,24 @@ class LifecycleCommand(MatchCommand):
                         case _:
                             raise RuntimeError
 
-                if success or (not entities and not ctx.obj['fail_if_no_match']):
-                    click.echo('Results:')
-                    click.echo(f'  Success:     { success }')
-                    click.echo(f'  Failed:      { len(entities) - success }')
+                click.echo(f'Finished { op_help.continuous } specified { doc_name }s.')
+                click.echo('')
+                click.echo('Results:')
+                click.echo(f'  Success:     { success }')
+                click.echo(f'  Failed:      { len(entities) - success }')
 
-                    if skipped:
-                        click.echo(f'    Skipped:   { skipped }')
+                if skipped:
+                    click.echo(f'    Skipped:   { skipped }')
 
-                    if timed_out:
-                        click.echo(f'    Timed Out: { timed_out }')
+                if timed_out:
+                    click.echo(f'    Timed Out: { timed_out }')
 
-                    if forced:
-                        click.echo(f'    Forced:    { forced }')
+                if forced:
+                    click.echo(f'    Forced:    { forced }')
 
-                    click.echo(f'Total:         { len(entities) }')
+                click.echo(f'Total:         { len(entities) }')
 
-                    if success != len(entities) and ctx.obj['fail_fast']:
-                        ctx.exit(3)
-                else:
-                    click.echo('Failed to { op_help.verb } any { doc_name }s.')
+                if success != len(entities) and ctx.obj['fail_fast'] or (not entities and ctx.obj['fail_if_no_match']):
                     ctx.exit(3)
 
         params = tuple(params) + (click.Argument(

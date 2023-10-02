@@ -5,14 +5,15 @@
 
 from __future__ import annotations
 
-from ...libvirt.storage_pool import MATCH_ALIASES
-from ...util.commands import make_xslt_command
+from .._base.xslt import XSLTCommand
 
-xslt = make_xslt_command(
+from ...libvirt.storage_pool import MATCH_ALIASES
+
+xslt = XSLTCommand(
     name='xslt',
     aliases=MATCH_ALIASES,
     hvprop='pools',
-    hvnameprop='pools_by_name',
+    metavar='POOL',
     doc_name='storage pool',
 )
 

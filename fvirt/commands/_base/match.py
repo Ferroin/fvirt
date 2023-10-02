@@ -28,7 +28,7 @@ T = TypeVar('T')
 
 def get_match_or_entity(
         *,
-        hv: Hypervisor,
+        hv: Hypervisor | Entity,
         hvprop: str,
         match: tuple[MatchTarget, re.Pattern] | None,
         entity: str | None,
