@@ -6,7 +6,6 @@
 from __future__ import annotations
 
 from .._base.list import ListCommand
-
 from ...libvirt.volume import MATCH_ALIASES
 from ...util.tables import Column
 

@@ -7,12 +7,12 @@ from __future__ import annotations
 
 import click
 
-from .libvirt import API_VERSION, URI, Driver, Transport
-from .version import VERSION
 from .commands import COMMANDS
-from .util.match import MATCH_HELP
 from .commands._base.group import Group
 from .commands._base.help import HelpTopic
+from .libvirt import API_VERSION, URI, Driver, Transport
+from .util.match import MATCH_HELP
+from .version import VERSION
 
 RECOGNIZED_DRIVERS = sorted(list({e.value for e in Driver}))
 RECOGNIZED_TRANSPORTS = sorted(list({e.value for e in Transport if e.value}))

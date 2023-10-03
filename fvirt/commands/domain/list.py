@@ -8,7 +8,6 @@ from __future__ import annotations
 from typing import Any
 
 from .._base.list import ListCommand
-
 from ...libvirt import DomainState
 from ...libvirt.domain import MATCH_ALIASES
 from ...util.tables import Column, color_bool

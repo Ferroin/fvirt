@@ -7,14 +7,14 @@ from __future__ import annotations
 
 import functools
 
-from typing import TYPE_CHECKING, Self, Any, ParamSpec, TypeVar, Concatenate
+from typing import TYPE_CHECKING, Any, Concatenate, ParamSpec, Self, TypeVar
 
 import click
 
-from .help import HelpCommand, HelpTopic, AliasHelpTopic
+from .help import AliasHelpTopic, HelpCommand, HelpTopic
 
 if TYPE_CHECKING:
-    from collections.abc import MutableMapping, Sequence, Callable, Iterable, Mapping
+    from collections.abc import Callable, Iterable, Mapping, MutableMapping, Sequence
 
     from ...util.match import MatchAlias
 

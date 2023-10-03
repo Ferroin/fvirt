@@ -8,15 +8,15 @@ from __future__ import annotations
 import enum
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Self, Generic, TypeVar, Literal, cast
+from typing import TYPE_CHECKING, Any, Generic, Literal, Self, TypeVar, cast
 from uuid import UUID
 
 import libvirt
 
 from lxml import etree
 
+from .exceptions import InsufficientPrivileges, InvalidEntity, NotConnected
 from ..util.units import unit_to_bytes
-from .exceptions import InvalidEntity, InsufficientPrivileges, NotConnected
 
 if TYPE_CHECKING:
     from collections.abc import Callable

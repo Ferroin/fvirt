@@ -5,9 +5,8 @@
 
 from __future__ import annotations
 
-from ...libvirt.domain import MATCH_ALIASES
-
 from .._base.lifecycle import UndefineCommand
+from ...libvirt.domain import MATCH_ALIASES
 
 undefine = UndefineCommand(
     name='undefine',

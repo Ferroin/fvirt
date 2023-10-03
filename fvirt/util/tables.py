@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Self, Type, Any
+from typing import TYPE_CHECKING, Any, Self, Type
 
 import click
 

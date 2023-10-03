@@ -14,9 +14,7 @@ from .start import start
 from .stop import stop
 from .undefine import undefine
 from .xslt import xslt
-
 from .._base.group import Group
-
 from ...libvirt.domain import MATCH_ALIASES
 
 domain = Group(

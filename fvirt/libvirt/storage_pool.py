@@ -6,11 +6,11 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
-from typing import TYPE_CHECKING, Self, Any
+from typing import TYPE_CHECKING, Any, Self
 
 import libvirt
 
-from .entity import ConfigurableEntity, RunnableEntity, ConfigProperty
+from .entity import ConfigProperty, ConfigurableEntity, RunnableEntity
 from .entity_access import BaseEntityAccess, EntityAccess, NameMap, UUIDMap
 from .exceptions import InsufficientPrivileges, InvalidConfig, NotConnected
 from .volume import Volume, VolumeAccess

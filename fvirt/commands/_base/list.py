@@ -6,20 +6,19 @@
 from __future__ import annotations
 
 from textwrap import dedent
-from typing import TYPE_CHECKING, Self, Any
+from typing import TYPE_CHECKING, Any, Self
 
 import click
 
 from .match import MatchCommand
-
 from ...libvirt import Hypervisor
 from ...util.match import MatchAlias, MatchTarget
-from ...util.tables import Column, ColumnsParam, print_columns, tabulate_entities, render_table
+from ...util.tables import Column, ColumnsParam, print_columns, render_table, tabulate_entities
 
 if TYPE_CHECKING:
     import re
 
-    from collections.abc import MutableMapping, Sequence, Mapping
+    from collections.abc import Mapping, MutableMapping, Sequence
 
 
 class ListCommand(MatchCommand):

@@ -20,14 +20,14 @@ from __future__ import annotations
 
 import libvirt
 
-from ..version import VersionNumber
-from .entity import LifecycleResult
-from .exceptions import (NotConnected, EntityNotRunning, InvalidConfig, InvalidEntity, InsufficientPrivileges)
-from .hypervisor import Hypervisor
 from .domain import Domain, DomainState
+from .entity import LifecycleResult
+from .exceptions import EntityNotRunning, InsufficientPrivileges, InvalidConfig, InvalidEntity, NotConnected
+from .hypervisor import Hypervisor
 from .storage_pool import StoragePool
-from .uri import URI, Driver, Transport, SESSION_DRIVERS, SYSTEM_DRIVERS, CLIENT_ONLY_DRIVERS, LIBVIRT_DEFAULT_URI
+from .uri import CLIENT_ONLY_DRIVERS, LIBVIRT_DEFAULT_URI, SESSION_DRIVERS, SYSTEM_DRIVERS, URI, Driver, Transport
 from .volume import Volume
+from ..version import VersionNumber
 
 
 def parse_libvirt_version(version: int) -> VersionNumber:

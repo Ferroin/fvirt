@@ -5,9 +5,8 @@
 
 from __future__ import annotations
 
-from ...libvirt.storage_pool import MATCH_ALIASES
-
 from .._base.lifecycle import StartCommand
+from ...libvirt.storage_pool import MATCH_ALIASES
 
 start = StartCommand(
     name='start',

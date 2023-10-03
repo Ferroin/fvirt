@@ -6,7 +6,6 @@
 from __future__ import annotations
 
 from .._base.xslt import XSLTCommand
-
 from ...libvirt.storage_pool import MATCH_ALIASES
 
 xslt = XSLTCommand(

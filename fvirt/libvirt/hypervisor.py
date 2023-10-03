@@ -5,14 +5,14 @@
 
 from __future__ import annotations
 
-from typing import Self, cast
 from types import TracebackType
+from typing import Self, cast
 
 import libvirt
 
 from .domain import Domain, DomainAccess
 from .entity import Entity
-from .exceptions import NotConnected, InvalidConfig, InsufficientPrivileges
+from .exceptions import InsufficientPrivileges, InvalidConfig, NotConnected
 from .storage_pool import StoragePool, StoragePoolAccess
 from .uri import URI
 

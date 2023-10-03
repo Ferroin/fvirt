@@ -5,9 +5,8 @@
 
 from .domain import domain
 from .pool import pool
-from .volume import volume
-
 from .uri import uri
+from .volume import volume
 
 COMMANDS = [
     domain,

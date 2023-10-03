@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from enum import Enum
 from typing import Self, Type
-from urllib.parse import quote, urlparse, parse_qs
+from urllib.parse import parse_qs, quote, urlparse
 
 from frozendict import frozendict
 

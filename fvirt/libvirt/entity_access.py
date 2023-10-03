@@ -6,11 +6,11 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from collections.abc import Iterable, Iterator, Sized, Mapping
-from typing import TYPE_CHECKING, Self, Any, cast
+from collections.abc import Iterable, Iterator, Mapping, Sized
+from typing import TYPE_CHECKING, Any, Self, cast
 from uuid import UUID
 
-from .entity import Entity, ConfigurableEntity
+from .entity import ConfigurableEntity, Entity
 
 if TYPE_CHECKING:
     import re

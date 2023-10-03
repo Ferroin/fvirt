@@ -14,7 +14,6 @@ import libvirt
 from lxml import etree
 
 from .match import MatchCommand, get_match_or_entity
-
 from ...libvirt import Hypervisor
 from ...libvirt.entity import ConfigurableEntity
 from ...util.match import MatchAlias, MatchTarget
@@ -22,7 +21,7 @@ from ...util.match import MatchAlias, MatchTarget
 if TYPE_CHECKING:
     import re
 
-    from collections.abc import Sequence, Mapping
+    from collections.abc import Mapping, Sequence
 
 
 class XSLTCommand(MatchCommand):

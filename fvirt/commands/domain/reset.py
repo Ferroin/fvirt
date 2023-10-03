@@ -7,8 +7,7 @@ from __future__ import annotations
 
 from typing import Self
 
-from .._base.lifecycle import SimpleLifecycleCommand, OperationHelpInfo
-
+from .._base.lifecycle import OperationHelpInfo, SimpleLifecycleCommand
 from ...libvirt.domain import MATCH_ALIASES
 
 

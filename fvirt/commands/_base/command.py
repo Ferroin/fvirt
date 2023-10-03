@@ -7,12 +7,12 @@ from __future__ import annotations
 
 import functools
 
-from typing import TYPE_CHECKING, Self, Any, ParamSpec, TypeVar, Concatenate
+from typing import TYPE_CHECKING, Any, Concatenate, ParamSpec, Self, TypeVar
 
 import click
 
 if TYPE_CHECKING:
-    from collections.abc import MutableMapping, Sequence, Callable
+    from collections.abc import Callable, MutableMapping, Sequence
 
 
 P = ParamSpec('P')

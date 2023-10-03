@@ -10,10 +10,9 @@ from typing import cast
 import click
 
 from .._base.lifecycle import LifecycleCommand, OperationHelpInfo
-
-from ...libvirt import LifecycleResult, Domain
-from ...libvirt.entity import Entity
+from ...libvirt import Domain, LifecycleResult
 from ...libvirt.domain import MATCH_ALIASES
+from ...libvirt.entity import Entity
 
 
 def callback(ctx: click.Context, domain: Entity, /, *, timeout: int, force: bool) -> LifecycleResult:

@@ -8,7 +8,6 @@ from __future__ import annotations
 import click
 
 from ._base.command import Command
-
 from ..libvirt import Hypervisor
 
 HELP = '''

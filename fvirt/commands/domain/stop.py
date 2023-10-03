@@ -5,9 +5,8 @@
 
 from __future__ import annotations
 
-from ...libvirt.domain import MATCH_ALIASES
-
 from .._base.lifecycle import StopCommand
+from ...libvirt.domain import MATCH_ALIASES
 
 stop = StopCommand(
     name='stop',

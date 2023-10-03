@@ -5,21 +5,20 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Self, Any, ParamSpec, Type, TypeVar, Concatenate
+from typing import TYPE_CHECKING, Any, Concatenate, ParamSpec, Self, Type, TypeVar
 
 import click
 
 from lxml import etree
 
 from .command import Command
-
 from ...libvirt.entity import Entity
 from ...util.match import MatchAlias, MatchTarget
 
 if TYPE_CHECKING:
     import re
 
-    from collections.abc import MutableMapping, Sequence, Callable, Mapping
+    from collections.abc import Callable, Mapping, MutableMapping, Sequence
 
     from ...libvirt import Hypervisor
 

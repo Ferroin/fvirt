@@ -5,14 +5,14 @@
 
 from __future__ import annotations
 
-from enum import Enum, verify, UNIQUE, CONTINUOUS
+from enum import CONTINUOUS, UNIQUE, Enum, verify
 from time import sleep
-from typing import TYPE_CHECKING, Self, Literal, Any, cast
+from typing import TYPE_CHECKING, Any, Literal, Self, cast
 from uuid import UUID
 
 import libvirt
 
-from .entity import ConfigurableEntity, RunnableEntity, ConfigElementProperty, ConfigAttributeProperty, LifecycleResult
+from .entity import ConfigAttributeProperty, ConfigElementProperty, ConfigurableEntity, LifecycleResult, RunnableEntity
 from .entity_access import BaseEntityAccess, EntityAccess, EntityMap, NameMap, UUIDMap
 from .exceptions import EntityNotRunning
 from ..util.match import MatchAlias

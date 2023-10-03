@@ -16,7 +16,6 @@ if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping
 
     from .group import Group
-
     from ...util.match import MatchAlias
 
 

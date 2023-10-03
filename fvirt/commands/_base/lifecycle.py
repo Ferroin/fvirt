@@ -9,17 +9,16 @@ import functools
 import re
 
 from abc import ABC, abstractmethod
-from collections.abc import MutableMapping, Sequence, Callable, Mapping
+from collections.abc import Callable, Mapping, MutableMapping, Sequence
 from dataclasses import dataclass
 from textwrap import dedent
-from typing import TYPE_CHECKING, Self, Any, ParamSpec, Concatenate, cast
+from typing import TYPE_CHECKING, Any, Concatenate, ParamSpec, Self, cast
 
 import click
 
 from .command import Command
 from .match import MatchCommand, get_match_or_entity
-
-from ...libvirt import Hypervisor, LifecycleResult, InsufficientPrivileges, InvalidConfig
+from ...libvirt import Hypervisor, InsufficientPrivileges, InvalidConfig, LifecycleResult
 from ...libvirt.entity import Entity, RunnableEntity
 from ...util.match import MatchTarget
 

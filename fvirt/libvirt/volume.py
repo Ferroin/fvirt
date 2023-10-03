@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Self, cast
 
 import libvirt
 
-from .entity import ConfigurableEntity, ConfigProperty, LifecycleResult
+from .entity import ConfigProperty, ConfigurableEntity, LifecycleResult
 from .entity_access import BaseEntityAccess, EntityAccess, NameMap
 from ..util.match import MatchAlias
 

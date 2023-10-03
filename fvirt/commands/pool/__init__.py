@@ -11,9 +11,7 @@ from .start import start
 from .stop import stop
 from .undefine import undefine
 from .xslt import xslt
-
 from .._base.group import Group
-
 from ...libvirt.volume import MATCH_ALIASES
 
 pool = Group(

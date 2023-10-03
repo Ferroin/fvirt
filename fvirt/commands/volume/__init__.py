@@ -7,9 +7,7 @@ from __future__ import annotations
 
 from .define import define
 from .list import list_volumes
-
 from .._base.group import Group
-
 from ...libvirt.volume import MATCH_ALIASES
 
 volume = Group(
