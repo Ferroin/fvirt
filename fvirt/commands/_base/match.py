@@ -5,6 +5,8 @@
 
 from __future__ import annotations
 
+import re
+
 from typing import TYPE_CHECKING, Any, Concatenate, ParamSpec, Self, Type, TypeVar
 
 import click
@@ -16,8 +18,6 @@ from ...libvirt.entity import Entity
 from ...util.match import MatchAlias, MatchTarget
 
 if TYPE_CHECKING:
-    import re
-
     from collections.abc import Callable, Mapping, MutableMapping, Sequence
 
     from ...libvirt import Hypervisor
