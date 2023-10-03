@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 from textwrap import dedent
-from typing import TYPE_CHECKING, Self, Any, cast
+from typing import TYPE_CHECKING, Self, cast
 
 import click
 import libvirt
@@ -22,7 +22,7 @@ from ...util.match import MatchAlias, MatchTarget
 if TYPE_CHECKING:
     import re
 
-    from collections.abc import MutableMapping, Sequence, Mapping
+    from collections.abc import Sequence, Mapping
 
 
 class XSLTCommand(MatchCommand):
@@ -41,11 +41,10 @@ class XSLTCommand(MatchCommand):
             parent_name: str | None = None,
             parent_metavar: str | None = None,
             epilog: str | None = None,
-            context_settings: MutableMapping[str, Any] = dict(),
             hidden: bool = False,
             deprecated: bool = False,
             ) -> None:
-        params = tuple()
+        params: tuple[click.Parameter, ...] = tuple()
 
         def cb(ctx: click.Context, entity: str | None, match: tuple[MatchTarget, re.Pattern] | None, xslt: str, parent: str | None = None) -> None:
             xform = etree.XSLT(etree.parse(xslt))
@@ -165,7 +164,6 @@ class XSLTCommand(MatchCommand):
             callback=cb,
             doc_name=doc_name,
             params=params,
-            context_settings=context_settings,
             hidden=hidden,
             deprecated=deprecated,
         )

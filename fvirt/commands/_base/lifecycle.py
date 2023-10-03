@@ -16,9 +16,10 @@ from typing import TYPE_CHECKING, Self, Any, ParamSpec, Concatenate, cast
 
 import click
 
+from .command import Command
 from .match import MatchCommand, get_match_or_entity
 
-from ...libvirt import Hypervisor, LifecycleResult
+from ...libvirt import Hypervisor, LifecycleResult, InsufficientPrivileges, InvalidConfig
 from ...libvirt.entity import Entity, RunnableEntity
 from ...util.match import MatchTarget
 
@@ -180,7 +181,7 @@ class LifecycleCommand(MatchCommand):
             callback=cb,
             aliases=aliases,
             doc_name=doc_name,
-            params=list(params),
+            params=params,
             context_settings=context_settings,
             hidden=hidden,
             deprecated=deprecated,
@@ -287,4 +288,130 @@ class UndefineCommand(SimpleLifecycleCommand):
             continuous='undefining',
             past='undefined',
             idempotent_state='undefined',
+        )
+
+
+class DefineCommand(Command):
+    '''A class for defining a libvirt object.
+
+       This class takes care of the callback, options, and help text
+       required for such commands.'''
+    def __init__(
+            self: Self,
+            name: str,
+            doc_name: str,
+            method: str,
+            epilog: str | None = None,
+            parent: str | None = None,
+            parent_name: str | None = None,
+            parent_metavar: str | None = None,
+            hidden: bool = False,
+            deprecated: bool = False,
+            ) -> None:
+        parent_args = {parent, parent_name, parent_metavar}
+
+        if None in parent_args and parent_args != {None}:
+            raise ValueError('Either both of parent and parent_name must be specified, or neither must be specified.')
+
+        def cb(ctx: click.Context, confpath: Sequence[str], parent_obj: str | None = None) -> None:
+            success = 0
+
+            confdata = []
+
+            for cpath in confpath:
+                with click.open_file(cpath, mode='r') as config:
+                    confdata.append(config.read())
+
+            with Hypervisor(hvuri=ctx.obj['uri']) as hv:
+                if parent is not None:
+                    assert parent_name is not None
+                    assert name is not None
+
+                    define_object: Entity | Hypervisor = getattr(hv, parent).get(name)
+
+                    if define_object is None:
+                        ctx.fail(f'No { parent_name } with name, UUID, or ID of "{ name }" is defined on this hypervisor.')
+                else:
+                    define_object = hv
+
+                for conf in confdata:
+                    try:
+                        entity = getattr(define_object, method)(confdata)
+                    except InsufficientPrivileges:
+                        ctx.fail(f'Specified hypervisor connection is read-only, unable to define { doc_name }')
+                    except InvalidConfig:
+                        click.echo(f'The configuration at { cpath } is not valid for a { doc_name }.')
+
+                        if ctx.obj['fail_fast']:
+                            break
+
+                    click.echo(f'Successfully defined { doc_name }: { entity.name }')
+                    success += 1
+
+                click.echo(f'Finished defining specified { doc_name }s.')
+                click.echo('')
+                click.echo('Results:')
+                click.echo(f'  Success:     { success }')
+                click.echo(f'  Failed:      { len(confdata) - success }')
+                click.echo(f'Total:         { len(confdata) }')
+
+                if success != len(confdata) and confdata:
+                    ctx.exit(3)
+
+        if parent is not None:
+            header = dedent(f'''
+            Define one or more new { doc_name }s in the specified { parent_name }.
+
+            The { parent_metavar } argument should indicate which { parent_name } to create the { doc_name }s in.''').lstrip()
+        else:
+            header = f'Define one or more new { doc_name }s.'
+
+        trailer = dedent(f'''
+        The CONFIGPATH argument should point to a valid XML configuration
+        for a { doc_name }. If more than one CONFIGPATH is specified, each
+        should correspond to a separate { doc_name } to be defined.
+
+        If a specified configuration describes a { doc_name } that already
+        exists, it will silently overwrite the the existing configuration
+        for that { doc_name }.
+
+        All specified configuration files will be read before attempting
+        to define any { doc_name }s. Thus, if any configuration file is
+        invalid, no { doc_name }s will be defined.
+
+        If more than one { doc_name } is requested to be defined, a failure
+        defining any { doc_name } will result in a non-zero exit code even if
+        some { doc_name }s were defined.
+
+        This command supports fvirt's fail-fast logic. In fail-fast mode, the
+        first { doc_name } that fails to be defined will cause the operation
+        to stop, and any failure will result in a non-zero exit code.
+
+        This command does not support fvirt's idempotent mode.''').lstrip()
+
+        docstr = f'{ header }\n\n{ trailer }'
+
+        params: tuple[click.Parameter, ...] = tuple()
+
+        if parent is not None:
+            params += (click.Argument(
+                param_decls=('name',),
+                nargs=1,
+                required=True,
+                metavar=parent_metavar,
+            ),)
+
+        params += (click.Argument(
+            param_decls=('configpath',),
+            nargs=-1,
+        ),)
+
+        super().__init__(
+            name=name,
+            help=docstr,
+            epilog=epilog,
+            callback=cb,
+            params=params,
+            hidden=hidden,
+            deprecated=deprecated,
         )

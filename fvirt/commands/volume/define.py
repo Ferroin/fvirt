@@ -5,11 +5,11 @@
 
 from __future__ import annotations
 
-from ...util.commands import make_define_command
+from .._base.lifecycle import DefineCommand
 
-define = make_define_command(
+define = DefineCommand(
     name='define',
-    define_method='defineVolume',
+    method='defineVolume',
     doc_name='volume',
     parent='pools',
     parent_name='storage pool',
