@@ -5,6 +5,3 @@ extend-ignore=SFS301
 inline-quotes=single
 multiline-quotes='''
 docstring-quotes='''
-
-per-file-ignores=
-    .github/scripts/check-labels.py: DB100
