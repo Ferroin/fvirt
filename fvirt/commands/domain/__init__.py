@@ -5,15 +5,6 @@
 
 from __future__ import annotations
 
-from .create import create
-from .define import define
-from .list import list_domains
-from .reset import reset
-from .shutdown import shutdown
-from .start import start
-from .stop import stop
-from .undefine import undefine
-from .xslt import xslt
 from .._base.group import Group
 from ...libvirt.domain import MATCH_ALIASES
 
@@ -21,17 +12,17 @@ domain = Group(
     name='domain',
     help='Perform various operations on libvirt domains.',
     callback=lambda x: None,
-    commands=(
-        create,
-        define,
-        list_domains,
-        reset,
-        shutdown,
-        start,
-        stop,
-        undefine,
-        xslt,
-    ),
+    lazy_commands={
+        'create': 'fvirt.commands.domain.create.create',
+        'define': 'fvirt.commands.domain.define.define',
+        'list': 'fvirt.commands.domain.list.list_domains',
+        'reset': 'fvirt.commands.domain.reset.reset',
+        'shutdown': 'fvirt.commands.domain.shutdown.shutdown',
+        'start': 'fvirt.commands.domain.start.start',
+        'stop': 'fvirt.commands.domain.stop.stop',
+        'undefine': 'fvirt.commands.domain.undefine.undefine',
+        'xslt': 'fvirt.commands.domain.xslt.xslt',
+    },
     aliases=MATCH_ALIASES,
 )
 

@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import click
 
-from .commands import COMMANDS
+from .commands import LAZY_COMMANDS
 from .commands._base.group import Group
 from .commands._base.help import HelpTopic
 from .libvirt import API_VERSION, URI, Driver, Transport
@@ -69,7 +69,7 @@ cli = Group(
     name='fvirt',
     help=FVIRT_HELP,
     callback=cb,
-    commands=COMMANDS,
+    lazy_commands=LAZY_COMMANDS,
     params=(
         click.Option(
             param_decls=('--connect', '-c', '--uri'),
