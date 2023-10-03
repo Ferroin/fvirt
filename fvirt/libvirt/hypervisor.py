@@ -5,8 +5,10 @@
 
 from __future__ import annotations
 
+import threading
+
 from types import TracebackType
-from typing import Self, cast
+from typing import Any, Self, Type, cast
 
 import libvirt
 
@@ -25,6 +27,10 @@ class Hypervisor:
        proper context manager interface and the ability to list _all_
        domains.
 
+       Most methods of interacting with a Hypervisor instance also handle
+       connection management automatically using reference counting for
+       the connection itself.
+
        When converting to a boolean, Hypervisor instances are treated as
        false if they are not connected, and true if they have at least
        one active connection.
@@ -33,13 +39,24 @@ class Hypervisor:
        `domains_by_id`, or `domains_by_uuid` properties.
 
        Storage pools can be accessed via the `pools`, `pools_by_name`,
-       or `pools_by_uuid` properties.'''
-    def __init__(self: Self, hvuri: URI, read_only: bool = False) -> None:
+       or `pools_by_uuid` properties.
+
+       Internal state is protected from concurrent access using a lock. By
+       default, a threading.Lock instance is used so that Hypervisor
+       instances are thread-safe. You can override this by providing
+       the lock class to use with the lock_cls parameter. This is needed
+       for example if you are using asyncio, in which case asyncio.Lock
+       should be used instead.
+
+       The underlying libvirt APIs are all concurrent-access safe
+       irrespective of the concurrency model in use.'''
+    def __init__(self: Self, hvuri: URI, read_only: bool = False, lock_cls: Type[object] = threading.Lock) -> None:
         self._uri = hvuri
 
         self._connection: libvirt.virConnect | None = None
         self.__read_only = bool(read_only)
         self.__conn_count = 0
+        self.__lock = cast(threading.Lock, lock_cls())
 
         self.__domains = DomainAccess(self)
 
@@ -49,12 +66,20 @@ class Hypervisor:
         return f'<fvirt.libvirt.Hypervisor: uri={ str(self.uri) }, ro={ self.read_only }, conns={ self.__conn_count }>'
 
     def __bool__(self: Self) -> bool:
-        return self.__conn_count > 0
+        with self.__lock:
+            return self.__conn_count > 0
 
     def __del__(self: Self) -> None:
-        if self._connection is not None and self.__conn_count > 0:
-            self._connection.close()
-            self._connection = None
+        with self.__lock:
+            if self.__conn_count > 0:
+                self.__conn_count = 0
+
+            if self._connection is not None:
+                if self._connection.isAlive():
+                    self._connection.unregisterCloseCallback()
+                    self._connection.close()
+
+                self._connection = None
 
     def __enter__(self: Self) -> Self:
         return self.open()
@@ -82,9 +107,16 @@ class Hypervisor:
 
     @property
     def uri(self: Self) -> URI:
+        '''The canonicalized URI for this Hypervisor connection.'''
         with self:
             assert self._connection is not None
             return URI.from_string(self._connection.getURI())
+
+    @property
+    def connected(self: Self) -> bool:
+        '''Whether or not the Hypervisor is connected.'''
+        with self.__lock:
+            return self._connection is not None and self._connection.isAlive()
 
     @property
     def domains(self: Self) -> DomainAccess:
@@ -103,41 +135,74 @@ class Hypervisor:
     def open(self: Self) -> Self:
         '''Open the connection represented by this Hypervisor instance.
 
+           Hypervisor instances use reference counting to ensure that
+           at most one connection is opened for any given Hypervisor
+           instance. If there is already a connection open, a new one
+           will not be opened.
+
+           If the connection is lost, we will automatically try to
+           reconnect.
+
            In most cases, it is preferred to use either the context
            manager interface, or property access, both of which will
            handle connections correctly for you.'''
-        if self._connection is None:
-            try:
-                if self.read_only:
-                    self._connection = libvirt.openReadOnly(str(self._uri))
-                else:
-                    self._connection = libvirt.open(str(self._uri))
-            except libvirt.libvirtError as e:
-                raise e
+        def cb(*args: Any, **kwargs: Any) -> None:
+            with self.__lock:
+                try:
+                    if self.read_only:
+                        self._connection = libvirt.openReadOnly(str(self._uri))
+                    else:
+                        self._connection = libvirt.open(str(self._uri))
+                except libvirt.libvirtError as e:
+                    raise e
 
-            self.__conn_count += 1
-        else:
-            if self.__conn_count == 0:
-                raise RuntimeError
-            else:
+                self._connection.registerCloseCallback(cb, None)
+
+        with self.__lock:
+            if self._connection is None or not self._connection.isAlive():
+                try:
+                    if self.read_only:
+                        self._connection = libvirt.openReadOnly(str(self._uri))
+                    else:
+                        self._connection = libvirt.open(str(self._uri))
+                except libvirt.libvirtError as e:
+                    raise e
+
+                self._connection.registerCloseCallback(cb, None)
                 self.__conn_count += 1
+            else:
+                if self.__conn_count == 0:
+                    raise RuntimeError
+                else:
+                    self.__conn_count += 1
 
         return self
 
     def close(self: Self) -> None:
-        '''Close any open connection represented by this hypervisor instance.
+        '''Reduce the connection count for this Hypervisor.
 
-           Open connections will be cleaned up automatically when a
-           Hypervisor instance is destroyed, so you should usually not
-           need to call this method directly.'''
-        if self._connection is not None and self.__conn_count < 2:
-            self._connection.close()
-            self._connection = None
+           If this reduces the connection count to 0, then any open
+           connection is closed.
 
-        self.__conn_count -= 1
+           Any open connections will also be closed when the Hypervisor
+           instance is garbage-collected, so forgetting to close your
+           connections is generally still safe.
 
-        if self.__conn_count < 0:
-            self.__conn_count = 0
+           If you are using the context manager interface or the entity
+           access protocols, you should not need to call this function
+           manually.'''
+        with self.__lock:
+            if self._connection is not None and self.__conn_count < 2:
+                if self._connection.isAlive():
+                    self._connection.unregisterCloseCallback()
+                    self._connection.close()
+
+                self._connection = None
+
+            self.__conn_count -= 1
+
+            if self.__conn_count < 0:
+                self.__conn_count = 0
 
     def defineDomain(self: Self, config: str) -> Domain:
         '''Define a domain from an XML config string.

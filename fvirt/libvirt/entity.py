@@ -50,8 +50,13 @@ class Entity(ABC):
             self.__conn = parent
             self.__parent = None
 
+        self.__conn.open()
+
         self.__entity = entity
         self.__valid = True
+
+    def __del__(self: Self) -> None:
+        self.__conn.close()
 
     def __format__(self: Self, format_spec: str) -> str:
         fmt_args: dict[str, Any] = dict()
@@ -70,10 +75,6 @@ class Entity(ABC):
 
     def __enter__(self: Self) -> Self:
         self._check_valid()
-
-        if self.__conn._connection is None:
-            raise NotConnected
-
         return self
 
     def __exit__(self: Self, *args: Any, **kwargs: Any) -> None:
@@ -88,6 +89,9 @@ class Entity(ABC):
            not valid.'''
         if not self.valid:
             raise InvalidEntity
+
+        if not self.__conn:
+            raise NotConnected
 
     @property
     def _format_properties(self: Self) -> set[str]:
