@@ -8,13 +8,13 @@ from __future__ import annotations
 from .._base.list import ListCommand
 from ...libvirt.storage_pool import MATCH_ALIASES
 from ...util.tables import Column, color_bool
-from ...util.terminal import TERM
+from ...util.terminal import get_terminal
 
 
 def color_state(value: bool) -> str:
     '''Apply colors to a pool state.'''
     if value:
-        return TERM.bright_green_on_black('running')
+        return get_terminal().bright_green_on_black('running')
     else:
         return 'inactive'
 

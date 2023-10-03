@@ -5,10 +5,24 @@
 
 from __future__ import annotations
 
+import functools
+
 import blessed
 
-TERM = blessed.Terminal()
+
+@functools.cache
+def get_terminal() -> blessed.Terminal:
+    '''Return a blessed.Terminal instance.
+
+       A function is used here so that we can defer initializing the
+       object until it}s actually needed, which saves significant time
+       on startup because most things don't use it.
+
+       The return value is cached so that only a single instance is
+       ever used.'''
+    return blessed.Terminal()
+
 
 __all__ = [
-    'TERM',
+    'get_terminal',
 ]

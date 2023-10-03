@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any, Self, Type
 
 import click
 
-from .terminal import TERM
+from .terminal import get_terminal
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Mapping, Sequence
@@ -79,7 +79,7 @@ def print_columns(columns: Mapping[str, Column], defaults: Sequence[str]) -> Non
 def color_bool(value: bool) -> str:
     '''Produce a colored string from a boolean.'''
     if value:
-        return TERM.bright_green_on_black('Yes')
+        return get_terminal().bright_green_on_black('Yes')
     else:
         return 'No'
 
@@ -116,6 +116,7 @@ def render_table(items: Sequence[Sequence[str]], columns: Sequence[Column]) -> s
        `columns` is a list of corresponding Column instances for the
        columns to be used for the table.'''
     ret = ''
+    TERM = get_terminal()
 
     column_sizes = [
         max([

@@ -11,11 +11,13 @@ from .._base.list import ListCommand
 from ...libvirt import DomainState
 from ...libvirt.domain import MATCH_ALIASES
 from ...util.tables import Column, color_bool
-from ...util.terminal import TERM
+from ...util.terminal import get_terminal
 
 
 def color_state(state: DomainState) -> str:
     '''Apply colors to a domain state.'''
+    TERM = get_terminal()
+
     match state:
         case d if d in {DomainState.RUNNING}:
             return TERM.bright_green_on_black(str(state))
