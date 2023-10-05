@@ -402,6 +402,7 @@ class DefineCommand(Command):
 
         params += (click.Argument(
             param_decls=('configpath',),
+            type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True, resolve_path=True),
             nargs=-1,
         ),)
 
