@@ -107,7 +107,7 @@ def tabulate_entities(domains: Iterable[Entity], columns: Mapping[str, Column], 
     return ret
 
 
-def render_table(items: Sequence[Sequence[str]], columns: Sequence[Column]) -> str:
+def render_table(items: Sequence[Sequence[str]], columns: Sequence[Column], headings: bool = True) -> str:
     '''Render a table of items.
 
        `items` should be a list of rows, where each row is a list of
@@ -121,18 +121,23 @@ def render_table(items: Sequence[Sequence[str]], columns: Sequence[Column]) -> s
     column_sizes = [
         max([
             TERM.length(columns[i].color(row[i])) for row in items
-        ] + [len(columns[i].title)]) for i in range(0, len(columns))
+        ]) for i in range(0, len(columns))
     ]
 
-    for idx, column in enumerate(columns):
-        if columns[idx].right_align:
-            ret += f'  {column.title:>{column_sizes[idx]}}'
-        else:
-            ret += f'  {column.title:<{column_sizes[idx]}}'
+    if headings:
+        column_sizes = [
+            max(column_sizes[i], len(columns[i].title)) for i in range(0, len(columns))
+        ]
 
-    ret += '\n'
-    ret += (TERM.bold('-' * (sum(column_sizes) + (2 * len(column_sizes)))))
-    ret += '\n'
+        for idx, column in enumerate(columns):
+            if columns[idx].right_align:
+                ret += f'  {column.title:>{column_sizes[idx]}}'
+            else:
+                ret += f'  {column.title:<{column_sizes[idx]}}'
+
+        ret += '\n'
+        ret += (TERM.bold('-' * (sum(column_sizes) + (2 * len(column_sizes)))))
+        ret += '\n'
 
     for row in items:
         for idx, item in enumerate(row):
@@ -143,7 +148,7 @@ def render_table(items: Sequence[Sequence[str]], columns: Sequence[Column]) -> s
 
         ret += '\n'
 
-    return ret
+    return ret.rstrip()
 
 
 __all__ = [

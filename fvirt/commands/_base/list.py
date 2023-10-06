@@ -60,6 +60,12 @@ class ListCommand(MatchCommand):
                 help=f'Limit the output to a simple list of { doc_name }s by the specified property.',
                 default=None,
             ),
+            click.Option(
+                param_decls=('--no-headings',),
+                is_flag=True,
+                default=False,
+                help=f'Don’t print headings when outputing the table of { doc_name }s.',
+            ),
         )
 
         def cb(
@@ -67,6 +73,7 @@ class ListCommand(MatchCommand):
             state: State,
             cols: Sequence[str],
             only: str | None,
+            no_headings: bool,
             match: tuple[MatchTarget, re.Pattern] | None,
             name: str | None = None
         ) -> None:
@@ -105,6 +112,7 @@ class ListCommand(MatchCommand):
                 click.echo(render_table(
                     data,
                     [columns[x] for x in cols],
+                    headings=not no_headings,
                 ))
 
         if obj_prop is None:
