@@ -81,6 +81,11 @@ list_domains = ListCommand(
     default_cols=DEFAULT_COLS,
     hvprop='domains',
     doc_name='domain',
+    single_list_props=(
+        'name',
+        'uuid',
+        'id',
+    ),
 )
 
 __all__ = [

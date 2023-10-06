@@ -35,6 +35,7 @@ class ListCommand(MatchCommand):
             default_cols: Sequence[str],
             doc_name: str,
             hvprop: str,
+            single_list_props: tuple[str, ...] = ('name', 'uuid'),
             obj_prop: str | None = None,
             obj_name: str | None = None,
             hvmetavar: str | None = None,
@@ -44,15 +45,31 @@ class ListCommand(MatchCommand):
             hidden: bool = False,
             deprecated: bool = False,
             ) -> None:
-        params = tuple(params) + (click.Option(
-            param_decls=('--columns', 'cols'),
-            type=ColumnsParam(columns, f'{ doc_name } columns')(),
-            nargs=1,
-            help=f'A comma separated list of columns to show when listing { doc_name }s. Use `--columns list` to list recognized column names.',
-            default=default_cols,
-        ),)
+        params = tuple(params) + (
+            click.Option(
+                param_decls=('--columns', 'cols'),
+                type=ColumnsParam(columns, f'{ doc_name } columns')(),
+                nargs=1,
+                help=f'A comma separated list of columns to show when listing { doc_name }s. Use `--columns list` to list recognized column names.',
+                default=default_cols,
+            ),
+            click.Option(
+                param_decls=('--only',),
+                type=click.Choice(single_list_props),
+                nargs=1,
+                help=f'Limit the output to a simple list of { doc_name }s by the specified property.',
+                default=None,
+            ),
+        )
 
-        def cb(ctx: click.Context, state: State, cols: Sequence[str], match: tuple[MatchTarget, re.Pattern] | None, name: str | None = None) -> None:
+        def cb(
+            ctx: click.Context,
+            state: State,
+            cols: Sequence[str],
+            only: str | None,
+            match: tuple[MatchTarget, re.Pattern] | None,
+            name: str | None = None
+        ) -> None:
             if cols == ['list']:
                 print_columns(columns, default_cols)
                 ctx.exit(0)
@@ -78,14 +95,17 @@ class ListCommand(MatchCommand):
                 if not entities and state.fail_if_no_match:
                     ctx.fail('No { doc_name }s found matching the specified parameters.')
 
-                data = tabulate_entities(entities, columns, cols)
+                if only is None:
+                    data = tabulate_entities(entities, columns, cols)
+                else:
+                    for e in entities:
+                        click.echo(getattr(e, only))
 
-            output = render_table(
-                data,
-                [columns[x] for x in cols],
-            )
-
-            click.echo(output)
+            if only is None:
+                click.echo(render_table(
+                    data,
+                    [columns[x] for x in cols],
+                ))
 
         if obj_prop is None:
             docstr = f'''

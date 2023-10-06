@@ -35,6 +35,10 @@ list_volumes = ListCommand(
     obj_prop='volumes',
     doc_name='volume',
     obj_name='storage pool',
+    single_list_props=(
+        'name',
+        'key',
+    ),
 )
 
 __all__ = [
