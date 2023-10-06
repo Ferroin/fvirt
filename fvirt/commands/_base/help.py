@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Self
+from typing import TYPE_CHECKING, Self, cast
 
 import click
 
@@ -51,8 +51,9 @@ class AliasHelpTopic(HelpTopic):
         )
 
 
-def _print_topics(ctx: click.core.Context, cmds: Mapping[str, click.Command], topics: Iterable[HelpTopic]) -> None:
+def _print_topics(ctx: click.Context, group: Group, topics: Iterable[HelpTopic]) -> None:
     '''Print out the topics for a help command.'''
+    cmds = {n: cast(click.Command, group.get_command(ctx, n)) for n in group.list_commands(ctx) if group.get_command(ctx, n) is not None}
     cmds_width = max([len(x) for x in cmds]) + 2
 
     click.echo('')
@@ -98,13 +99,13 @@ class HelpCommand(Command):
 
                     if subcmd is None:
                         click.echo(f'{ topic } is not a recognized help topic.')
-                        _print_topics(ctx, group.commands, topics)
+                        _print_topics(ctx, group, topics)
                         ctx.exit(1)
                     else:
                         ctx.info_name = topic
                         click.echo(subcmd.get_help(ctx))
                         if t == 'help':
-                            _print_topics(ctx, group.commands, topics)
+                            _print_topics(ctx, group, topics)
                         ctx.exit(0)
 
         super().__init__(

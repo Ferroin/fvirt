@@ -101,6 +101,7 @@ class Group(click.Group):
 
         return super().get_command(ctx, name)
 
+    @functools.cache
     def _lazy_load(self: Self, cmd_name: str) -> click.BaseCommand:
         import_path = self.__lazy_commands[cmd_name]
         modname, cmd_name = import_path.rsplit('.', 1)
@@ -109,7 +110,7 @@ class Group(click.Group):
 
         if not isinstance(cmd, click.BaseCommand):
             raise ValueError(
-                f'Lazy loading of {import_path} failed by returning '
+                f'Lazy loading of { import_path } failed by returning '
                 'a non-command object'
             )
 
