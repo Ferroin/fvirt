@@ -16,6 +16,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping
 
     from .group import Group
+    from .state import State
     from ...util.match import MatchAlias
 
 
@@ -83,7 +84,7 @@ class HelpCommand(Command):
             ) -> None:
         topic_map = {t.name: t for t in topics}
 
-        def cb(ctx: click.Context, topic: str | None) -> None:
+        def cb(ctx: click.Context, _state: State, topic: str | None) -> None:
             match topic:
                 case '' | None:
                     ctx.info_name = group.name

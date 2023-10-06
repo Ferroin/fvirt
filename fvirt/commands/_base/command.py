@@ -14,6 +14,8 @@ import click
 if TYPE_CHECKING:
     from collections.abc import Callable, MutableMapping, Sequence
 
+    from .state import State
+
 
 P = ParamSpec('P')
 T = TypeVar('T')
@@ -30,7 +32,7 @@ class Command(click.Command):
             self: Self,
             name: str,
             help: str,
-            callback: Callable[Concatenate[click.core.Context, P], T],
+            callback: Callable[Concatenate[click.Context, State, P], T],
             short_help: str | None = None,
             epilog: str | None = None,
             params: Sequence[click.Parameter] = [],
@@ -43,7 +45,8 @@ class Command(click.Command):
 
         @functools.wraps(callback)
         def f(*args: P.args, **kwargs: P.kwargs) -> T:
-            return callback(click.get_current_context(), *args, **kwargs)
+            ctx = click.get_current_context()
+            return callback(ctx, ctx.obj, *args, **kwargs)
 
         super().__init__(
             name=name,

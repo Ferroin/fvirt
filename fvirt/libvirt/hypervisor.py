@@ -8,7 +8,7 @@ from __future__ import annotations
 import threading
 
 from types import TracebackType
-from typing import Any, Self, Type, cast
+from typing import Any, Self, cast
 
 import libvirt
 
@@ -41,22 +41,20 @@ class Hypervisor:
        Storage pools can be accessed via the `pools`, `pools_by_name`,
        or `pools_by_uuid` properties.
 
-       Internal state is protected from concurrent access using a lock. By
-       default, a threading.Lock instance is used so that Hypervisor
-       instances are thread-safe. You can override this by providing
-       the lock class to use with the lock_cls parameter. This is needed
-       for example if you are using asyncio, in which case asyncio.Lock
-       should be used instead.
+       Internal state is protected from concurrent access using a
+       threading.RLock instance. This means that Hypervisor instances are
+       just as thread-safe as libvirt itself, but they are notably _not_
+       asyncio safe.
 
        The underlying libvirt APIs are all concurrent-access safe
        irrespective of the concurrency model in use.'''
-    def __init__(self: Self, hvuri: URI, read_only: bool = False, lock_cls: Type[object] = threading.Lock) -> None:
+    def __init__(self: Self, hvuri: URI, read_only: bool = False) -> None:
         self._uri = hvuri
 
         self._connection: libvirt.virConnect | None = None
         self.__read_only = bool(read_only)
         self.__conn_count = 0
-        self.__lock = cast(threading.Lock, lock_cls())
+        self.__lock = threading.RLock()
 
         self.__domains = DomainAccess(self)
 

@@ -14,7 +14,6 @@ import libvirt
 from lxml import etree
 
 from .match import MatchCommand, get_match_or_entity
-from ...libvirt import Hypervisor
 from ...libvirt.entity import ConfigurableEntity
 from ...util.match import MatchAlias, MatchTarget
 
@@ -22,6 +21,8 @@ if TYPE_CHECKING:
     import re
 
     from collections.abc import Mapping, Sequence
+
+    from .state import State
 
 
 class XSLTCommand(MatchCommand):
@@ -45,10 +46,10 @@ class XSLTCommand(MatchCommand):
             ) -> None:
         params: tuple[click.Parameter, ...] = tuple()
 
-        def cb(ctx: click.Context, entity: str | None, match: tuple[MatchTarget, re.Pattern] | None, xslt: str, parent: str | None = None) -> None:
+        def cb(ctx: click.Context, state: State, entity: str | None, match: tuple[MatchTarget, re.Pattern] | None, xslt: str, parent: str | None = None) -> None:
             xform = etree.XSLT(etree.parse(xslt))
 
-            with Hypervisor(hvuri=ctx.obj['uri']) as hv:
+            with state.hypervisor as hv:
                 entities = cast(Sequence[ConfigurableEntity], get_match_or_entity(
                     hv=hv,
                     hvprop=hvprop,
@@ -66,7 +67,7 @@ class XSLTCommand(MatchCommand):
                 except libvirt.libvirtError:
                     click.echo(f'Failed to modify { doc_name } "{ e.name }".')
 
-                    if ctx.obj['fail_fast']:
+                    if state.fail_fast:
                         break
                 else:
                     click.echo(f'Successfully modified { doc_name } "{ e.name }".')
@@ -79,7 +80,7 @@ class XSLTCommand(MatchCommand):
             click.echo(f'  Failed:      { len(entities) - success }')
             click.echo(f'Total:         { len(entities) }')
 
-            if success != len(entities) and ctx.obj['fail_fast'] or (not entities and ctx.obj['fail_if_no_match']):
+            if success != len(entities) and state.fail_fast or (not entities and state.fail_if_no_match):
                 ctx.exit(3)
 
         if parent_prop is None:

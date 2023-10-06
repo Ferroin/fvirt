@@ -34,7 +34,7 @@ class Group(click.Group):
             self: Self,
             name: str,
             help: str,
-            callback: Callable[Concatenate[click.core.Context, P], T],
+            callback: Callable[Concatenate[click.Context, P], T],
             commands: Sequence[click.Command] = [],
             lazy_commands: Mapping[str, str] = dict(),
             help_topics: Iterable[HelpTopic] = [],

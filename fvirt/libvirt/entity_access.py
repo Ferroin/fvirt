@@ -151,7 +151,15 @@ class EntityAccess(BaseEntityAccess, Iterable):
     '''Class providing top-level entity access protocol.
 
        Instances are directly iterable to access entities, though the
-       iteration order is explicitly not specified.'''
+       iteration order is explicitly not specified.
+
+       When used as an iterator, the underlying libvirt objects are all
+       allocated when initially starting iteration, but the fvirt.libvirt
+       wrappers are only constructed as needed. This saves some memory
+       for the common case of the individual objects going out of scope
+       relatively quickly, but it also means that iterator access only
+       works correctly if you have something holding the Hypervisor
+       connection open.'''
     def __iter__(self: Self) -> Iterator[Entity]:
         with self._parent:
             link = self._get_parent_link()

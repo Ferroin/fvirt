@@ -5,14 +5,20 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING, Self
+
 import click
 
 from .commands import LAZY_COMMANDS
 from .commands._base.group import Group
 from .commands._base.help import HelpTopic
+from .commands._base.state import State
 from .libvirt import API_VERSION, URI, Driver, Transport
 from .util.match import MATCH_HELP
 from .version import VERSION
+
+if TYPE_CHECKING:
+    import threading
 
 RECOGNIZED_DRIVERS = sorted(list({e.value for e in Driver}))
 RECOGNIZED_TRANSPORTS = sorted(list({e.value for e in Transport if e.value}))
@@ -58,11 +64,12 @@ def cb(
         click.echo(f'fvirt { VERSION }, using libvirt-python { API_VERSION }')
         ctx.exit(0)
 
-    ctx.ensure_object(dict)
-    ctx.obj['uri'] = URI.from_string(connect)
-    ctx.obj['fail_fast'] = fail_fast
-    ctx.obj['idempotent'] = idempotent
-    ctx.obj['fail_if_no_match'] = fail_if_no_match
+    ctx.obj = State(
+        uri=URI.from_string(connect),
+        fail_fast=fail_fast,
+        idempotent=idempotent,
+        fail_if_no_match=fail_if_no_match,
+    )
 
 
 cli = Group(

@@ -23,6 +23,7 @@ from ...libvirt.entity import Entity, RunnableEntity
 from ...util.match import MatchTarget
 
 if TYPE_CHECKING:
+    from .state import State
     from ...util.match import MatchAlias
 
 P = ParamSpec('P')
@@ -60,7 +61,7 @@ class LifecycleCommand(MatchCommand):
     def __init__(
             self: Self,
             name: str,
-            callback: Callable[Concatenate[click.Context, Entity, P], LifecycleResult],
+            callback: Callable[Concatenate[click.Context, State, Entity, P], LifecycleResult],
             aliases: Mapping[str, MatchAlias],
             doc_name: str,
             op_help: OperationHelpInfo,
@@ -72,8 +73,8 @@ class LifecycleCommand(MatchCommand):
             deprecated: bool = False,
             ) -> None:
         @functools.wraps(callback)
-        def cb(ctx: click.Context, *args: P.args, **kwargs: P.kwargs) -> None:
-            with Hypervisor(hvuri=ctx.obj['uri']) as hv:
+        def cb(ctx: click.Context, state: State, *args: P.args, **kwargs: P.kwargs) -> None:
+            with state.hypervisor as hv:
                 entities = cast(Sequence[RunnableEntity], get_match_or_entity(
                     hv=hv,
                     hvprop=hvprop,
@@ -89,7 +90,7 @@ class LifecycleCommand(MatchCommand):
                 forced = 0
 
                 for e in entities:
-                    match callback(ctx, e, *args, **kwargs):
+                    match callback(ctx, state, e, *args, **kwargs):
                         case LifecycleResult.SUCCESS:
                             click.echo(f'{ op_help.continuous.capitalize() } { doc_name } "{ e.name }".')
                             success += 1
@@ -97,18 +98,18 @@ class LifecycleCommand(MatchCommand):
                             click.echo(f'{ doc_name.capitalize() } "{ e.name }" is already { op_help.idempotent_state }.')
                             skipped += 1
 
-                            if ctx.obj['idempotent']:
+                            if state.idempotent:
                                 success += 1
                         case LifecycleResult.FAILURE:
                             click.echo(f'Failed to { op_help.verb } { doc_name } "{ e.name }".')
 
-                            if ctx.obj['fail_fast']:
+                            if state.fail_fast:
                                 break
                         case LifecycleResult.TIMED_OUT:
                             click.echo(f'Timed out waiting for { doc_name } "{ e.name }" to { op_help.verb }.')
                             timed_out += 1
 
-                            if ctx.obj['fail_fast']:
+                            if state.fail_fast:
                                 break
                         case LifecycleResult.FORCED:
                             click.echo(f'{ doc_name.capitalize() } "{ e.name }" failed to { op_help.verb } and was forced to do so anyway.')
@@ -133,7 +134,7 @@ class LifecycleCommand(MatchCommand):
 
                 click.echo(f'Total:         { len(entities) }')
 
-                if success != len(entities) and ctx.obj['fail_fast'] or (not entities and ctx.obj['fail_if_no_match']):
+                if success != len(entities) and state.fail_fast or (not entities and state.fail_if_no_match):
                     ctx.exit(3)
 
         params = tuple(params) + (click.Argument(
@@ -209,8 +210,8 @@ class SimpleLifecycleCommand(ABC, LifecycleCommand):
             hidden: bool = False,
             deprecated: bool = False,
             ) -> None:
-        def cb(ctx: click.Context, entity: Entity, /) -> LifecycleResult:
-            return cast(LifecycleResult, getattr(entity, self.METHOD)(idempotent=ctx.obj['idempotent']))
+        def cb(ctx: click.Context, state: State, entity: Entity, /) -> LifecycleResult:
+            return cast(LifecycleResult, getattr(entity, self.METHOD)(idempotent=ctx.obj.idempotent))
 
         super().__init__(
             name=name,
@@ -312,7 +313,7 @@ class DefineCommand(Command):
         if None in parent_args and parent_args != {None}:
             raise ValueError('Either both of parent and parent_name must be specified, or neither must be specified.')
 
-        def cb(ctx: click.Context, confpath: Sequence[str], parent_obj: str | None = None) -> None:
+        def cb(ctx: click.Context, state: State, confpath: Sequence[str], parent_obj: str | None = None) -> None:
             success = 0
 
             confdata = []
@@ -321,7 +322,7 @@ class DefineCommand(Command):
                 with click.open_file(cpath, mode='r') as config:
                     confdata.append(config.read())
 
-            with Hypervisor(hvuri=ctx.obj['uri']) as hv:
+            with state.hypervisor as hv:
                 if parent is not None:
                     assert parent_name is not None
                     assert name is not None
@@ -341,7 +342,7 @@ class DefineCommand(Command):
                     except InvalidConfig:
                         click.echo(f'The configuration at { cpath } is not valid for a { doc_name }.')
 
-                        if ctx.obj['fail_fast']:
+                        if state.fail_fast:
                             break
 
                     click.echo(f'Successfully defined { doc_name }: { entity.name }')

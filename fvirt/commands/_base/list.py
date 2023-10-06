@@ -11,7 +11,6 @@ from typing import TYPE_CHECKING, Any, Self
 import click
 
 from .match import MatchCommand
-from ...libvirt import Hypervisor
 from ...util.match import MatchAlias, MatchTarget
 from ...util.tables import Column, ColumnsParam, print_columns, render_table, tabulate_entities
 
@@ -19,6 +18,8 @@ if TYPE_CHECKING:
     import re
 
     from collections.abc import Mapping, MutableMapping, Sequence
+
+    from .state import State
 
 
 class ListCommand(MatchCommand):
@@ -51,12 +52,12 @@ class ListCommand(MatchCommand):
             default=default_cols,
         ),)
 
-        def cb(ctx: click.Context, cols: Sequence[str], match: tuple[MatchTarget, re.Pattern] | None, name: str | None = None) -> None:
+        def cb(ctx: click.Context, state: State, cols: Sequence[str], match: tuple[MatchTarget, re.Pattern] | None, name: str | None = None) -> None:
             if cols == ['list']:
                 print_columns(columns, default_cols)
                 ctx.exit(0)
 
-            with Hypervisor(hvuri=ctx.obj['uri']) as hv:
+            with state.hypervisor as hv:
                 if obj_prop is None:
                     obj = hv
                     prop = hvprop
@@ -74,7 +75,7 @@ class ListCommand(MatchCommand):
                 else:
                     entities = getattr(obj, prop).match(match)
 
-                if not entities and ctx.obj['fail_if_no_match']:
+                if not entities and state.fail_if_no_match:
                     ctx.fail('No { doc_name }s found matching the specified parameters.')
 
                 data = tabulate_entities(entities, columns, cols)

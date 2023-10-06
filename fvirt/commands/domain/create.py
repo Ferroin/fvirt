@@ -10,10 +10,12 @@ from typing import TYPE_CHECKING
 import click
 
 from .._base.command import Command
-from ...libvirt import Hypervisor, InsufficientPrivileges, InvalidConfig
+from ...libvirt import InsufficientPrivileges, InvalidConfig
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+
+    from .._base.state import State
 
 HELP = '''
 Create one or more new transient domains.
@@ -44,6 +46,7 @@ This command does not support fvirt's idempotent mode.
 
 def cb(
         ctx: click.Context,
+        state: State,
         confpath: Sequence[str],
         paused: bool,
         reset_nvram: bool,
@@ -56,7 +59,7 @@ def cb(
         with click.open_file(cpath, mode='r') as config:
             confdata.append(config.read())
 
-    with Hypervisor(hvuri=ctx.obj['uri']) as hv:
+    with state.hypervisor as hv:
         for conf in confdata:
             try:
                 entity = hv.createDomain(conf, paused=paused, reset_nvram=reset_nvram)
@@ -65,7 +68,7 @@ def cb(
             except InvalidConfig:
                 click.echo(f'The configuration at { cpath } is not valid for a domain.')
 
-                if ctx.obj['fail_fast']:
+                if state.fail_fast:
                     break
 
             click.echo(f'Successfully created domain: { entity.name }')

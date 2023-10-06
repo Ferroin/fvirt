@@ -20,6 +20,7 @@ from ...util.match import MatchAlias, MatchTarget
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping, MutableMapping, Sequence
 
+    from .state import State
     from ...libvirt import Hypervisor
 
 P = ParamSpec('P')
@@ -88,11 +89,12 @@ def get_match_or_entity(
 
        This is a helper function intended to simplify writing callbacks for MatchCommands.'''
     entities: list[Entity] = []
+    state: State = ctx.obj
 
     if match is not None:
         entities = list(getattr(hv, hvprop).match(match))
 
-        if not entities and ctx.obj['fail_if_no_match']:
+        if not entities and state.fail_if_no_match:
             click.echo(f'No { doc_name }s found matching the specified criteria.', err=True)
             ctx.exit(2)
     elif entity is not None:
@@ -116,7 +118,7 @@ class MatchCommand(Command):
             self: Self,
             name: str,
             help: str,
-            callback: Callable[Concatenate[click.Context, P], T],
+            callback: Callable[Concatenate[click.Context, State, P], T],
             aliases: Mapping[str, MatchAlias],
             doc_name: str,
             short_help: str | None = None,

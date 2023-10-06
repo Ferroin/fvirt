@@ -5,18 +5,21 @@
 
 from __future__ import annotations
 
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 import click
 
 from .._base.lifecycle import LifecycleCommand, OperationHelpInfo
 from ...libvirt import Domain, LifecycleResult
 from ...libvirt.domain import MATCH_ALIASES
-from ...libvirt.entity import Entity
+
+if TYPE_CHECKING:
+    from .._base.state import State
+    from ...libvirt.entity import Entity
 
 
-def callback(ctx: click.Context, domain: Entity, /, *, timeout: int, force: bool) -> LifecycleResult:
-    return cast(Domain, domain).shutdown(timeout=timeout, force=force, idempotent=ctx.obj['idempotent'])
+def callback(ctx: click.Context, state: State, domain: Entity, /, *, timeout: int, force: bool) -> LifecycleResult:
+    return cast(Domain, domain).shutdown(timeout=timeout, force=force, idempotent=state.idempotent)
 
 
 shutdown = LifecycleCommand(
