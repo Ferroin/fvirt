@@ -16,6 +16,7 @@ pool = Group(
     lazy_commands={
         'autostart': 'fvirt.commands.pool.autostart.autostart',
         'define': 'fvirt.commands.pool.define.define',
+        'delete': 'fvirt.commands.pool.delete.delete',
         'list': 'fvirt.commands.pool.list.list_pools',
         'start': 'fvirt.commands.pool.start.start',
         'stop': 'fvirt.commands.pool.stop.stop',

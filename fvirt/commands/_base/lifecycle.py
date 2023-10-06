@@ -134,7 +134,7 @@ class LifecycleCommand(MatchCommand):
 
                 click.echo(f'Total:         { len(entities) }')
 
-                if success != len(entities) and state.fail_fast or (not entities and state.fail_if_no_match):
+                if success != len(entities) or (not entities and state.fail_if_no_match):
                     ctx.exit(3)
 
         params = tuple(params) + (click.Argument(

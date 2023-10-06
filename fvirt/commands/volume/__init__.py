@@ -14,6 +14,7 @@ volume = Group(
     callback=lambda x: None,
     lazy_commands={
         'define': 'fvirt.commands.volume.define.define',
+        'delete': 'fvirt.commands.volume.delete.delete',
         'list': 'fvirt.commands.volume.list.list_volumes',
     },
     aliases=MATCH_ALIASES,

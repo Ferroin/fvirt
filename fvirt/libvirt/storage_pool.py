@@ -6,11 +6,11 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
-from typing import TYPE_CHECKING, Any, Self
+from typing import TYPE_CHECKING, Self
 
 import libvirt
 
-from .entity import ConfigProperty, ConfigurableEntity, RunnableEntity
+from .entity import ConfigProperty, ConfigurableEntity, LifecycleResult, RunnableEntity
 from .entity_access import BaseEntityAccess, EntityAccess, NameMap, UUIDMap
 from .exceptions import InsufficientPrivileges, InvalidConfig, NotConnected
 from .volume import Volume, VolumeAccess
@@ -122,6 +122,25 @@ class StoragePool(ConfigurableEntity, RunnableEntity):
         '''Refresh the list of volumes in the pool.'''
         self._check_valid()
         self._entity.refresh()
+
+    def delete(self: Self, idempotent: bool = True) -> LifecycleResult:
+        '''Delete the underlying storage resources for the pool.
+
+           This is a non-recoverable destructive operation.'''
+        if not self.valid:
+            if idempotent:
+                return LifecycleResult.SUCCESS
+            else:
+                return LifecycleResult.FAILURE
+
+        try:
+            self._entity.delete()
+        except libvirt.libvirtError:
+            return LifecycleResult.FAILURE
+
+        self.__valid = False
+
+        return LifecycleResult.SUCCESS
 
     def defineVolume(self: Self, config: str) -> Volume:
         '''Define a volume within the storage pool.
