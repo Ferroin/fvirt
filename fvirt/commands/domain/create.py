@@ -91,19 +91,19 @@ create = Command(
     help=HELP,
     params=(
         click.Option(
-            param_decls='--paused',
+            param_decls=('--paused',),
             is_flag=True,
             default=False,
             help='Start the domain in paused state instead of running it immediately.',
         ),
         click.Option(
-            param_decls='--reset-nvram',
+            param_decls=('--reset-nvram',),
             is_flag=True,
             default=False,
             help='Reset any existing NVRAM state before starting the domain.',
         ),
         click.Argument(
-            param_decls='confpath',
+            param_decls=('confpath',),
             type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True, resolve_path=True),
             nargs=-1,
         ),

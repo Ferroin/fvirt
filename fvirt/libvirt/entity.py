@@ -562,6 +562,31 @@ class RunnableEntity(Entity):
 
         return bool(self._entity.isPersistent())
 
+    @property
+    def autostart(self: Self) -> bool | None:
+        '''Whether or not the domain is configured to auto-start.
+
+           A value of None wil be returned for entities that do not
+           support this functionality.'''
+        self._check_valid()
+
+        if hasattr(self._entity, 'autostart'):
+            return bool(self._entity.autostart())
+        else:
+            return None
+
+    @autostart.setter
+    def autostart(self: Self, value: bool) -> None:
+        self._check_valid()
+
+        if hasattr(self._entity, 'setAutostart'):
+            if self.__conn.read_only:
+                raise InsufficientPrivileges
+
+            self._entity.setAutostart(int(value))
+        else:
+            raise AttributeError('Entity does not support autostart.')
+
     def start(self: Self, /, *, idempotent: bool = False) -> \
             Literal[LifecycleResult.SUCCESS, LifecycleResult.FAILURE, LifecycleResult.NO_OPERATION]:
         '''Attempt to start the entity.

@@ -85,12 +85,11 @@ class StoragePool(ConfigurableEntity, RunnableEntity):
 
         super().__init__(pool, conn)
 
-        self.__auto_refresh = False
         self.__volumes = VolumeAccess(self)
 
     def __repr__(self: Self) -> str:
         if self.valid:
-            return f'<fvirt.libvirt.Pool: name={ self.name }, auto_refresh={ self.auto_refresh }>'
+            return f'<fvirt.libvirt.Pool: name={ self.name }>'
         else:
             return '<fvirt.libvirt.Pool: INVALID>'
 
@@ -119,52 +118,8 @@ class StoragePool(ConfigurableEntity, RunnableEntity):
         '''The number of volumes in the pool.'''
         return len(self.volumes)
 
-    @property
-    def autostart(self: Self) -> bool:
-        '''Control whether the pool starts automatically or not.
-
-           If set to True, then the pool will be started automatically
-           on system startup.'''
-        self._check_valid()
-        return bool(self._entity.autostart())
-
-    @autostart.setter
-    def autostart(self: Self, value: Any) -> None:
-        self._check_valid()
-
-        if self.__conn.read_only:
-            raise InsufficientPrivileges
-
-        value = int(bool(value))
-
-        self._entity.setAutostart(value)
-
-    @property
-    def auto_refresh(self: Self) -> bool:
-        '''Control pool auto-refresh behavior.
-
-           Defaults to False.
-
-           If set to True, then operations that read the list of volumes
-           in the pool will automatically call the Pool.refresh()
-           method when invoked. This ensures that you will always see
-           the current state of the pool when making such operations,
-           but can significantly impact performance.
-
-           This functionality is part of fvirt.libvirt, not libvirt
-           itself, and this property thus has no impact on libvirt
-           behavior.'''
-        return self.__auto_refresh
-
-    @auto_refresh.setter
-    def auto_refresh(self: Self, value: Any) -> None:
-        self.__auto_refresh = bool(value)
-
     def refresh(self: Self) -> None:
-        '''Refresh the list of volumes in the pool.
-
-           If the auto_refresh property is set to True, this will be
-           invoked automatically in most cases.'''
+        '''Refresh the list of volumes in the pool.'''
         self._check_valid()
         self._entity.refresh()
 

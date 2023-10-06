@@ -14,6 +14,7 @@ pool = Group(
     help='Perform various operations on libvirt storage pools.',
     callback=lambda x: None,
     lazy_commands={
+        'autostart': 'fvirt.commands.pool.autostart.autostart',
         'define': 'fvirt.commands.pool.define.define',
         'list': 'fvirt.commands.pool.list.list_pools',
         'start': 'fvirt.commands.pool.start.start',

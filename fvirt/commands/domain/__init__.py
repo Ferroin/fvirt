@@ -13,6 +13,7 @@ domain = Group(
     help='Perform various operations on libvirt domains.',
     callback=lambda x: None,
     lazy_commands={
+        'autostart': 'fvirt.commands.domain.autostart.autostart',
         'create': 'fvirt.commands.domain.create.create',
         'define': 'fvirt.commands.domain.define.define',
         'list': 'fvirt.commands.domain.list.list_domains',

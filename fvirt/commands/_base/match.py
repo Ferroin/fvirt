@@ -28,6 +28,8 @@ T = TypeVar('T')
 
 DEFAULT_MATCH = re.compile('.*')
 
+MatchArgument = tuple[MatchTarget, re.Pattern]
+
 
 def MatchTargetParam(aliases: Mapping[str, MatchAlias]) -> Type[click.ParamType]:
     '''Factory function for creating types for match tagets.
@@ -151,4 +153,6 @@ class MatchCommand(Command):
 
 __all__ = [
     'MatchCommand',
+    'MatchArgument',
+    'get_match_or_entity',
 ]
