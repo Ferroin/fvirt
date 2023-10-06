@@ -18,7 +18,7 @@ import click
 
 from .command import Command
 from .match import MatchCommand, get_match_or_entity
-from ...libvirt import Hypervisor, InsufficientPrivileges, InvalidConfig, LifecycleResult
+from ...libvirt import Hypervisor, InsufficientPrivileges, InvalidConfig, InvalidOperation, LifecycleResult
 from ...libvirt.entity import Entity, RunnableEntity
 from ...util.match import MatchTarget
 
@@ -90,32 +90,38 @@ class LifecycleCommand(MatchCommand):
                 forced = 0
 
                 for e in entities:
-                    match callback(ctx, state, e, *args, **kwargs):
-                        case LifecycleResult.SUCCESS:
-                            click.echo(f'{ op_help.continuous.capitalize() } { doc_name } "{ e.name }".')
-                            success += 1
-                        case LifecycleResult.NO_OPERATION:
-                            click.echo(f'{ doc_name.capitalize() } "{ e.name }" is already { op_help.idempotent_state }.')
-                            skipped += 1
-
-                            if state.idempotent:
+                    try:
+                        match callback(ctx, state, e, *args, **kwargs):
+                            case LifecycleResult.SUCCESS:
+                                click.echo(f'{ op_help.continuous.capitalize() } { doc_name } "{ e.name }".')
                                 success += 1
-                        case LifecycleResult.FAILURE:
-                            click.echo(f'Failed to { op_help.verb } { doc_name } "{ e.name }".')
+                            case LifecycleResult.NO_OPERATION:
+                                click.echo(f'{ doc_name.capitalize() } "{ e.name }" is already { op_help.idempotent_state }.')
+                                skipped += 1
 
-                            if state.fail_fast:
-                                break
-                        case LifecycleResult.TIMED_OUT:
-                            click.echo(f'Timed out waiting for { doc_name } "{ e.name }" to { op_help.verb }.')
-                            timed_out += 1
+                                if state.idempotent:
+                                    success += 1
+                            case LifecycleResult.FAILURE:
+                                click.echo(f'Failed to { op_help.verb } { doc_name } "{ e.name }".')
 
-                            if state.fail_fast:
-                                break
-                        case LifecycleResult.FORCED:
-                            click.echo(f'{ doc_name.capitalize() } "{ e.name }" failed to { op_help.verb } and was forced to do so anyway.')
-                            forced += 1
-                        case _:
-                            raise RuntimeError
+                                if state.fail_fast:
+                                    break
+                            case LifecycleResult.TIMED_OUT:
+                                click.echo(f'Timed out waiting for { doc_name } "{ e.name }" to { op_help.verb }.')
+                                timed_out += 1
+
+                                if state.fail_fast:
+                                    break
+                            case LifecycleResult.FORCED:
+                                click.echo(f'{ doc_name.capitalize() } "{ e.name }" failed to { op_help.verb } and was forced to do so anyway.')
+                                forced += 1
+                            case _:
+                                raise RuntimeError
+                    except InvalidOperation:
+                        click.echo(f'Failed to { op_help.verb } { doc_name } "{ e.name }", operation is not supported for this { doc_name }.')
+
+                        if state.fail_fast:
+                            break
 
                 click.echo(f'Finished { op_help.continuous } specified { doc_name }s.')
                 click.echo('')

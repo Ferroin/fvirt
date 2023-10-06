@@ -18,6 +18,7 @@ domain = Group(
         'define': 'fvirt.commands.domain.define.define',
         'list': 'fvirt.commands.domain.list.list_domains',
         'reset': 'fvirt.commands.domain.reset.reset',
+        'save': 'fvirt.commands.domain.save.save',
         'shutdown': 'fvirt.commands.domain.shutdown.shutdown',
         'start': 'fvirt.commands.domain.start.start',
         'stop': 'fvirt.commands.domain.stop.stop',

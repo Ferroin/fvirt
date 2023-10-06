@@ -14,7 +14,7 @@ import libvirt
 
 from .entity import ConfigAttributeProperty, ConfigElementProperty, ConfigurableEntity, LifecycleResult, RunnableEntity
 from .entity_access import BaseEntityAccess, EntityAccess, EntityMap, NameMap, UUIDMap
-from .exceptions import EntityNotRunning
+from .exceptions import EntityNotRunning, InvalidOperation
 from ..util.match import MatchAlias
 
 if TYPE_CHECKING:
@@ -351,6 +351,32 @@ class Domain(ConfigurableEntity, RunnableEntity):
                 return LifecycleResult.TIMED_OUT
         else:
             return LifecycleResult.SUCCESS
+
+    def managedSave(self: Self, idempotent: bool = True) -> LifecycleResult:
+        '''Suspend the domain and save it's state to disk.
+
+           On the next start, this saved state will be used to restore
+           the state of the domain.'''
+        self._check_valid()
+
+        if not self.running:
+            if self.hasManagedSave:
+                if idempotent:
+                    return LifecycleResult.NO_OPERATION
+                else:
+                    return LifecycleResult.FAILURE
+            else:
+                raise EntityNotRunning
+
+        if not self.persistent:
+            raise InvalidOperation('Managed saves are only possible for persistent domains.')
+
+        try:
+            self._entity.managedSave(flags=0)
+        except libvirt.libvirtError:
+            return LifecycleResult.FAILURE
+
+        return LifecycleResult.SUCCESS
 
 
 class Domains(BaseEntityAccess):

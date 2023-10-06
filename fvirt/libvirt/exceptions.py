@@ -26,7 +26,12 @@ class InvalidEntity(FVirtException):
     pass
 
 
-class EntityNotRunning(FVirtException):
+class InvalidOperation(FVirtException):
+    '''Raised when attempting an operation that is not valid on a particular entity.'''
+    pass
+
+
+class EntityNotRunning(InvalidOperation):
     '''Raised when attempting runtime-only operations on an entity that is not running.'''
     pass
 
@@ -47,6 +52,7 @@ __all__ = [
     'InsufficientPrivileges',
     'InvalidConfig',
     'InvalidEntity',
+    'InvalidOperation',
     'NotConnected',
     'TimedOut',
 ]
