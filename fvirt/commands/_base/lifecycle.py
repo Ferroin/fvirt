@@ -74,7 +74,10 @@ class LifecycleCommand(MatchCommand):
             hidden: bool = False,
             deprecated: bool = False,
             ) -> None:
-        def cb(ctx: click.Context, state: State, match: MatchArgument | None, *args: Any, **kwargs: Any) -> None:
+        def cb(ctx: click.Context, state: State, match: MatchArgument | None, name: str | None, *args: Any, **kwargs: Any) -> None:
+            if op_help.idempotent_state:
+                kwargs['idempotent'] = state.idempotent
+
             with state.hypervisor as hv:
                 entities = cast(Sequence[RunnableEntity], get_match_or_entity(
                     hv=hv,
@@ -119,27 +122,27 @@ class LifecycleCommand(MatchCommand):
 
                             if state.fail_fast:
                                 break
-                        case RunnerResult(method_success=True, result=LifecycleResult.SUCCESS):
+                        case RunnerResult(method_success=True, result=LifecycleResult.SUCCESS) as r:
                             click.echo(f'{ op_help.continuous.capitalize() } { doc_name } "{ r.ident }".')
                             success += 1
-                        case RunnerResult(method_success=True, result=LifecycleResult.NO_OPERATION):
+                        case RunnerResult(method_success=True, result=LifecycleResult.NO_OPERATION) as r:
                             click.echo(f'{ doc_name.capitalize() } "{ r.ident }" is already { op_help.idempotent_state }.')
                             skipped += 1
 
                             if state.idempotent:
                                 success += 1
-                        case RunnerResult(method_success=True, result=LifecycleResult.FAILURE):
+                        case RunnerResult(method_success=True, result=LifecycleResult.FAILURE) as r:
                             click.echo(f'Failed to { op_help.verb } { doc_name } "{ r.ident }".')
 
                             if state.fail_fast:
                                 break
-                        case RunnerResult(method_success=True, result=LifecycleResult.TIMED_OUT):
+                        case RunnerResult(method_success=True, result=LifecycleResult.TIMED_OUT) as r:
                             click.echo(f'Timed out waiting for { doc_name } "{ r.ident }" to { op_help.verb }.')
                             timed_out += 1
 
                             if state.fail_fast:
                                 break
-                        case RunnerResult(method_success=True, result=LifecycleResult.FORCED):
+                        case RunnerResult(method_success=True, result=LifecycleResult.FORCED) as r:
                             click.echo(f'{ doc_name.capitalize() } "{ r.ident }" failed to { op_help.verb } and was forced to do so anyway.')
                             forced += 1
                         case _:

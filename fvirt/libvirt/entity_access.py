@@ -10,6 +10,8 @@ from collections.abc import Iterable, Iterator, Mapping, Sized
 from typing import TYPE_CHECKING, Any, Self, cast
 from uuid import UUID
 
+import libvirt
+
 from .entity import ConfigurableEntity, Entity
 
 if TYPE_CHECKING:
@@ -85,11 +87,14 @@ class EntityMap(BaseEntityAccess, Mapping):
         with self._parent:
             link = self._get_parent_link()
 
-            match getattr(link, self._lookup_func)(key):
-                case None:
-                    raise KeyError(key)
-                case entity:
-                    return cast(Entity, self._entity_class(entity, self._parent))
+            try:
+                match getattr(link, self._lookup_func)(key):
+                    case None:
+                        raise KeyError(key)
+                    case entity:
+                        return cast(Entity, self._entity_class(entity, self._parent))
+            except libvirt.libvirtError:
+                raise KeyError(key)
 
     @abstractmethod
     def _get_key(self: Self, entity: Any) -> Any:

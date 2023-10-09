@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
 from textwrap import dedent
 from typing import TYPE_CHECKING, Self, cast
 
@@ -12,12 +13,10 @@ import click
 
 from .match import MatchArgument, MatchCommand, get_match_or_entity
 from ...libvirt import InsufficientPrivileges
+from ...libvirt.entity import RunnableEntity
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping, Sequence
-
     from .state import State
-    from ...libvirt.entity import RunnableEntity
     from ...util.match import MatchAlias
 
 

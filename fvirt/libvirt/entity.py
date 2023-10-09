@@ -580,7 +580,7 @@ class RunnableEntity(Entity):
         self._check_valid()
 
         if hasattr(self._entity, 'setAutostart'):
-            if self.__conn.read_only:
+            if self._hv.read_only:
                 raise InsufficientPrivileges
 
             self._entity.setAutostart(int(value))
