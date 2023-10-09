@@ -8,7 +8,7 @@ from __future__ import annotations
 import click
 
 from ._base.command import Command
-from ..libvirt import Hypervisor
+from ._base.state import State
 
 HELP = '''
 Print the hypervisor URI.
@@ -21,8 +21,8 @@ help connections`.
 '''.lstrip().rstrip()
 
 
-def cb(ctx: click.Context) -> None:
-    with Hypervisor(hvuri=ctx.obj['uri']) as hv:
+def cb(ctx: click.Context, state: State) -> None:
+    with state.hypervisor as hv:
         click.echo(str(hv.uri))
 
 

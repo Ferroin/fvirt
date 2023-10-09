@@ -5,35 +5,34 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, cast
+from typing import Self
 
 import click
 
-from .._base.lifecycle import LifecycleCommand, OperationHelpInfo
-from ...libvirt import Domain, LifecycleResult
+from .._base.lifecycle import OperationHelpInfo, SimpleLifecycleCommand
 from ...libvirt.domain import MATCH_ALIASES
 
-if TYPE_CHECKING:
-    from .._base.state import State
-    from ...libvirt.entity import Entity
+
+class _ShutdownCommand(SimpleLifecycleCommand):
+    '''Command for shutting down libvirt domains.'''
+    @property
+    def METHOD(self: Self) -> str: return 'shutdown'
+
+    @property
+    def OP_HELP(self: Self) -> OperationHelpInfo:
+        return OperationHelpInfo(
+            verb='shut down',
+            continuous='shutting down',
+            past='shut down',
+            idempotent_state='shut down',
+        )
 
 
-def callback(ctx: click.Context, state: State, domain: Entity, /, *, timeout: int, force: bool) -> LifecycleResult:
-    return cast(Domain, domain).shutdown(timeout=timeout, force=force, idempotent=state.idempotent)
-
-
-shutdown = LifecycleCommand(
+shutdown = _ShutdownCommand(
     name='shutdown',
     aliases=MATCH_ALIASES,
-    callback=callback,
     hvprop='domains',
     doc_name='domain',
-    op_help=OperationHelpInfo(
-        verb='shut down',
-        continuous='shutting down',
-        past='shut down',
-        idempotent_state='shut down',
-    ),
     params=(
         click.Option(
             param_decls=('--timeout',),

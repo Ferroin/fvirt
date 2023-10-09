@@ -5,7 +5,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Self
+import os
 
 import click
 
@@ -17,8 +17,17 @@ from .libvirt import API_VERSION, URI, Driver, Transport
 from .util.match import MATCH_HELP
 from .version import VERSION
 
-if TYPE_CHECKING:
-    import threading
+DEFAULT_MAX_JOBS = 8
+
+if hasattr(os, 'sched_getaffinity') and os.sched_getaffinity(0):
+    DEFAULT_JOB_COUNT = min(DEFAULT_MAX_JOBS, len(os.sched_getaffinity(0)) + 4)
+else:
+    ncpus = os.cpu_count()
+
+    if ncpus is not None:
+        DEFAULT_JOB_COUNT = min(DEFAULT_MAX_JOBS, ncpus + 4)
+    else:
+        DEFAULT_JOB_COUNT = DEFAULT_MAX_JOBS
 
 RECOGNIZED_DRIVERS = sorted(list({e.value for e in Driver}))
 RECOGNIZED_TRANSPORTS = sorted(list({e.value for e in Transport if e.value}))
@@ -41,6 +50,32 @@ fvirt does not (currently) support URI aliases.
 CONNECTION_HELP += f'\n\nSupported drivers:\n{ click.wrap_text(" ".join(RECOGNIZED_DRIVERS), initial_indent="  ", subsequent_indent="  ") }'
 CONNECTION_HELP += f'\n\nSupported transports:\n{ click.wrap_text(" ".join(RECOGNIZED_TRANSPORTS), initial_indent="  ", subsequent_indent="  ") }'
 
+CONCURRENCY_HELP = f'''
+When asked to perform an operation on more than one libvirt object,
+fvirt will usually by default attempt to parallelize the operations
+using a thread pool to speed up processing.
+
+By default, this thread pool will use either 8 threads, or four more
+threads than the number of CPUs in the systme, whichever is less. If
+fvirt determines that it is restricted to a subset of the number of
+logical CPUs in the system, that subset will be treated as the number
+of CPUs in the system for determining the number of threads to use.
+
+If fvirt cannot determine the number of CPUs in the system, fvirt will
+default to using 8 threads.
+
+Operations on single objects will completely bypass the thread pool.
+
+Some commands will bypass the thread pool even if asked to operate on
+multiple objects. They will explicitly state this in their help text.
+
+The number of threads to be used can be overridden using the `--jobs`
+option. A value of 0 explicitly requests the default number of jobs. A
+value of 1 will run everything in sequence.
+
+The default number of jobs on this system is { DEFAULT_JOB_COUNT }.
+'''.lstrip().rstrip()
+
 FVIRT_HELP = '''
 A lightweight frontend for libvirt.
 
@@ -58,17 +93,22 @@ def cb(
         fail_fast: bool,
         idempotent: bool,
         fail_if_no_match: bool,
+        jobs: int,
         version: bool,
         ) -> None:
     if version:
         click.echo(f'fvirt { VERSION }, using libvirt-python { API_VERSION }')
         ctx.exit(0)
 
+    if jobs == 0:
+        jobs = DEFAULT_JOB_COUNT
+
     ctx.obj = State(
         uri=URI.from_string(connect),
         fail_fast=fail_fast,
         idempotent=idempotent,
         fail_if_no_match=fail_if_no_match,
+        jobs=jobs,
     )
 
 
@@ -101,6 +141,12 @@ cli = Group(
             help='If using the --match option, return with a non-zero exist status if no match is found.',
         ),
         click.Option(
+            param_decls=('--jobs', '-j'),
+            default=DEFAULT_JOB_COUNT,
+            type=click.IntRange(min=0),
+            help='Specify the number of jobs to use for concurrent execution. Run `fvirt help concurrency` for more information.',
+        ),
+        click.Option(
             param_decls=('--version', '-V'),
             is_flag=True,
             default=False,
@@ -117,6 +163,11 @@ cli = Group(
             name='connections',
             description='Information about how fvirt handles hypervisor connections.',
             help_text=CONNECTION_HELP,
+        ),
+        HelpTopic(
+            name='concurrency',
+            description="Information about fvirt's concurrent processing functionality.",
+            help_text=CONCURRENCY_HELP,
         ),
     ),
 )

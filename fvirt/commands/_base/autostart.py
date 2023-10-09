@@ -12,6 +12,7 @@ import click
 
 from .match import MatchArgument, MatchCommand, get_match_or_entity
 from ...libvirt import InsufficientPrivileges
+from ...libvirt.runner import set_entity_attribute
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
@@ -109,6 +110,10 @@ class AutostartCommand(MatchCommand):
         state set, a failure setting the autostart state for any {
         doc_name } will result in a non-zero exit code even if the
         autostart state was set successfully for some { doc_name }s.
+
+        This command does not support parallelization when operating on
+        multiple { doc_name }s. No matter how many jobs are requested,
+        only one actual job will be used.
 
         This command does not support fvirt's fail-fast mode, as the only
         failures possible for this operation will cause the operation

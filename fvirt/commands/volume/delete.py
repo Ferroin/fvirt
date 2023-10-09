@@ -5,14 +5,16 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
-from typing import TYPE_CHECKING, cast
+import concurrent.futures
+
+from typing import TYPE_CHECKING
 
 import click
 
 from .._base.match import MatchArgument, MatchCommand, get_match_or_entity
 from ...libvirt import LifecycleResult
-from ...libvirt.volume import MATCH_ALIASES, Volume
+from ...libvirt.runner import RunnerResult, run_sub_entity_method
+from ...libvirt.volume import MATCH_ALIASES
 
 if TYPE_CHECKING:
     from .._base.state import State
@@ -44,47 +46,71 @@ def cb(ctx: click.Context, state: State, pool: str, match: MatchArgument, entity
         if parent is None:
             ctx.fail(f'No storage pool found with name or UUID equal to { pool }.')
 
-        entities = cast(Sequence[Volume], get_match_or_entity(
+        futures = [state.pool.submit(
+            run_sub_entity_method,
+            uri=hv.uri,
+            hvprop='pools',
+            parentprop='volumes',
+            method='delete',
+            ident=(parent.name, e.name),  # type: ignore
+        ) for e in get_match_or_entity(
             hv=parent,
             hvprop='volumes',
             match=match,
             entity=entity,
             ctx=ctx,
             doc_name='volume',
-        ))
+        )]
 
-        success = 0
-        skipped = 0
+    success = 0
+    skipped = 0
 
-        for e in entities:
-            match e.delete(idempotent=state.idempotent):
-                case LifecycleResult.SUCCESS:
-                    click.echo(f'Deleted volume "{ e.name }".')
+    for f in concurrent.futures.as_completed(futures):
+        match f.result():
+            case RunnerResult(attrs_found=False) as r:
+                ctx.fail(f'Unexpected internal error processing volume "{ r.ident[1] }".')
+            case RunnerResult(entity_found=False) as r:
+                click.echo(f'Storage pool "{ r.ident[0] }" disappeared while trying to process volumes in it.')
+                break  # Not recoverable, but we still need to show the summary.
+            case RunnerResult(entity_found=True, sub_entity_found=False) as r:
+                click.echo(f'Volume "{ r.ident[1] }" disappeared before we could delete it.')
+
+                if state.fail_fast:
+                    break
+            case RunnerResult(method_success=False) as r:
+                click.echo(f'Unexpected error processing volume "{ r.ident }".')
+
+                if state.fail_fast:
+                    break
+            case RunnerResult(method_success=True, result=LifecycleResult.SUCCESS):
+                click.echo(f'Deleted volume "{ r.ident[1] }".')
+                success += 1
+            case RunnerResult(method_success=True, result=LifecycleResult.NO_OPERATION):
+                click.echo(f'Volume "{ r.ident[1] }" is already deleted.')
+                skipped += 1
+
+                if state.idempotent:
                     success += 1
-                case LifecycleResult.NO_OPERATION:
-                    click.echo(f'Volume "{ e.name }" does not exist.')
-                    skipped += 1
+            case RunnerResult(method_success=True, result=LifecycleResult.FAILURE):
+                click.echo(f'Failed to delete volume "{ r.ident[1] }".')
 
-                    if state.idempotent:
-                        success += 1
-                case LifecycleResult.FAILURE:
-                    click.echo(f'Failed to delte volume "{ e.name }".')
-
-                    if state.fail_fast:
-                        break
+                if state.fail_fast:
+                    break
+            case _:
+                raise RuntimeError
 
     click.echo('Finished deleting specified volumes.')
     click.echo('')
     click.echo('Results:')
     click.echo(f'  Success:     { success }')
-    click.echo(f'  Failed:      { len(entities) - success }')
+    click.echo(f'  Failed:      { len(futures) - success }')
 
     if skipped:
         click.echo(f'    Skipped:   { skipped }')
 
-    click.echo(f'Total:         { len(entities) }')
+    click.echo(f'Total:         { len(futures) }')
 
-    if success != len(entities) or (not entities and state.fail_if_no_match):
+    if success != len(futures) or (not futures and state.fail_if_no_match):
         ctx.exit(3)
 
 

@@ -5,28 +5,30 @@
 
 from __future__ import annotations
 
-import functools
-import re
+import concurrent.futures
 
 from abc import ABC, abstractmethod
-from collections.abc import Callable, Mapping, MutableMapping, Sequence
+from collections.abc import Mapping, MutableMapping, Sequence
 from dataclasses import dataclass
 from textwrap import dedent
-from typing import TYPE_CHECKING, Any, Concatenate, ParamSpec, Self, cast
+from typing import TYPE_CHECKING, Any, Self, cast
 
 import click
 
 from .command import Command
-from .match import MatchCommand, get_match_or_entity
-from ...libvirt import Hypervisor, InsufficientPrivileges, InvalidConfig, InvalidOperation, LifecycleResult
-from ...libvirt.entity import Entity, RunnableEntity
-from ...util.match import MatchTarget
+from .match import MatchArgument, MatchCommand, get_match_or_entity
+from ...libvirt import InvalidConfig, InvalidOperation, LifecycleResult
+from ...libvirt.entity import RunnableEntity
+from ...libvirt.runner import RunnerResult, run_entity_method, run_hv_method
 
 if TYPE_CHECKING:
     from .state import State
     from ...util.match import MatchAlias
 
-P = ParamSpec('P')
+
+def __read_file(path: str) -> str:
+    with click.open_file(path, mode='r') as f:
+        return cast(str, f.read())
 
 
 @dataclass(kw_only=True, slots=True)
@@ -61,7 +63,7 @@ class LifecycleCommand(MatchCommand):
     def __init__(
             self: Self,
             name: str,
-            callback: Callable[Concatenate[click.Context, State, Entity, P], LifecycleResult],
+            method: str,
             aliases: Mapping[str, MatchAlias],
             doc_name: str,
             op_help: OperationHelpInfo,
@@ -72,56 +74,81 @@ class LifecycleCommand(MatchCommand):
             hidden: bool = False,
             deprecated: bool = False,
             ) -> None:
-        @functools.wraps(callback)
-        def cb(ctx: click.Context, state: State, *args: P.args, **kwargs: P.kwargs) -> None:
+        def cb(ctx: click.Context, state: State, match: MatchArgument | None, *args: Any, **kwargs: Any) -> None:
             with state.hypervisor as hv:
                 entities = cast(Sequence[RunnableEntity], get_match_or_entity(
                     hv=hv,
                     hvprop=hvprop,
-                    match=cast(tuple[MatchTarget, re.Pattern], kwargs.get('match')),
+                    match=match,
                     entity=name,
                     ctx=ctx,
                     doc_name=doc_name,
                 ))
 
-                success = 0
-                skipped = 0
-                timed_out = 0
-                forced = 0
+                uri = hv.uri
 
-                for e in entities:
-                    try:
-                        match callback(ctx, state, e, *args, **kwargs):
-                            case LifecycleResult.SUCCESS:
-                                click.echo(f'{ op_help.continuous.capitalize() } { doc_name } "{ e.name }".')
+                futures = [state.pool.submit(
+                    run_entity_method,
+                    uri=uri,
+                    hvprop=hvprop,
+                    method=method,
+                    ident=e.name,  # type: ignore
+                    args=args,
+                    kwargs=kwargs,
+                ) for e in entities]
+
+            success = 0
+            skipped = 0
+            timed_out = 0
+            not_found = 0
+            forced = 0
+
+            for f in concurrent.futures.as_completed(futures):
+                try:
+                    match f.result():
+                        case RunnerResult(attrs_found=False) as r:
+                            ctx.fail(f'Unexpected internal error processing { doc_name } "{ r.ident }".')
+                        case RunnerResult(entity_found=False) as r:
+                            click.echo(f'Could not find { doc_name } "{ r.ident }".')
+                            not_found += 1
+
+                            if state.fail_fast:
+                                break
+                        case RunnerResult(method_success=False) as r:
+                            click.echo(f'Unexpected error processing { doc_name } "{ r.ident }".')
+
+                            if state.fail_fast:
+                                break
+                        case RunnerResult(method_success=True, result=LifecycleResult.SUCCESS):
+                            click.echo(f'{ op_help.continuous.capitalize() } { doc_name } "{ r.ident }".')
+                            success += 1
+                        case RunnerResult(method_success=True, result=LifecycleResult.NO_OPERATION):
+                            click.echo(f'{ doc_name.capitalize() } "{ r.ident }" is already { op_help.idempotent_state }.')
+                            skipped += 1
+
+                            if state.idempotent:
                                 success += 1
-                            case LifecycleResult.NO_OPERATION:
-                                click.echo(f'{ doc_name.capitalize() } "{ e.name }" is already { op_help.idempotent_state }.')
-                                skipped += 1
+                        case RunnerResult(method_success=True, result=LifecycleResult.FAILURE):
+                            click.echo(f'Failed to { op_help.verb } { doc_name } "{ r.ident }".')
 
-                                if state.idempotent:
-                                    success += 1
-                            case LifecycleResult.FAILURE:
-                                click.echo(f'Failed to { op_help.verb } { doc_name } "{ e.name }".')
+                            if state.fail_fast:
+                                break
+                        case RunnerResult(method_success=True, result=LifecycleResult.TIMED_OUT):
+                            click.echo(f'Timed out waiting for { doc_name } "{ r.ident }" to { op_help.verb }.')
+                            timed_out += 1
 
-                                if state.fail_fast:
-                                    break
-                            case LifecycleResult.TIMED_OUT:
-                                click.echo(f'Timed out waiting for { doc_name } "{ e.name }" to { op_help.verb }.')
-                                timed_out += 1
+                            if state.fail_fast:
+                                break
+                        case RunnerResult(method_success=True, result=LifecycleResult.FORCED):
+                            click.echo(f'{ doc_name.capitalize() } "{ r.ident }" failed to { op_help.verb } and was forced to do so anyway.')
+                            forced += 1
+                        case _:
+                            raise RuntimeError
+                except InvalidOperation:
+                    click.echo(f'Failed to { op_help.verb } { doc_name } "{ r.ident }", operation is not supported for this { doc_name }.')
 
-                                if state.fail_fast:
-                                    break
-                            case LifecycleResult.FORCED:
-                                click.echo(f'{ doc_name.capitalize() } "{ e.name }" failed to { op_help.verb } and was forced to do so anyway.')
-                                forced += 1
-                            case _:
-                                raise RuntimeError
-                    except InvalidOperation:
-                        click.echo(f'Failed to { op_help.verb } { doc_name } "{ e.name }", operation is not supported for this { doc_name }.')
-
-                        if state.fail_fast:
-                            break
+                    if state.fail_fast:
+                        break
 
                 click.echo(f'Finished { op_help.continuous } specified { doc_name }s.')
                 click.echo('')
@@ -198,9 +225,9 @@ class SimpleLifecycleCommand(ABC, LifecycleCommand):
     '''Base class for trivial lifecycle commands.
 
        This handles the callback and operation info for a
-       LifecycleCommand, but requires that the method on an entity
-       not need any special handling other than being called with no
-       arguments.
+       LifecycleCommand, but requires that the method on an entity not
+       need any special handling other than being called with whatever
+       arguments click would pass in based on the parameters.
 
        Subclasses must define METHOD and OP_HELP properties. The
        METHOD property should specify the name of the method to call on
@@ -213,21 +240,19 @@ class SimpleLifecycleCommand(ABC, LifecycleCommand):
             doc_name: str,
             hvprop: str,
             epilog: str | None = None,
+            params: Sequence[click.Parameter] = [],
             hidden: bool = False,
             deprecated: bool = False,
             ) -> None:
-        def cb(ctx: click.Context, state: State, entity: Entity, /) -> LifecycleResult:
-            return cast(LifecycleResult, getattr(entity, self.METHOD)(idempotent=ctx.obj.idempotent))
-
         super().__init__(
             name=name,
             epilog=epilog,
-            callback=cb,
             aliases=aliases,
+            method=self.METHOD,
             hvprop=hvprop,
             doc_name=doc_name,
             op_help=self.OP_HELP,
-            params=tuple(),
+            params=params,
             hidden=hidden,
             deprecated=deprecated,
         )
@@ -322,47 +347,72 @@ class DefineCommand(Command):
         def cb(ctx: click.Context, state: State, confpath: Sequence[str], parent_obj: str | None = None) -> None:
             success = 0
 
-            confdata = []
+            confdata = list(state.pool.map(__read_file, confpath))
 
             for cpath in confpath:
                 with click.open_file(cpath, mode='r') as config:
                     confdata.append(config.read())
 
-            with state.hypervisor as hv:
+            uri = state.hypervisor.uri
+
+            if state.hypervisor.read_only:
+                ctx.fail(f'Unable to define { doc_name }s, the hypervisor connection is read-only.')
+
+            for conf in confdata:
                 if parent is not None:
-                    assert parent_name is not None
-                    assert name is not None
+                    assert parent_obj is not None
 
-                    define_object: Entity | Hypervisor = getattr(hv, parent).get(name)
-
-                    if define_object is None:
-                        ctx.fail(f'No { parent_name } with name, UUID, or ID of "{ name }" is defined on this hypervisor.')
+                    futures = [state.pool.submit(
+                        run_entity_method,
+                        uri=uri,
+                        hvprop=parent,
+                        method=method,
+                        ident=parent_obj,  # type: ignore
+                        postproc=lambda x: x.name,
+                        args=[c],
+                    ) for c in confdata]
                 else:
-                    define_object = hv
+                    futures = [state.pool.submit(
+                        run_hv_method,
+                        uri=uri,
+                        method=method,
+                        ident='',  # type: ignore
+                        postproc=lambda x: x.name,
+                        args=[c],
+                    ) for c in confdata]
 
-                for conf in confdata:
-                    try:
-                        entity = getattr(define_object, method)(confdata)
-                    except InsufficientPrivileges:
-                        ctx.fail(f'Specified hypervisor connection is read-only, unable to define { doc_name }')
-                    except InvalidConfig:
+            for f in concurrent.futures.as_completed(futures):
+                match f.result():
+                    case RunnerResult(attrs_found=False):
+                        ctx.fail(f'Unexpected internal error defining new { doc_name }.')
+                    case RunnerResult(method_success=False, exception=InvalidConfig()):
                         click.echo(f'The configuration at { cpath } is not valid for a { doc_name }.')
 
                         if state.fail_fast:
                             break
+                    case RunnerResult(method_success=False):
+                        click.echo(f'Failed to create { doc_name }.')
 
-                    click.echo(f'Successfully defined { doc_name }: { entity.name }')
-                    success += 1
+                        if state.fail_fast:
+                            break
+                    case RunnerResult(method_success=True, postproc_success=False):
+                        click.echo(f'Successfully defined { doc_name }.')
+                        success += 1
+                    case RunnerResult(method_success=True, postproc_success=True, result=name):
+                        click.echo(f'Successfully defined { doc_name }: "{ name }".')
+                        success += 1
+                    case _:
+                        raise RuntimeError
 
-                click.echo(f'Finished defining specified { doc_name }s.')
-                click.echo('')
-                click.echo('Results:')
-                click.echo(f'  Success:     { success }')
-                click.echo(f'  Failed:      { len(confdata) - success }')
-                click.echo(f'Total:         { len(confdata) }')
+            click.echo(f'Finished defining specified { doc_name }s.')
+            click.echo('')
+            click.echo('Results:')
+            click.echo(f'  Success:     { success }')
+            click.echo(f'  Failed:      { len(confdata) - success }')
+            click.echo(f'Total:         { len(confdata) }')
 
-                if success != len(confdata) and confdata:
-                    ctx.exit(3)
+            if success != len(confdata) and confdata:
+                ctx.exit(3)
 
         if parent is not None:
             header = dedent(f'''
@@ -401,7 +451,7 @@ class DefineCommand(Command):
 
         if parent is not None:
             params += (click.Argument(
-                param_decls=('name',),
+                param_decls=('parent_obj',),
                 nargs=1,
                 required=True,
                 metavar=parent_metavar,

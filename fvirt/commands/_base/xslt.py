@@ -5,8 +5,10 @@
 
 from __future__ import annotations
 
+import concurrent.futures
+
 from textwrap import dedent
-from typing import TYPE_CHECKING, Self, cast
+from typing import TYPE_CHECKING, Self
 
 import click
 import libvirt
@@ -14,13 +16,13 @@ import libvirt
 from lxml import etree
 
 from .match import MatchCommand, get_match_or_entity
-from ...libvirt.entity import ConfigurableEntity
+from ...libvirt.runner import RunnerResult, run_entity_method, run_sub_entity_method
 from ...util.match import MatchAlias, MatchTarget
 
 if TYPE_CHECKING:
     import re
 
-    from collections.abc import Mapping, Sequence
+    from collections.abc import Mapping
 
     from .state import State
 
@@ -46,41 +48,110 @@ class XSLTCommand(MatchCommand):
             ) -> None:
         params: tuple[click.Parameter, ...] = tuple()
 
-        def cb(ctx: click.Context, state: State, entity: str | None, match: tuple[MatchTarget, re.Pattern] | None, xslt: str, parent: str | None = None) -> None:
+        def cb(
+                ctx: click.Context,
+                state: State,
+                entity: str | None,
+                match: tuple[MatchTarget, re.Pattern] | None,
+                xslt: str,
+                parent: str | None = None
+        ) -> None:
             xform = etree.XSLT(etree.parse(xslt))
 
             with state.hypervisor as hv:
-                entities = cast(Sequence[ConfigurableEntity], get_match_or_entity(
-                    hv=hv,
-                    hvprop=hvprop,
-                    match=match,
-                    entity=entity,
-                    ctx=ctx,
-                    doc_name=doc_name,
-                ))
+                uri = hv.uri
+
+                if parent is None:
+                    futures = [state.pool.submit(
+                        run_entity_method,
+                        uri=uri,
+                        hvprop=hvprop,
+                        method='applyXSLT',
+                        ident=e.name,  # type: ignore
+                        args=[xform],
+                    ) for e in get_match_or_entity(
+                        hv=hv,
+                        hvprop=hvprop,
+                        match=match,
+                        entity=entity,
+                        ctx=ctx,
+                        doc_name=doc_name,
+                    )]
+                else:
+                    assert parent_prop is not None
+
+                    parent_obj = getattr(hv, hvprop).get(parent)
+
+                    futures = [state.pool.submit(
+                        run_sub_entity_method,
+                        uri=uri,
+                        hvprop=hvprop,
+                        parentprop=parent_prop,
+                        method='applyXSLT',
+                        ident=(parent_obj.name, e.name),  # type: ignore
+                        args=[xform],
+                    ) for e in get_match_or_entity(
+                        hv=parent_obj,
+                        hvprop=parent_prop,
+                        match=match,
+                        entity=entity,
+                        ctx=ctx,
+                        doc_name=doc_name,
+                    )]
 
             success = 0
 
-            for e in entities:
-                try:
-                    e.applyXSLT(xform)
-                except libvirt.libvirtError:
-                    click.echo(f'Failed to modify { doc_name } "{ e.name }".')
+            for f in concurrent.futures.as_completed(futures):
+                match f.result():
+                    case RunnerResult(attrs_found=False) as r:
+                        name = r.ident
 
-                    if state.fail_fast:
-                        break
-                else:
-                    click.echo(f'Successfully modified { doc_name } "{ e.name }".')
-                    success += 1
+                        if parent is not None:
+                            name = r.ident[1]
+
+                        ctx.fail(f'Unexpected internal error processing { doc_name } "{ name }".')
+                    case RunnerResult(entity_found=False) as r if parent is None:
+                        click.echo(f'{ doc_name } "{ r.ident }" disappeared before we could modify it.')
+
+                        if state.fail_fast:
+                            break
+                    case RunnerResult(entity_found=False) as r:
+                        click.echo(f'{ parent_name } "{ r.ident[0] }" not found when trying to modify { doc_name } "{ r.ident[1] }".')
+                        break  # Can't recover in this case, but we should still print our normal summary.
+                    case RunnerResult(entity_found=True, sub_entity_found=False) as r:
+                        click.echo(f'{ doc_name } "{ r.ident[1] }" disappeared before we could modify it.')
+
+                        if state.fail_fast:
+                            break
+                    case RunnerResult(method_success=False) as r:
+                        name = r.ident
+
+                        if parent is not None:
+                            name = r.ident[1]
+
+                        click.echo(f'Failed to modify { doc_name } "{ name }".')
+
+                        if state.fail_fast:
+                            break
+                    case RunnerResult(method_success=True) as r:
+                        name = r.ident
+
+                        if parent is not None:
+                            name = r.ident[1]
+
+                        click.echo(f'Successfully modified { doc_name } "{ name }".')
+                        success += 1
+                    case _:
+                        raise RuntimeError
 
             click.echo(f'Finished modifying specified { doc_name }s using XSLT document at { xslt }.')
             click.echo('')
             click.echo('Results:')
             click.echo(f'  Success:     { success }')
-            click.echo(f'  Failed:      { len(entities) - success }')
-            click.echo(f'Total:         { len(entities) }')
+            click.echo(f'  Failed:      { len(futures) - success }')
+            click.echo(f'Total:         { len(futures) }')
 
-            if success != len(entities) and state.fail_fast or (not entities and state.fail_if_no_match):
+            if success != len(futures) or (not futures and state.fail_if_no_match):
                 ctx.exit(3)
 
         if parent_prop is None:
