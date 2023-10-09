@@ -75,6 +75,16 @@ class Transport(Enum):
     LOCAL = 'unix'
 
 
+REMOTE_TRANSPORTS = frozenset({
+    Transport.EXTERNAL,
+    Transport.LIBSSH2,
+    Transport.LIBSSH,
+    Transport.SSH,
+    Transport.TCP,
+    Transport.TLS,
+})
+
+
 class URI:
     '''A class representing a libvirt URI.'''
     __slots__ = [
@@ -117,8 +127,8 @@ class URI:
             raise ValueError('Host name must be specified with client-only drivers.')
         elif transport is Transport.EXTERNAL and 'command' not in parameters:
             raise ValueError('External transport requires a command to be specified in the URI parameters.')
-        elif transport not in {Transport.SSH, Transport.LIBSSH, Transport.LIBSSH2} and user is not None:
-            raise ValueError('User name is only supported for SSH transports.')
+        elif transport not in REMOTE_TRANSPORTS and user is not None:
+            raise ValueError('User name is only supported for remote transports.')
         elif port is not None and port not in range(1, 65536):
             raise ValueError('Invalid port number.')
 
@@ -251,7 +261,7 @@ class URI:
             case [str() as d1]:
                 driver = Driver(d1)
                 if urlparts.hostname is None:
-                    transport = Transport.UNIX
+                    transport: Transport | None = Transport.UNIX
                 else:
                     transport = Transport('')
             case [str() as d2, str() as t1]:
@@ -262,6 +272,9 @@ class URI:
 
         if urlparts.hostname is None and transport is Transport(''):
             transport = Transport.UNIX
+
+        if driver in CLIENT_ONLY_DRIVERS and transport is Transport.TLS:
+            transport = None
 
         params = {k: v[0] for k, v in parse_qs(urlparts.query, keep_blank_values=False, strict_parsing=True).items()}
 

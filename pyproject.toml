@@ -31,6 +31,7 @@ mypy = "^1.5.0"
 yamllint = "^1.32.0"
 flake8-isort = "^6.1.0"
 isort = "^5.12.0"
+pytest = "^7.4.2"
 
 [tool.mypy]
 python_version = "3.11"
@@ -58,6 +59,11 @@ remove_redundant_aliases = true
 reverse_relative = true
 skip_gitignore = true
 use_parentheses = true
+
+[tool.pytest.ini_options]
+minversion = 7.0
+testpaths = "tests"
+xfail_strict = true
 
 [build-system]
 requires = ["poetry-core"]
