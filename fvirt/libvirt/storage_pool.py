@@ -118,10 +118,16 @@ class StoragePool(ConfigurableEntity, RunnableEntity):
         '''The number of volumes in the pool.'''
         return len(self.volumes)
 
-    def refresh(self: Self) -> None:
+    def refresh(self: Self) -> LifecycleResult:
         '''Refresh the list of volumes in the pool.'''
         self._check_valid()
-        self._entity.refresh()
+
+        try:
+            self._entity.refresh()
+        except libvirt.LibvirtError:
+            return LifecycleResult.FAILURE
+
+        return LifecycleResult.SUCCESS
 
     def delete(self: Self, idempotent: bool = True) -> LifecycleResult:
         '''Delete the underlying storage resources for the pool.

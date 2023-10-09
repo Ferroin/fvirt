@@ -18,6 +18,7 @@ pool = Group(
         'define': 'fvirt.commands.pool.define.define',
         'delete': 'fvirt.commands.pool.delete.delete',
         'list': 'fvirt.commands.pool.list.list_pools',
+        'refresh': 'fvirt.commands.pool.refresh.refresh',
         'start': 'fvirt.commands.pool.start.start',
         'stop': 'fvirt.commands.pool.stop.stop',
         'undefine': 'fvirt.commands.pool.undefine.undefine',

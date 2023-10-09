@@ -10,6 +10,22 @@ from ...libvirt.storage_pool import MATCH_ALIASES
 from ...util.tables import Column, color_bool
 from ...util.terminal import get_terminal
 
+EPILOG = '''
+For performance reasons, information about the volumes in any given
+storage pool is cached by the libvirt daemon. This information is only
+updated when a pool is started (or created), when certain operations
+(such as defining or deleting volumes) occur, and when the pool is
+explicitly refreshed.
+
+This is usually not an issue as the libvirt daemon tracks any changes
+made through it, but if some external tool modifies the underlying
+storage of the pool, the information shown by this command may not be
+accurate any more.
+
+To explicitly refresh the information about the volumes in a storage pool,
+use the 'fvirt pool refresh' command.
+'''.lstrip().rstrip()
+
 
 def color_state(value: bool) -> str:
     '''Apply colors to a pool state.'''
