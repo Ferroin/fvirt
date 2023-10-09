@@ -12,7 +12,6 @@ import click
 
 from .match import MatchArgument, MatchCommand, get_match_or_entity
 from ...libvirt import InsufficientPrivileges
-from ...libvirt.runner import set_entity_attribute
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence

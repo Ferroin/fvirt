@@ -21,6 +21,7 @@ pool = Group(
         'start': 'fvirt.commands.pool.start.start',
         'stop': 'fvirt.commands.pool.stop.stop',
         'undefine': 'fvirt.commands.pool.undefine.undefine',
+        'xml': 'fvirt.commands.pool.xml.xml',
         'xslt': 'fvirt.commands.pool.xslt.xslt',
     },
     aliases=MATCH_ALIASES,

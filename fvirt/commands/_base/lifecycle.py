@@ -342,7 +342,7 @@ class DefineCommand(Command):
         parent_args = {parent, parent_name, parent_metavar}
 
         if None in parent_args and parent_args != {None}:
-            raise ValueError('Either both of parent and parent_name must be specified, or neither must be specified.')
+            raise ValueError('Either all of parent, parent_name, and parent_metavar must be specified, or neither must be specified.')
 
         def cb(ctx: click.Context, state: State, confpath: Sequence[str], parent_obj: str | None = None) -> None:
             success = 0

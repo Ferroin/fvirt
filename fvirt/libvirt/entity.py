@@ -37,23 +37,23 @@ class Entity(ABC):
        is tied to is connected, and that the entity itself is valid.'''
     __slots__ = [
         '__conn',
-        '__parent',
         '__entity',
-        '__valid',
+        '_parent',
+        '_valid',
     ]
 
     def __init__(self: Self, entity: Any, parent: Hypervisor | Entity) -> None:
         if isinstance(parent, Entity):
             self.__conn = parent._hv
-            self.__parent: Entity | None = parent
+            self._parent: Entity | None = parent
         else:
             self.__conn = parent
-            self.__parent = None
+            self._parent = None
 
         self.__conn.open()
 
         self.__entity = entity
-        self.__valid = True
+        self._valid = True
 
     def __del__(self: Self) -> None:
         self.__conn.close()
@@ -90,7 +90,7 @@ class Entity(ABC):
         if not self.valid:
             raise InvalidEntity
 
-        if not self.__conn:
+        if not self._hv.connected:
             raise NotConnected
 
     @property
@@ -137,7 +137,7 @@ class Entity(ABC):
 
            If this is false, calling most methods or accessing most
            properties will raise a fvirt.libvirt.InvalidEntity error.'''
-        return self.__valid
+        return self._valid
 
     @property
     def name(self: Self) -> str:
@@ -185,7 +185,7 @@ class ConfigurableEntity(Entity):
     @property
     def _define_target(self: Self) -> Any:
         '''The object that will be used to define new instances of this entity.'''
-        return self.__conn
+        return self._hv
 
     @property
     @abstractmethod
@@ -226,7 +226,7 @@ class ConfigurableEntity(Entity):
         if not self._define_method:
             raise ValueError('No method specified to redefine entity.')
 
-        if self.__conn.read_only:
+        if self._hv.read_only:
             raise InsufficientPrivileges
 
         define = getattr(self._define_target, self._define_method, None)
@@ -236,7 +236,7 @@ class ConfigurableEntity(Entity):
 
         self.__entity = define(config).__entity
 
-        self.__valid = True
+        self._valid = True
 
     @property
     def config(self: Self) -> etree._Element:
@@ -265,7 +265,7 @@ class ConfigurableEntity(Entity):
 
         self._check_valid()
 
-        if self.__conn.read_only:
+        if self._hv.read_only:
             raise InsufficientPrivileges
 
         self.updateConfigElement('./name', name)
@@ -288,7 +288,7 @@ class ConfigurableEntity(Entity):
 
         self._check_valid()
 
-        if self.__conn.read_only:
+        if self._hv.read_only:
             raise InsufficientPrivileges
 
         config = self.config
@@ -323,7 +323,7 @@ class ConfigurableEntity(Entity):
 
         self._check_valid()
 
-        if self.__conn.read_only:
+        if self._hv.read_only:
             raise InsufficientPrivileges
 
         config = self.config
@@ -361,7 +361,7 @@ class ConfigurableEntity(Entity):
             return LifecycleResult.FAILURE
 
         if self._mark_invalid_on_undefine:
-            self.__valid = False
+            self._valid = False
 
         return LifecycleResult.SUCCESS
 

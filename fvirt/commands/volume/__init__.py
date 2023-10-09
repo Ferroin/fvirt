@@ -16,6 +16,7 @@ volume = Group(
         'define': 'fvirt.commands.volume.define.define',
         'delete': 'fvirt.commands.volume.delete.delete',
         'list': 'fvirt.commands.volume.list.list_volumes',
+        'xml': 'fvirt.commands.volume.xml.xml',
     },
     aliases=MATCH_ALIASES,
 )

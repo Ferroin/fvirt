@@ -23,6 +23,7 @@ domain = Group(
         'start': 'fvirt.commands.domain.start.start',
         'stop': 'fvirt.commands.domain.stop.stop',
         'undefine': 'fvirt.commands.domain.undefine.undefine',
+        'xml': 'fvirt.commands.domain.xml.xml',
         'xslt': 'fvirt.commands.domain.xslt.xslt',
     },
     aliases=MATCH_ALIASES,
