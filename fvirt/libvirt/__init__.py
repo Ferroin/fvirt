@@ -29,17 +29,7 @@ from .uri import CLIENT_ONLY_DRIVERS, LIBVIRT_DEFAULT_URI, SESSION_DRIVERS, SYST
 from .volume import Volume
 from ..version import VersionNumber
 
-
-def parse_libvirt_version(version: int) -> VersionNumber:
-    '''Parse a libvirt version number into a version tuple.'''
-    vstr = str(version)
-    release = int(vstr[-3:].lstrip('0') or '0')
-    minor = int(vstr[-6:-3].lstrip('0') or '0')
-    major = int(vstr[:-6].lstrip('0'))
-    return VersionNumber(major, minor, release)
-
-
-API_VERSION = parse_libvirt_version(libvirt.getVersion())
+API_VERSION = VersionNumber.from_libvirt_version(libvirt.getVersion())
 
 __all__ = [
     'EntityNotRunning',

@@ -94,12 +94,7 @@ def cb(
         idempotent: bool,
         fail_if_no_match: bool,
         jobs: int,
-        version: bool,
         ) -> None:
-    if version:
-        click.echo(f'fvirt { VERSION }, using libvirt-python { API_VERSION }')
-        ctx.exit(0)
-
     if jobs == 0:
         jobs = DEFAULT_JOB_COUNT
 
@@ -145,12 +140,6 @@ cli = Group(
             default=DEFAULT_JOB_COUNT,
             type=click.IntRange(min=0),
             help='Specify the number of jobs to use for concurrent execution. Run `fvirt help concurrency` for more information.',
-        ),
-        click.Option(
-            param_decls=('--version', '-V'),
-            is_flag=True,
-            default=False,
-            help='Print the fvirt version.',
         ),
     ),
     help_topics=(

@@ -47,6 +47,15 @@ class VersionNumber:
         '''The release release number.'''
         return self.__release
 
+    @staticmethod
+    def from_libvirt_version(version: int) -> VersionNumber:
+        '''Parse a libvirt version number into a VersionNumber.'''
+        vstr = str(version)
+        release = int(vstr[-3:].lstrip('0') or '0')
+        minor = int(vstr[-6:-3].lstrip('0') or '0')
+        major = int(vstr[:-6].lstrip('0') or '0')
+        return VersionNumber(major, minor, release)
+
 
 VERSION = VersionNumber(0, 0, 1)
 

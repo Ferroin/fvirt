@@ -17,6 +17,7 @@ from .entity import Entity
 from .exceptions import InsufficientPrivileges, InvalidConfig, NotConnected
 from .storage_pool import StoragePool, StoragePoolAccess
 from .uri import URI
+from ..version import VersionNumber
 
 
 class Hypervisor:
@@ -109,6 +110,31 @@ class Hypervisor:
         with self:
             assert self._connection is not None
             return URI.from_string(self._connection.getURI())
+
+    @property
+    def libVersion(self: Self) -> VersionNumber:
+        '''The version information of the remote libvirt instance.'''
+        with self:
+            assert self._connection is not None
+            return VersionNumber.from_libvirt_version(self._connection.getLibVersion())
+
+    @property
+    def version(self: Self) -> VersionNumber | None:
+        '''The version information of the remote hypervisor.
+
+           Some hypervisor drivers do not report a version (such as the
+           test driver), in which case this property will show a value
+           of None.'''
+        with self:
+            assert self._connection is not None
+
+            version = self._connection.getVersion()
+
+            match version:
+                case '':
+                    return None
+                case _:
+                    return VersionNumber.from_libvirt_version(version)
 
     @property
     def connected(self: Self) -> bool:

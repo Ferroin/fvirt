@@ -5,8 +5,9 @@
 
 LAZY_COMMANDS = {
     'domain': 'fvirt.commands.domain.domain',
+    'host': 'fvirt.commands.host.host',
     'pool': 'fvirt.commands.pool.pool',
-    'uri': 'fvirt.commands.uri.uri',
+    'version': 'fvirt.commands.version.version',
     'volume': 'fvirt.commands.volume.volume',
 }
 

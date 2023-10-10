@@ -7,8 +7,8 @@ from __future__ import annotations
 
 import click
 
-from ._base.command import Command
-from ._base.state import State
+from .._base.command import Command
+from .._base.state import State
 
 HELP = '''
 Print the hypervisor URI.
