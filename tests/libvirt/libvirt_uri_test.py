@@ -8,12 +8,12 @@ import pytest
 from fvirt.libvirt.uri import CLIENT_ONLY_DRIVERS, SESSION_DRIVERS, SYSTEM_DRIVERS, URI
 
 # Definitions used below
-CLIENT_ONLY_DRIVER = list(CLIENT_ONLY_DRIVERS)[0]
-SESSION_DRIVER = list(SESSION_DRIVERS)[0]
-SYSTEM_DRIVER = list(SYSTEM_DRIVERS)[0]
+CLIENT_ONLY_DRIVER = sorted(CLIENT_ONLY_DRIVERS, key=lambda x: x.value)[0].value
+SESSION_DRIVER = sorted(SESSION_DRIVERS - SYSTEM_DRIVERS, key=lambda x: x.value)[0].value
+SYSTEM_DRIVER = sorted(SYSTEM_DRIVERS - SESSION_DRIVERS, key=lambda x: x.value)[0].value
 
 # An assortment of cannonical URIs used for the tests.
-SAMPLE_URIS = {
+SAMPLE_URIS = (
     'openvz+ssh://root@example.com/system',
     'qemu:///system',
     'test:///default',
@@ -21,21 +21,21 @@ SAMPLE_URIS = {
     'xen://example.com/system',
     'hyperv://example-hyperv.com/?transport=http',
     'ch:///session',
-    'bhyve+ext://example.com/session?command=nc',
-}
+    'bhyve+ext://example.com/system?command=nc',
+)
 
 # An assortment of known invalid URIs used for tests.
 # Each of these should test _exactly_ one failure mode.
-BAD_URIS = {
+BAD_URIS = (
     'foo:///',  # Bogus driver
     'qemu+bar:///system',  # Bogus transport
     'xen://example.com:0/',  # Invalid port number
     'test+ext:///defaults',  # Ext driver without command.
-    f'{ CLIENT_ONLY_DRIVER.value }+ssh://example.com/',  # Client-only driver with transport
-    f'{ CLIENT_ONLY_DRIVER.value }:///',  # Client-only driver without host
+    f'{ CLIENT_ONLY_DRIVER }+ssh://example.com/',  # Client-only driver with transport
+    f'{ CLIENT_ONLY_DRIVER }:///',  # Client-only driver without host
     f'{ SESSION_DRIVER }:///system',  # Using system with session driver
     f'{ SYSTEM_DRIVER }:///session',  # Using session with system driver
-}
+)
 
 
 @pytest.mark.parametrize('uri', SAMPLE_URIS)

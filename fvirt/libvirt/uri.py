@@ -117,9 +117,9 @@ class URI:
         self.__path = path
         self.__parameters = frozendict(parameters)
 
-        if path == 'session' and driver not in SESSION_DRIVERS:
+        if path == '/session' and driver not in SESSION_DRIVERS:
             raise ValueError('Driver does not support /session paths.')
-        elif path == 'system' and driver not in SYSTEM_DRIVERS:
+        elif path == '/system' and driver not in SYSTEM_DRIVERS:
             raise ValueError('Driver does not support /system paths.')
         elif transport is not None and driver in CLIENT_ONLY_DRIVERS:
             raise ValueError('Transport must be None for client only drivers.')

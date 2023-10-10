@@ -53,12 +53,12 @@ def test_version_str() -> None:
     assert str(VERSION) == f'{ VERSION.major }.{ VERSION.minor }.{ VERSION.release }'
 
 
-@pytest.mark.parametrize('v, t', {
+@pytest.mark.parametrize('v, t', (
     (0, VersionNumber(0, 0, 0)),
     (1, VersionNumber(0, 0, 1)),
     (1000, VersionNumber(0, 1, 0)),
     (1000000, VersionNumber(1, 0, 0)),
-})
+))
 def test_libvirt_parse(v: int, t: VersionNumber) -> None:
     '''Test that parsing libvirt version numbers works correctly.'''
     assert VersionNumber.from_libvirt_version(v) == t
