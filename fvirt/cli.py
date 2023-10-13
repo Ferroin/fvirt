@@ -13,9 +13,8 @@ from .commands import LAZY_COMMANDS
 from .commands._base.group import Group
 from .commands._base.help import HelpTopic
 from .commands._base.state import State
-from .libvirt import API_VERSION, URI, Driver, Transport
+from .libvirt import URI, Driver, Transport
 from .util.match import MATCH_HELP
-from .version import VERSION
 
 DEFAULT_MAX_JOBS = 8
 

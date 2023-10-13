@@ -36,6 +36,10 @@ were deleted.
 This command supports fvirt's fail-fast logic. In fail-fast mode, the
 first volume that fails to be deleted will cause the operation to stop,
 and any failure will result in a non-zero exit code.
+
+This command supports fvirt's idempotent logic. In idempotent mode,
+failing to delete a volume because it is does not exist will not be
+treated as an error.
 '''.lstrip().rstrip()
 
 
@@ -52,7 +56,7 @@ def cb(ctx: click.Context, state: State, pool: str, match: MatchArgument, entity
             hvprop='pools',
             parentprop='volumes',
             method='delete',
-            ident=(parent.name, e.name),  # type: ignore
+            ident=(parent.name, e.name),
         ) for e in get_match_or_entity(
             hv=parent,
             hvprop='volumes',

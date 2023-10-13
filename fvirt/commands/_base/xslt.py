@@ -11,7 +11,6 @@ from textwrap import dedent
 from typing import TYPE_CHECKING, Self
 
 import click
-import libvirt
 
 from lxml import etree
 
@@ -67,8 +66,8 @@ class XSLTCommand(MatchCommand):
                         uri=uri,
                         hvprop=hvprop,
                         method='applyXSLT',
-                        ident=e.name,  # type: ignore
-                        args=[xform],
+                        ident=e.name,
+                        arguments=[xform],
                     ) for e in get_match_or_entity(
                         hv=hv,
                         hvprop=hvprop,
@@ -88,8 +87,8 @@ class XSLTCommand(MatchCommand):
                         hvprop=hvprop,
                         parentprop=parent_prop,
                         method='applyXSLT',
-                        ident=(parent_obj.name, e.name),  # type: ignore
-                        args=[xform],
+                        ident=(parent_obj.name, e.name),
+                        arguments=[xform],
                     ) for e in get_match_or_entity(
                         hv=parent_obj,
                         hvprop=parent_prop,

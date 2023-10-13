@@ -14,7 +14,7 @@ import libvirt
 
 from .domain import Domain, DomainAccess
 from .entity import Entity
-from .exceptions import InsufficientPrivileges, InvalidConfig, NotConnected
+from .exceptions import InsufficientPrivileges, InvalidConfig
 from .storage_pool import StoragePool, StoragePoolAccess
 from .uri import URI
 from ..version import VersionNumber

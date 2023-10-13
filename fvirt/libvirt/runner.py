@@ -194,15 +194,15 @@ def run_hv_method(
     uri: URI,
     method: str,
     ident: I1,
-    args: Sequence[Any],
-    kwargs: Mapping[str, Any],
+    arguments: Sequence[Any],
+    kwarguments: Mapping[str, Any],
     postproc: Callable[[Any], T1] = lambda x: x,
     start_event_loop: bool | Callable = False,
 ) -> RunnerResult[I1, T1]:
     '''Call a Hypervisor method on a new Hypervisor with the given URI.
 
-       The method is called with positional arguments `args` and keyword
-       arguments `kwargs`.
+       The method is called with positional arguments `arguments` and keyword
+       arguments `kwarguments`.
 
        `ident` is an arbitrary value passed in to help identify this
        particular call. It is passed directly through to the returned
@@ -218,7 +218,7 @@ def run_hv_method(
     _start_event_loop(start_event_loop)
 
     with Hypervisor(hvuri=uri) as hv:
-        match _run_method(hv, method, ident, args, kwargs):
+        match _run_method(hv, method, ident, arguments, kwarguments):
             case RunnerResult() as r:
                 return r
             case retval:
@@ -236,8 +236,8 @@ def run_entity_method(
     hvprop: str,
     method: str,
     ident: I1,
-    args: Sequence[Any] = [],
-    kwargs: Mapping[str, Any] = dict(),
+    arguments: Sequence[Any] = [],
+    kwarguments: Mapping[str, Any] = dict(),
     postproc: Callable[[Any], T1] = lambda x: x,
     start_event_loop: bool = True
 ) -> RunnerResult[I1, T1]:
@@ -269,7 +269,7 @@ def run_entity_method(
             case _:
                 raise RuntimeError
 
-        match _run_method(entity, method, ident, args, kwargs, entity=True):
+        match _run_method(entity, method, ident, arguments, kwarguments, entity=True):
             case RunnerResult() as r:
                 return r
             case retval:
@@ -289,8 +289,8 @@ def run_sub_entity_method(
     parentprop: str,
     method: str,
     ident: tuple[I1, I2],
-    args: Sequence[Any] = [],
-    kwargs: Mapping[str, Any] = dict(),
+    arguments: Sequence[Any] = [],
+    kwarguments: Mapping[str, Any] = dict(),
     postproc: Callable[[Any], T1] = lambda x: x,
     start_event_loop: bool = True
 ) -> RunnerResult[tuple[I1, I2], T1]:
@@ -305,8 +305,8 @@ def run_sub_entity_method(
        `ident` is a 2-tuple containing an identifier to look up the
        parent object, and an identifier to look up the child object.
 
-       The method will be called with positional arguments from `args`
-       and keyword arguments from `kwargs`.
+       The method will be called with positional arguments from `arguments`
+       and keyword arguments from `kwarguments`.
 
        `postproc` is a function that will be used to process the return
        value of the method.
@@ -333,7 +333,7 @@ def run_sub_entity_method(
             case _:
                 raise RuntimeError
 
-        match _run_method(entity, method, ident, args, kwargs, entity=True, sub_entity=True):
+        match _run_method(entity, method, ident, arguments, kwarguments, entity=True, sub_entity=True):
             case RunnerResult() as r:
                 return r
             case retval:

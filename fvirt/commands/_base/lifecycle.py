@@ -95,9 +95,9 @@ class LifecycleCommand(MatchCommand):
                     uri=uri,
                     hvprop=hvprop,
                     method=method,
-                    ident=e.name,  # type: ignore
-                    args=args,
-                    kwargs=kwargs,
+                    ident=e.name,
+                    arguments=args,
+                    kwarguments=kwargs,
                 ) for e in entities]
 
             success = 0
@@ -366,22 +366,22 @@ class DefineCommand(Command):
                     assert parent_obj is not None
 
                     futures = [state.pool.submit(
-                        run_entity_method,
+                        run_entity_method,  # type: ignore
                         uri=uri,
                         hvprop=parent,
                         method=method,
-                        ident=parent_obj,  # type: ignore
+                        ident=parent_obj,
                         postproc=lambda x: x.name,
-                        args=[c],
+                        arguments=[c],
                     ) for c in confdata]
                 else:
                     futures = [state.pool.submit(
-                        run_hv_method,
+                        run_hv_method,  # type: ignore
                         uri=uri,
                         method=method,
-                        ident='',  # type: ignore
+                        ident='',
                         postproc=lambda x: x.name,
-                        args=[c],
+                        arguments=[c],
                     ) for c in confdata]
 
             for f in concurrent.futures.as_completed(futures):
