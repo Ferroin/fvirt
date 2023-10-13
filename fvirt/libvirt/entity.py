@@ -337,7 +337,7 @@ class ConfigurableEntity(Entity):
         self.config = config
         return True
 
-    def undefine(self: Self, /, *, idempotent: bool = False) -> \
+    def undefine(self: Self, /, *, idempotent: bool = True) -> \
             Literal[LifecycleResult.SUCCESS, LifecycleResult.FAILURE, LifecycleResult.NO_OPERATION]:
         '''Attempt to undefine the entity.
 
@@ -353,14 +353,19 @@ class ConfigurableEntity(Entity):
            Returns LifecycleResult.SUCCESS if the operation succeeds, or
            LifecycleResult.FAILURE if it fails due to a libvirt error.'''
         if not self.valid:
-            return LifecycleResult.NO_OPERATION
+            if idempotent:
+                return LifecycleResult.SUCCESS
+            else:
+                return LifecycleResult.NO_OPERATION
+
+        mark_invalid = self._mark_invalid_on_undefine
 
         try:
             self._entity.undefine()
         except libvirt.libvirtError:
             return LifecycleResult.FAILURE
 
-        if self._mark_invalid_on_undefine:
+        if mark_invalid:
             self._valid = False
 
         return LifecycleResult.SUCCESS

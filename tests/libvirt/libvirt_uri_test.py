@@ -55,3 +55,17 @@ def test_check_invalid(uri: str) -> None:
 def test_check_roundtrip(uri: str) -> None:
     '''Check that a canonical URI can be parsed and then regurgitated successfully.'''
     assert str(URI.from_string(uri)) == uri
+
+
+@pytest.mark.parametrize('uri', SAMPLE_URIS)
+def test_check_equality(uri: str) -> None:
+    '''Check that equality testing works.'''
+    uri1 = URI.from_string(uri)
+    uri2 = URI.from_string(uri)
+
+    assert uri1 == uri2
+
+
+def test_check_hash() -> None:
+    '''Check that hashing works.'''
+    assert isinstance(hash(URI.from_string(SAMPLE_URIS[0])), int)

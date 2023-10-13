@@ -15,7 +15,7 @@ from lxml import etree
 
 from .command import Command
 from ...libvirt.entity import Entity
-from ...util.match import MatchAlias, MatchTarget
+from ...util.match import MatchAlias, MatchArgument, MatchTarget
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping, MutableMapping, Sequence
@@ -27,8 +27,6 @@ P = ParamSpec('P')
 T = TypeVar('T')
 
 DEFAULT_MATCH = re.compile('.*')
-
-MatchArgument = tuple[MatchTarget, re.Pattern]
 
 
 def MatchTargetParam(aliases: Mapping[str, MatchAlias]) -> Type[click.ParamType]:

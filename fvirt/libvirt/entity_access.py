@@ -15,10 +15,8 @@ import libvirt
 from .entity import ConfigurableEntity, Entity
 
 if TYPE_CHECKING:
-    import re
-
     from .hypervisor import Hypervisor
-    from ..util.match import MatchTarget
+    from ..util.match import MatchArgument
 
 
 class BaseEntityAccess(ABC, Sized):
@@ -50,6 +48,10 @@ class BaseEntityAccess(ABC, Sized):
             assert link is not None
             return link
 
+    @staticmethod
+    def _filter_entities(entities: Iterable[Entity]) -> Iterable[Entity]:
+        return entities
+
     @property
     @abstractmethod
     def _count_funcs(self: Self) -> Iterable[str]:
@@ -79,7 +81,7 @@ class EntityMap(BaseEntityAccess, Mapping):
                 case None:
                     return iter([])
                 case entities:
-                    return iter([x.name() for x in entities])
+                    return iter(self._get_key(x) for x in self._filter_entities(entities))
 
     def __getitem__(self: Self, key: Any) -> Entity:
         key = self._coerce_key(key)
@@ -136,7 +138,7 @@ class UUIDMap(EntityMap):
 
        When iterating keys, only uuid.UUID objects will be returned.'''
     def _get_key(self: Self, entity: Any) -> UUID:
-        return UUID(entity.uuidString())
+        return UUID(entity.UUIDString())
 
     def _coerce_key(self: Self, key: Any) -> str:
         match key:
@@ -173,29 +175,34 @@ class EntityAccess(BaseEntityAccess, Iterable):
                 case None:
                     return iter([])
                 case entities:
-                    return iter(self._entity_class(x, self._parent) for x in entities)
+                    return iter(self._entity_class(x, self._parent) for x in self._filter_entities(entities))
 
-    def get(self: Self, key: str) -> Entity | None:
+    def get(self: Self, key: Any) -> Entity | None:
         '''Look up an entity by a general identifier.
 
            This tries, in order, looking up by name and then by UUID. If
-           it can't find an entity based on that key, it returns None.'''
+           it can't find an entity based on that key, it returns None.
+
+           Child classes should override this to specify an appropriate
+           type signature.'''
         ret: Entity | None = None
 
         if hasattr(self, 'by_name'):
-            ret = self.by_name.get(key, None)
+            if isinstance(key, str):
+                ret = self.by_name.get(key, None)
 
         if ret is None and hasattr(self, 'by_uuid'):
-            try:
-                uuid = UUID(key)
-            except ValueError:
-                pass
-            else:
-                ret = self.by_uuid.get(uuid, None)
+            if isinstance(key, UUID):
+                ret = self.by_uuid.get(key, None)
+            elif isinstance(key, str):
+                try:
+                    ret = self.by_uuid.get(UUID(hex=key), None)
+                except ValueError:
+                    pass
 
         return ret
 
-    def match(self: Self, match: tuple[MatchTarget, re.Pattern]) -> Iterable[ConfigurableEntity]:
+    def match(self: Self, match: MatchArgument) -> Iterable[ConfigurableEntity]:
         '''Return an iterable of entities that match given match parameters.'''
         def f(entity: ConfigurableEntity) -> bool:
             value = match[0].get_value(entity)

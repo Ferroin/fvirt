@@ -12,28 +12,32 @@ fvirt = "fvirt.cli:cli"
 
 [tool.poetry.dependencies]
 python = "^3.11"
-libvirt-python = "^9.6.0,!=9.7.0"
-lxml = "^4.9.3"
+blessed = "^1.20.0"
 click = "^8.1.7"
 frozendict = "^2.3.8"
-blessed = "^1.20.0"
+libvirt-python = "^9.6.0,!=9.7.0"
+lxml = "^4.9.3"
 
 [tool.poetry.group.dev.dependencies]
 bandit = "^1.7.5"
-flake8 = "^6.0.0"
 flake8-2020 = "^1.8.1"
+flake8 = "^6.0.0"
 flake8-async = "^22.11.14"
 flake8-debug = "^0.2.0"
+flake8-isort = "^6.1.0"
 flake8-quotes = "^3.3.2"
 flake8-sfs = "^0.0.4"
+isort = "^5.12.0"
 lxml-stubs = "^0.4.0"
 mypy = "^1.5.0"
-yamllint = "^1.32.0"
-flake8-isort = "^6.1.0"
-isort = "^5.12.0"
 pytest = "^7.4.2"
-pytest-xdist = "^3.3.1"
+pytest-click = "^1.1.0"
 pytest-cov = "^4.1.0"
+pytest-randomly = "^3.15.0"
+pytest-unique = "^0.1.1"
+pytest-xdist = "^3.3.1"
+simple-file-lock = "^2023.5"
+yamllint = "^1.32.0"
 
 [tool.mypy]
 python_version = "3.11"
@@ -50,6 +54,10 @@ warn_unreachable = true
 module = "libvirt"
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+module = "simple_file_lock"
+ignore_missing_imports = true
+
 [tool.isort]
 balanced_wrapping = true
 combine_as_imports = true
@@ -64,6 +72,9 @@ use_parentheses = true
 
 [tool.pytest.ini_options]
 minversion = 7.0
+markers = [
+    "slow: marks tests which take a long time to run (more than a few seconds)",
+]
 testpaths = "tests"
 xfail_strict = true
 

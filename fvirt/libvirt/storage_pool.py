@@ -6,13 +6,13 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
-from typing import TYPE_CHECKING, Self
+from typing import TYPE_CHECKING, Any, Self, cast
 
 import libvirt
 
 from .entity import ConfigProperty, ConfigurableEntity, LifecycleResult, RunnableEntity
 from .entity_access import BaseEntityAccess, EntityAccess, NameMap, UUIDMap
-from .exceptions import InsufficientPrivileges, InvalidConfig, NotConnected
+from .exceptions import EntityRunning, InsufficientPrivileges, InvalidConfig, NotConnected
 from .volume import Volume, VolumeAccess
 from ..util.match import MatchAlias
 
@@ -89,9 +89,9 @@ class StoragePool(ConfigurableEntity, RunnableEntity):
 
     def __repr__(self: Self) -> str:
         if self.valid:
-            return f'<fvirt.libvirt.Pool: name={ self.name }>'
+            return f'<fvirt.libvirt.StoragePool: name={ self.name }>'
         else:
-            return '<fvirt.libvirt.Pool: INVALID>'
+            return '<fvirt.libvirt.StoragePool: INVALID>'
 
     @property
     def _format_properties(self: Self) -> set[str]:
@@ -102,7 +102,7 @@ class StoragePool(ConfigurableEntity, RunnableEntity):
 
     @property
     def _define_method(self: Self) -> str:
-        return 'definePool'
+        return 'defineStoragePool'
 
     @property
     def _config_flags(self: Self) -> int:
@@ -118,13 +118,24 @@ class StoragePool(ConfigurableEntity, RunnableEntity):
         '''The number of volumes in the pool.'''
         return len(self.volumes)
 
+    def build(self: Self) -> LifecycleResult:
+        '''Build the storage pool.'''
+        self._check_valid()
+
+        try:
+            self._entity.build(flags=0)
+        except libvirt.libvirtError:
+            return LifecycleResult.FAILURE
+
+        return LifecycleResult.SUCCESS
+
     def refresh(self: Self) -> LifecycleResult:
         '''Refresh the list of volumes in the pool.'''
         self._check_valid()
 
         try:
             self._entity.refresh()
-        except libvirt.LibvirtError:
+        except libvirt.libvirtError:
             return LifecycleResult.FAILURE
 
         return LifecycleResult.SUCCESS
@@ -132,7 +143,17 @@ class StoragePool(ConfigurableEntity, RunnableEntity):
     def delete(self: Self, idempotent: bool = True) -> LifecycleResult:
         '''Delete the underlying storage resources for the pool.
 
+           Only works on storage pools that are not running.
+
+           May not work if the pool still has volumes in it.
+
+           Idempotent operation only comes into effect if the pool is no
+           longer valid. Deleting a valid pool is inherently idempotent.
+
            This is a non-recoverable destructive operation.'''
+        if self.running:
+            raise EntityRunning
+
         if not self.valid:
             if idempotent:
                 return LifecycleResult.SUCCESS
@@ -143,8 +164,6 @@ class StoragePool(ConfigurableEntity, RunnableEntity):
             self._entity.delete()
         except libvirt.libvirtError:
             return LifecycleResult.FAILURE
-
-        self.__valid = False
 
         return LifecycleResult.SUCCESS
 
@@ -158,10 +177,10 @@ class StoragePool(ConfigurableEntity, RunnableEntity):
            success.'''
         self._check_valid()
 
-        if self.__conn.read_only:
+        if self._hv.read_only:
             raise InsufficientPrivileges
 
-        if not self.__conn:
+        if not self._hv.connected:
             raise NotConnected
 
         try:
@@ -169,7 +188,7 @@ class StoragePool(ConfigurableEntity, RunnableEntity):
         except libvirt.libvirtError:
             raise InvalidConfig
 
-        return Volume(vol, self.__conn, self)
+        return Volume(vol, self._hv, self)
 
 
 class StoragePools(BaseEntityAccess):
@@ -213,6 +232,10 @@ class StoragePoolAccess(EntityAccess, StoragePools):
         self.__by_name = StoragePoolsByName(parent)
         self.__by_uuid = StoragePoolsByUUID(parent)
         super().__init__(parent)
+
+    def get(self: Self, key: Any) -> StoragePool | None:
+        '''Look up a storage pool by a general identifier.'''
+        return cast(StoragePool, super().get(key))
 
     @property
     def by_name(self: Self) -> StoragePoolsByName:

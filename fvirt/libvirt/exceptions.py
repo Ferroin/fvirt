@@ -36,6 +36,11 @@ class EntityNotRunning(InvalidOperation):
     pass
 
 
+class EntityRunning(InvalidOperation):
+    '''Raised when attempting an operation that requires an entity to not be running on a running entity.'''
+    pass
+
+
 class InsufficientPrivileges(FVirtException):
     '''Raised when attempting to perform write operations on a read only connection.'''
     pass
@@ -49,6 +54,7 @@ class TimedOut(FVirtException):
 __all__ = [
     'FVirtException',
     'EntityNotRunning',
+    'EntityRunning',
     'InsufficientPrivileges',
     'InvalidConfig',
     'InvalidEntity',

@@ -5,7 +5,15 @@
 
 import pytest
 
+import fvirt
+
 from fvirt.version import VERSION, VersionNumber
+
+
+def test_version_in_init() -> None:
+    '''Confirm that VERSION is also in the __init__ module.'''
+    assert hasattr(fvirt, 'VERSION')
+    assert fvirt.VERSION == VERSION
 
 
 def test_version_type() -> None:

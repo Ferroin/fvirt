@@ -90,15 +90,13 @@ class Hypervisor:
         if self.read_only:
             raise InsufficientPrivileges
 
-        if self._connection is None:
-            raise NotConnected
+        with self:
+            try:
+                entity = getattr(self._connection, method)(config, flags)
+            except libvirt.libvirtError:
+                raise InvalidConfig
 
-        try:
-            entity = getattr(self._connection, method)(config, flags)
-        except libvirt.LibvirtError:
-            raise InvalidConfig
-
-        return entity_class(entity, self)
+            return entity_class(entity, self)
 
     @property
     def read_only(self: Self) -> bool:

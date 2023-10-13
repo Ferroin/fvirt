@@ -3,14 +3,18 @@
 
 '''Core tests for fvirt.commands.host.uri'''
 
-from click.testing import CliRunner
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 from fvirt.cli import cli
 
+if TYPE_CHECKING:
+    from click.testing import CliRunner
 
-def test_uri() -> None:
+
+def test_uri(cli_runner: CliRunner, test_uri: str) -> None:
     '''Test that the host uri command properly reports the URI.'''
-    runner = CliRunner()
-    result = runner.invoke(cli, ['-c', 'test:///default', 'host', 'uri'])
+    result = cli_runner.invoke(cli, ['-c', test_uri, 'host', 'uri'])
     assert result.exit_code == 0
-    assert result.output == 'test:///default\n'
+    assert result.output == f'{ test_uri }\n'

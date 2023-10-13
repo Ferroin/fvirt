@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Self, Type
+from typing import Any, Self, Type
 from urllib.parse import parse_qs, quote, urlparse
 
 from frozendict import frozendict
@@ -183,6 +183,15 @@ class URI:
                 uri = f'{ uri }&{ key }={ quote(value, safe="") } '
 
         return uri
+
+    def __hash__(self: Self) -> int:
+        return hash(str(self))
+
+    def __eq__(self: Self, other: Any) -> bool:
+        if not isinstance(other, URI):
+            return False
+
+        return str(self) == str(other)
 
     @property
     def driver(self: Self) -> Driver | None:

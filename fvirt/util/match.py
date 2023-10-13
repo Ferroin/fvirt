@@ -15,7 +15,6 @@ from lxml import etree
 if TYPE_CHECKING:
     from ..libvirt.entity import ConfigurableEntity
 
-
 MATCH_HELP = '''fvirt object matching is based on two parameters passed to the --match
 option of a fvirt command. The first is the match target, and the second
 is the match pattern.
@@ -37,8 +36,6 @@ are fully supported.
 To see a list of recognized match aliases for a given subcommand, run
 `fvirt <subcommand> help aliases`
 '''
-
-DEFAULT_MATCH = re.compile('.*')
 
 
 @dataclass(kw_only=True, slots=True)
@@ -94,8 +91,11 @@ class MatchTarget:
             return ''
 
 
+MatchArgument = tuple[MatchTarget, re.Pattern]
+
 __all__ = [
     'MatchAlias',
+    'MatchArgument',
     'MatchTarget',
     'MATCH_HELP',
 ]

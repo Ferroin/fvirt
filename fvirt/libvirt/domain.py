@@ -282,9 +282,8 @@ class Domain(ConfigurableEntity, RunnableEntity):
            in seconds that we should wait for the domain to shut down. If
            the timeout is exceeded and force is True, then the domain
            will be forcibly stopped (equivalent to calling the destroy()
-           method) and True will be returned if that succeeds. If
-           the timeout is exceeded and force is False (the default),
-           a fvirt.libvirt.TimedOut exception will be raised.
+           method). A timeout of less than 0 indicates that fvirt should
+           use an arbitrary large timeout with longer polling periods.
 
            The timeout is polled roughly once per second using time.sleep().
 
@@ -299,9 +298,11 @@ class Domain(ConfigurableEntity, RunnableEntity):
         else:
             if isinstance(timeout, int):
                 if timeout < 0:
-                    tmcount = 0
+                    tmcount = 60
+                    interval = 5
                 else:
                     tmcount = timeout
+                    interval = 1
             else:
                 raise ValueError(f'Invalid timeout specified: { timeout }.')
 
@@ -332,8 +333,8 @@ class Domain(ConfigurableEntity, RunnableEntity):
 
                 break
 
-            tmcount -= 1
-            sleep(1)
+            tmcount -= interval
+            sleep(interval)
 
         if cast(bool, self.running):
             if force:
@@ -362,9 +363,9 @@ class Domain(ConfigurableEntity, RunnableEntity):
         if not self.running:
             if self.hasManagedSave:
                 if idempotent:
-                    return LifecycleResult.NO_OPERATION
+                    return LifecycleResult.SUCCESS
                 else:
-                    return LifecycleResult.FAILURE
+                    return LifecycleResult.NO_OPERATION
             else:
                 raise EntityNotRunning
 
@@ -418,11 +419,15 @@ class DomainsByID(EntityMap, Domains):
     def _lookup_func(self: Self) -> str:
         return 'lookupByID'
 
+    @staticmethod
+    def _filter_entities(entities: Iterable) -> Iterable:
+        return iter(x for x in entities if x.ID() > 0)
+
     def _get_key(self: Self, entity: Any) -> int:
         return cast(int, entity.ID())
 
     def _coerce_key(self: Self, key: Any) -> int:
-        if not isinstance(key, int):
+        if not isinstance(key, int) or key < 1:
             raise KeyError(key)
 
         return key
@@ -442,7 +447,7 @@ class DomainAccess(EntityAccess, Domains):
         self.__by_id = DomainsByID(parent)
         super().__init__(parent)
 
-    def get(self: Self, key: str) -> Domain | None:
+    def get(self: Self, key: Any) -> Domain | None:
         '''Look up a domain by a general identifier.
 
            This tries, in order, looking up by name, then by UUID,
@@ -451,12 +456,13 @@ class DomainAccess(EntityAccess, Domains):
         ret = cast(Domain | None, super().get(key))
 
         if ret is None:
-            try:
-                ID = int(key)
-            except ValueError:
-                pass
-            else:
-                ret = self.by_id.get(ID, None)
+            if isinstance(key, int):
+                ret = self.by_id.get(key, None)
+            elif isinstance(key, str) or isinstance(key, float):
+                try:
+                    ret = self.by_id.get(int(key), None)
+                except ValueError:
+                    pass
 
         return ret
 
