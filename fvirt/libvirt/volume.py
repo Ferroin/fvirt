@@ -16,7 +16,6 @@ from ..util.match import MatchAlias
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
-    from .hypervisor import Hypervisor
     from .storage_pool import StoragePool
 
 MATCH_ALIASES = {
@@ -59,17 +58,15 @@ class Volume(ConfigurableEntity):
         typ=str,
     )
 
-    def __init__(self: Self, vol: libvirt.virStorageVol | Volume, conn: Hypervisor, pool: StoragePool) -> None:
+    def __init__(self: Self, vol: libvirt.virStorageVol | Volume, pool: StoragePool) -> None:
         if isinstance(vol, Volume):
             vol = vol._entity
 
-        super().__init__(vol, conn)
-
-        self._pool = pool
+        super().__init__(vol, pool)
 
     def __repr__(self: Self) -> str:
         if self.valid:
-            return f'<fvirt.libvirt.Volume: pool={ self._pool.name } name={ self.name }>'
+            return f'<fvirt.libvirt.Volume: pool={ cast(StoragePool, self._parent).name } name={ self.name }>'
         else:
             return '<fvirt.libvirt.Volume: INVALID>'
 
@@ -84,8 +81,12 @@ class Volume(ConfigurableEntity):
         }
 
     @property
+    def _mark_invalid_on_undefine(self: Self) -> bool:
+        return True
+
+    @property
     def _define_target(self: Self) -> StoragePool:
-        return self._pool
+        return cast(StoragePool, self._parent)
 
     @property
     def _define_method(self: Self) -> str:
@@ -126,7 +127,7 @@ class Volume(ConfigurableEntity):
             if idempotent:
                 return LifecycleResult.SUCCESS
             else:
-                return LifecycleResult.FAILURE
+                return LifecycleResult.NO_OPERATION
 
         try:
             self._entity.delete()
@@ -136,6 +137,10 @@ class Volume(ConfigurableEntity):
         self._valid = False
 
         return LifecycleResult.SUCCESS
+
+    def undefine(self: Self, idempotent: bool = True) -> LifecycleResult:
+        '''Alias for delete() to preserve compatibility with other entities.'''
+        return self.delete(idempotent=idempotent)
 
     def wipe(self: Self) -> LifecycleResult:
         '''Wipe the data in the volume.
@@ -240,7 +245,7 @@ class VolumesByName(NameMap, Volumes):
     '''Immutabkle mapping returning volumes on a StoragePool based on their names.'''
     @property
     def _lookup_func(self: Self) -> str:
-        return 'lookupByName'
+        return 'storageVolLookupByName'
 
 
 class VolumeAccess(EntityAccess, Volumes):

@@ -36,27 +36,27 @@ class Entity(ABC):
        entity’s context will ensure that the Hypervisor instance it
        is tied to is connected, and that the entity itself is valid.'''
     __slots__ = [
-        '__conn',
         '__entity',
+        '_hv',
         '_parent',
         '_valid',
     ]
 
     def __init__(self: Self, entity: Any, parent: Hypervisor | Entity) -> None:
         if isinstance(parent, Entity):
-            self.__conn = parent._hv
+            self._hv: Hypervisor = parent._hv
             self._parent: Entity | None = parent
         else:
-            self.__conn = parent
+            self._hv = parent
             self._parent = None
 
-        self.__conn.open()
+        self._hv.open()
 
         self.__entity = entity
         self._valid = True
 
     def __del__(self: Self) -> None:
-        self.__conn.close()
+        self._hv.close()
 
     def __format__(self: Self, format_spec: str) -> str:
         fmt_args: dict[str, Any] = dict()
@@ -117,13 +117,6 @@ class Entity(ABC):
            generally discouraged as calling certain methods will cause
            the encapsulating Entity instance to stop working correctly.'''
         return self.__entity
-
-    @property
-    def _hv(self: Self) -> Hypervisor:
-        '''The hypervisor instance this entity is tied to.
-
-           API users should generally not need to access this at all.'''
-        return self.__conn
 
     @property
     def valid(self: Self) -> bool:
@@ -337,8 +330,7 @@ class ConfigurableEntity(Entity):
         self.config = config
         return True
 
-    def undefine(self: Self, /, *, idempotent: bool = True) -> \
-            Literal[LifecycleResult.SUCCESS, LifecycleResult.FAILURE, LifecycleResult.NO_OPERATION]:
+    def undefine(self: Self, /, *, idempotent: bool = True) -> LifecycleResult:
         '''Attempt to undefine the entity.
 
            If the entity is already undefined and idempotent is False

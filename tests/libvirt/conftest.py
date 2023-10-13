@@ -164,3 +164,18 @@ def volume_factory(volume_xml: Callable[[StoragePool], str]) -> Callable[[Storag
         return pool.defineVolume(volume_xml(pool))
 
     return inner
+
+
+@pytest.fixture
+def live_volume(live_pool: StoragePool, volume_factory: Callable[[StoragePool], Volume]) -> Generator[Volume, None, None]:
+    '''Provide a live volume to operate on.'''
+    vol = volume_factory(live_pool)
+
+    assert '_hv' in dir(vol)
+
+    yield vol
+
+    assert '_hv' in dir(vol)
+
+    if vol.valid:
+        vol.undefine()

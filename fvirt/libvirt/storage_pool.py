@@ -188,7 +188,7 @@ class StoragePool(ConfigurableEntity, RunnableEntity):
         except libvirt.libvirtError:
             raise InvalidConfig
 
-        return Volume(vol, self._hv, self)
+        return Volume(vol, self)
 
 
 class StoragePools(BaseEntityAccess):
