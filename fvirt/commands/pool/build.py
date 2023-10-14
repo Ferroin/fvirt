@@ -11,8 +11,8 @@ from .._base.lifecycle import OperationHelpInfo, SimpleLifecycleCommand
 from ...libvirt.storage_pool import MATCH_ALIASES
 
 
-class _RefreshCommand(SimpleLifecycleCommand):
-    '''Class for resetting domains.'''
+class _BuildCommand(SimpleLifecycleCommand):
+    '''Class for building storage pools.'''
     @property
     def METHOD(self: Self) -> str: return 'build'
 
@@ -26,7 +26,7 @@ class _RefreshCommand(SimpleLifecycleCommand):
         )
 
 
-build = _RefreshCommand(
+build = _BuildCommand(
     name='build',
     aliases=MATCH_ALIASES,
     hvprop='pools',

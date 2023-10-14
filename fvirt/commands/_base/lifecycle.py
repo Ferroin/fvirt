@@ -8,7 +8,7 @@ from __future__ import annotations
 import concurrent.futures
 
 from abc import ABC, abstractmethod
-from collections.abc import Mapping, MutableMapping, Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from textwrap import dedent
 from typing import TYPE_CHECKING, Any, Self, cast
@@ -19,7 +19,7 @@ from .command import Command
 from .match import MatchArgument, MatchCommand, get_match_or_entity
 from ...libvirt import InvalidConfig, InvalidOperation, LifecycleResult
 from ...libvirt.entity import RunnableEntity
-from ...libvirt.runner import RunnerResult, run_entity_method, run_hv_method
+from ...libvirt.runner import RunnerResult, run_entity_method, run_hv_method, run_sub_entity_method
 
 if TYPE_CHECKING:
     from .state import State
@@ -68,37 +68,73 @@ class LifecycleCommand(MatchCommand):
             doc_name: str,
             op_help: OperationHelpInfo,
             hvprop: str,
+            parent: str | None = None,
+            parent_name: str | None = None,
+            parent_metavar: str | None = None,
             epilog: str | None = None,
             params: Sequence[click.Parameter] = [],
-            context_settings: MutableMapping[str, Any] = dict(),
             hidden: bool = False,
             deprecated: bool = False,
             ) -> None:
-        def cb(ctx: click.Context, state: State, match: MatchArgument | None, name: str | None, *args: Any, **kwargs: Any) -> None:
+        parent_args = {parent, parent_name, parent_metavar}
+
+        if None in parent_args and parent_args != {None}:
+            raise ValueError('Either all of parent, parent_name, and parent_metavar must be specified, or neither must be specified.')
+
+        def cb(
+            ctx: click.Context,
+            state: State,
+            match: MatchArgument | None,
+            name: str | None,
+            parent_obj: str | None = None,
+            *args: Any,
+            **kwargs: Any
+        ) -> None:
             if op_help.idempotent_state:
                 kwargs['idempotent'] = state.idempotent
 
             with state.hypervisor as hv:
-                entities = cast(Sequence[RunnableEntity], get_match_or_entity(
-                    hv=hv,
-                    hvprop=hvprop,
-                    match=match,
-                    entity=name,
-                    ctx=ctx,
-                    doc_name=doc_name,
-                ))
-
                 uri = hv.uri
 
-                futures = [state.pool.submit(
-                    run_entity_method,
-                    uri=uri,
-                    hvprop=hvprop,
-                    method=method,
-                    ident=e.name,
-                    arguments=args,
-                    kwarguments=kwargs,
-                ) for e in entities]
+                if parent_obj is not None:
+                    assert parent is not None
+
+                    parent_entity = getattr(hv, hvprop).get(parent_obj)
+
+                    futures = [state.pool.submit(
+                        run_sub_entity_method,
+                        uri=uri,
+                        hvprop=hvprop,
+                        parentprop=parent,
+                        method=method,
+                        ident=(parent_entity.name, e.name),
+                        arguments=args,
+                        kwarguments=kwargs
+                    ) for e in get_match_or_entity(
+                        hv=parent_entity,
+                        hvprop=parent,
+                        match=match,
+                        entity=name,
+                        ctx=ctx,
+                        doc_name=doc_name,
+                    )]
+                else:
+                    futures = [state.pool.submit(
+                        run_entity_method,
+                        uri=uri,
+                        hvprop=hvprop,
+                        method=method,
+                        ident=e.name,
+                        arguments=args,
+                        kwarguments=kwargs,
+                    ) for e in get_match_or_entity(
+                        hv=hv,
+                        hvprop=hvprop,
+                        match=match,
+                        entity=name,
+                        ctx=ctx,
+                        doc_name=doc_name,
+                    )]
 
             success = 0
             skipped = 0
@@ -157,7 +193,7 @@ class LifecycleCommand(MatchCommand):
                 click.echo('')
                 click.echo('Results:')
                 click.echo(f'  Success:     { success }')
-                click.echo(f'  Failed:      { len(entities) - success }')
+                click.echo(f'  Failed:      { len(futures) - success }')
 
                 if skipped:
                     click.echo(f'    Skipped:   { skipped }')
@@ -168,20 +204,39 @@ class LifecycleCommand(MatchCommand):
                 if forced:
                     click.echo(f'    Forced:    { forced }')
 
-                click.echo(f'Total:         { len(entities) }')
+                click.echo(f'Total:         { len(futures) }')
 
-                if success != len(entities) or (not entities and state.fail_if_no_match):
+                if success != len(futures) or (not futures and state.fail_if_no_match):
                     ctx.exit(3)
 
-        params = tuple(params) + (click.Argument(
+        params = tuple(params)
+
+        if parent is not None:
+            params += (click.Argument(
+                param_decls=('parent_obj',),
+                nargs=1,
+                required=True,
+                metavar=parent_metavar,
+            ),)
+
+        params += (click.Argument(
             param_decls=('name',),
             metavar=doc_name,
             nargs=1,
             required=False,
         ),)
 
+        if parent is not None:
+            header = dedent(f'''
+            { op_help.verb.capitalize() } one or more { doc_name }s in the specified { parent_name }.
+
+            The { parent_metavar } argument should indicate which {
+            parent_name } to look for the { doc_name }s in.''').lstrip()
+        else:
+            header = f'{ op_help.verb.capitalize() } one or more { doc_name }s.'
+
         docstr = dedent(f'''
-        { op_help.verb.capitalize() } one or more { doc_name }s.
+        { header }
 
         Either a specific { doc_name } name to { op_help.verb } should
         be specified as NAME, or matching parameters should be specified
@@ -218,7 +273,6 @@ class LifecycleCommand(MatchCommand):
             aliases=aliases,
             doc_name=doc_name,
             params=params,
-            context_settings=context_settings,
             hidden=hidden,
             deprecated=deprecated,
         )
@@ -242,6 +296,9 @@ class SimpleLifecycleCommand(ABC, LifecycleCommand):
             aliases: Mapping[str, MatchAlias],
             doc_name: str,
             hvprop: str,
+            parent: str | None = None,
+            parent_name: str | None = None,
+            parent_metavar: str | None = None,
             epilog: str | None = None,
             params: Sequence[click.Parameter] = [],
             hidden: bool = False,
@@ -253,6 +310,9 @@ class SimpleLifecycleCommand(ABC, LifecycleCommand):
             aliases=aliases,
             method=self.METHOD,
             hvprop=hvprop,
+            parent=parent,
+            parent_name=parent_name,
+            parent_metavar=parent_metavar,
             doc_name=doc_name,
             op_help=self.OP_HELP,
             params=params,
