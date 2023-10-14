@@ -12,7 +12,8 @@ from uuid import UUID
 
 import libvirt
 
-from .entity import ConfigAttributeProperty, ConfigElementProperty, ConfigurableEntity, LifecycleResult, RunnableEntity
+from .descriptors import ConfigAttributeProperty, ConfigElementProperty, MethodProperty
+from .entity import ConfigurableEntity, LifecycleResult, RunnableEntity
 from .entity_access import BaseEntityAccess, EntityAccess, EntityMap, NameMap, UUIDMap
 from .exceptions import EntityNotRunning, InvalidOperation
 from ..util.match import MatchAlias
@@ -36,7 +37,7 @@ MATCH_ALIASES = {
 }
 
 
-def _non_negative_integer(value: int, _instance: Domain) -> None:
+def _non_negative_integer(value: int, _instance: Any) -> None:
     if not isinstance(value, int):
         raise ValueError(f'{ value } is not a positive integer.')
     else:
@@ -47,21 +48,21 @@ def _non_negative_integer(value: int, _instance: Domain) -> None:
 def _currentCPUs_validator(value: int, instance: Domain) -> None:
     _non_negative_integer(value, instance)
 
-    if value > instance.maxCPUs:
+    if value > cast(int, instance.maxCPUs):
         raise ValueError('Current CPU count may not exceed max CPU count.')
 
 
 def _memory_validator(value: int, instance: Domain) -> None:
     _non_negative_integer(value, instance)
 
-    if value > instance.maxMemory:
+    if value > cast(int, instance.maxMemory):
         raise ValueError('Memory cannot exceed maxMemory value.')
 
 
 def _currentMemory_validator(value: int, instance: Domain) -> None:
     _non_negative_integer(value, instance)
 
-    if value > instance.memory:
+    if value > cast(int, instance.memory):
         raise ValueError('Current memory cannot exceed memory value.')
 
 
@@ -102,52 +103,62 @@ class Domain(ConfigurableEntity, RunnableEntity):
        some of the functionality provided by that class, but wraps most
        of the useful parts in a nicer, more Pythonic interface.'''
     genid: ConfigElementProperty[UUID] = ConfigElementProperty(
+        doc='The generation ID of the domain.',
         path='./genid/text()[1]',
-        typ=UUID,
+        type=UUID,
     )
     osType: ConfigElementProperty[str] = ConfigElementProperty(
+        doc='THe OS type of the domain.',
         path='./os/type/text()[1]',
         typ=str,
     )
     osArch: ConfigAttributeProperty[str] = ConfigAttributeProperty(
+        doc='The CPU architecture of the domain.',
         path='./os',
-        attrib='arch',
+        attr='arch',
         typ=str,
     )
     osMachine: ConfigAttributeProperty[str] = ConfigAttributeProperty(
+        doc='The machine type of the domain.',
         path='./os',
-        attrib='machine',
+        attr='machine',
         typ=str,
     )
     emulator: ConfigElementProperty[str] = ConfigElementProperty(
+        doc='The emulator used for the domain.',
         path='./devices/emulator/text()[1]',
         typ=str,
     )
     maxCPUs: ConfigElementProperty[int] = ConfigElementProperty(
+        doc='The maximum number of virtuual CPUs for the domain.',
         path='./vcpu/text()[1]',
         typ=int,
         validator=_non_negative_integer,
     )
     currentCPUs: ConfigAttributeProperty[int] = ConfigAttributeProperty(
+        doc='The current number of virtual CPUs attached to the domain.',
         path='./vcpu/text()[1]',
-        attrib='current',
+        attr='current',
         typ=int,
         fallback='maxCPUs',
         validator=_currentCPUs_validator,
     )
     maxMemory: ConfigElementProperty[int] = ConfigElementProperty(
+        doc='The maximum amount of memory that can be allocated to the domain.',
         path='./maxMemory/text()[1]',
         typ=int,
         units_to_bytes=True,
         validator=_non_negative_integer,
     )
     maxMemorySlots: ConfigAttributeProperty[int] = ConfigAttributeProperty(
+        doc='The number of memory slots in the domain.',
         path='./maxMemory/text()[1]',
-        attrib='slots',
+        attr='slots',
         typ=int,
         validator=_non_negative_integer,
     )
     memory: ConfigElementProperty[int] = ConfigElementProperty(
+        doc='The total memory allocated to the domain.',
         path='./memory/text()[1]',
         typ=int,
         fallback='maxMemory',
@@ -155,11 +166,27 @@ class Domain(ConfigurableEntity, RunnableEntity):
         validator=_memory_validator,
     )
     currentMemory: ConfigElementProperty[int] = ConfigElementProperty(
+        doc='The current memory in use by the domain, not including any reclaimed by a memory balloon.',
         path='./currentMemory/text()[1]',
         typ=int,
         fallback='memory',
         units_to_bytes=True,
         validator=_currentMemory_validator,
+    )
+    id: MethodProperty[int] = MethodProperty(
+        doc='THe libvirt ID of the domain. Only valid for running domains.',
+        get='ID',
+        type=int,
+    )
+    hasCurrentSnapshot: MethodProperty[bool] = MethodProperty(
+        doc='Whether or not the domain has a current snapshot.',
+        get='hasCurrentSnapshot',
+        type=bool,
+    )
+    hasManagedSave: MethodProperty[bool] = MethodProperty(
+        doc='Whether or not the domain has a managed save state.',
+        get='hasManagedSaveImage',
+        type=bool,
     )
 
     def __init__(self: Self, dom: libvirt.virDomain | Domain, conn: Hypervisor) -> None:
@@ -194,31 +221,6 @@ class Domain(ConfigurableEntity, RunnableEntity):
             flags |= libvirt.VIR_DOMAIN_XML_SECURE
 
         return flags
-
-    @property
-    def id(self: Self) -> int | None:
-        '''The libvirt id of the domain.
-
-           A value of -1 is returned if the domain is not running.'''
-        self._check_valid()
-
-        domid = self._entity.ID()
-
-        return cast(int, domid)
-
-    @property
-    def hasCurrentSnapshot(self: Self) -> bool:
-        '''Whether or not the domain has a current snapshot.'''
-        self._check_valid()
-
-        return bool(self._entity.hasCurrentSnapshot())
-
-    @property
-    def hasManagedSave(self: Self) -> bool:
-        '''Whether or not the domain has a managed save state.'''
-        self._check_valid()
-
-        return bool(self._entity.hasManagedSaveImage())
 
     @property
     def state(self: Self) -> DomainState:

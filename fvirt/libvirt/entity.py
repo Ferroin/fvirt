@@ -8,19 +8,17 @@ from __future__ import annotations
 import enum
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Generic, Literal, Self, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Literal, Self, TypeVar, cast
 from uuid import UUID
 
 import libvirt
 
 from lxml import etree
 
+from .descriptors import MethodProperty
 from .exceptions import InsufficientPrivileges, InvalidEntity, NotConnected
-from ..util.units import unit_to_bytes
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
     from .hypervisor import Hypervisor
 
 T = TypeVar('T')
@@ -373,165 +371,20 @@ class ConfigurableEntity(Entity):
         self.configRaw = str(xslt(self.config))
 
 
-class ConfigProperty(Generic[T]):
-    '''A descriptor for accessing items in the configuration of a ConfigurableEntity.
-
-       The path argument is an XPath expression that when evaluated
-       against the config produces the value of the property.
-
-       The typ argument is a function used to ensure the returned value
-       is the right type.
-
-       THe units_to_bytes argument is a boolean which if True, enables
-       automatic conversion of libvirt-style numbers with units down to
-       integral bytes. If this is True, the path argument must evaluate to
-       an element with a numerical value for it’s text and an optional
-       attribute named units which specifies the units of the value.
-
-       The fallback argument is either the name of a different attribute
-       on the instance to use as a default value, or None if we should
-       raise an attribute error when we can't find a value.
-
-       For writable configuration properties, use ConfigElementProperty
-       or ConfigAttributeProperty instead.'''
-    def __init__(
-            self: Self,
-            /,
-            path: str,
-            *,
-            typ: Callable[[Any], T] | None = None,
-            units_to_bytes: bool = False,
-            fallback: str | None = None,
-            ) -> None:
-        self._path = path
-        self._xpath = etree.XPath(path, smart_strings=False)
-        self._type = typ
-        self._units_to_bytes = units_to_bytes
-        self._fallback = fallback
-
-    def __get__(self: Self, instance: ConfigurableEntity, _owner: Any) -> T:
-        ret: Any = None
-
-        if self._units_to_bytes:
-            e = instance.config.find(self._path)
-
-            if e is None:
-                if self._fallback is not None:
-                    fb = getattr(instance, self._fallback, None)
-
-                    if fb is None:
-                        raise AttributeError
-                    elif hasattr(fb, '__get__'):
-                        ret = fb.__get__(instance)
-                    else:
-                        ret = fb
-                else:
-                    raise AttributeError
-            else:
-                unit = str(e.get('unit', default='bytes'))
-                value = int(str(e.text))
-
-                ret = unit_to_bytes(value, unit)
-        else:
-            ret = self._xpath(instance.config)
-
-            if ret is None or ret == []:
-                raise AttributeError
-            elif isinstance(ret, list):
-                ret = ret[0]
-
-        if self._type is not None:
-            return self._type(ret)
-        else:
-            return cast(T, ret)
-
-    def __set__(self: Self, instance: ConfigurableEntity, _value: T) -> None:
-        raise AttributeError(f'Unable to set config property at { self._path } for instance { instance }.')
-
-
-class ConfigElementProperty(ConfigProperty, Generic[T]):
-    '''A writable descriptor for accessing the value of an element in the configuration of a ConfigurableEntity.
-
-       The `path` argument specifies the path to the element.
-
-       `typ` and `units_to_bytes` have the same meaning as for ConfigProperty.
-
-       The validator argument is an optional function which will be
-       called when trying to set the property to verify that the value
-       is acceptable for that instance. It should raise an error if the
-       value is not acceptable.'''
-    def __init__(
-            self: Self,
-            /,
-            path: str,
-            *,
-            typ: Callable[[Any], T] | None = None,
-            units_to_bytes: bool = False,
-            fallback: str | None = None,
-            validator: Callable[[T, Any], None] | None = None,
-            ) -> None:
-        self._validator = validator
-        super().__init__(path=path, typ=typ, units_to_bytes=units_to_bytes, fallback=fallback)
-
-    def __set__(self: Self, instance: ConfigurableEntity, value: T) -> None:
-        if self._validator is not None:
-            self._validator(value, instance)
-
-        instance.updateConfigElement(self._path, str(value), reset_units=self._units_to_bytes)
-
-
-class ConfigAttributeProperty(ConfigProperty, Generic[T]):
-    '''A writable descriptor for accessing the value of an attribute of an element in the configuration of a ConfigurableEntity.
-
-       The `path` argument specifies the path to the element the desired
-       attribute is part of.
-
-       The `attrib` arugment specifies the name of the attribute.
-
-       `typ` has the same meaning as for ConfigProperty.
-
-       The validator argument is an optional function which will be
-       called when trying to set the property to verify that the value
-       is acceptable for that instance. It should raise an error if the
-       value is not acceptable.'''
-    def __init__(
-            self: Self,
-            /,
-            path: str,
-            attrib: str,
-            *,
-            typ: Callable[[Any], T] | None = None,
-            fallback: str | None = None,
-            validator: Callable[[T, Any], None] | None = None,
-            ) -> None:
-        self._validator = validator
-        self._attrib = attrib
-        super().__init__(path=path, typ=typ, units_to_bytes=False, fallback=fallback)
-
-    def __get__(self: Self, instance: ConfigurableEntity, _owner: Any) -> T | None:
-        e = instance.config.find(self._path)
-
-        if e is None:
-            return None
-
-        ret = e.get(self._attrib, default=None)
-
-        if ret is None:
-            return None
-        elif self._type is not None:
-            return cast(T, self._type(ret))
-        else:
-            return cast(T, ret)
-
-    def __set__(self: Self, instance: ConfigurableEntity, value: T) -> None:
-        if self._validator is not None:
-            self._validator(value, instance)
-
-        instance.updateConfigAttribute(self._path, self._attrib, str(value))
-
-
 class RunnableEntity(Entity):
     '''ABC for entities that may be activated and inactivated.'''
+    running: MethodProperty[bool] = MethodProperty(
+        doc='Whether the entity is running or not.',
+        type=bool,
+        get='isActive',
+    )
+
+    persistent: MethodProperty[bool] = MethodProperty(
+        doc='Whether the entity is running or not.',
+        type=bool,
+        get='isPersistent',
+    )
+
     @property
     def _format_properties(self: Self) -> set[str]:
         return super()._format_properties | {
@@ -542,22 +395,6 @@ class RunnableEntity(Entity):
     @property
     def _mark_invalid_on_undefine(self: Self) -> bool:
         return not self.running
-
-    @property
-    def running(self: Self) -> bool:
-        '''Whether the entity is active or not.'''
-        if not self.valid:
-            return False
-
-        return bool(self._entity.isActive())
-
-    @property
-    def persistent(self: Self) -> bool:
-        '''Whether the entity is persistent or not.'''
-        if not self.valid:
-            return False
-
-        return bool(self._entity.isPersistent())
 
     @property
     def autostart(self: Self) -> bool | None:
@@ -649,8 +486,5 @@ __all__ = [
     'Entity',
     'LifecycleResult',
     'ConfigurableEntity',
-    'ConfigProperty',
-    'ConfigElementProperty',
-    'ConfigAttributeProperty',
     'RunnableEntity',
 ]

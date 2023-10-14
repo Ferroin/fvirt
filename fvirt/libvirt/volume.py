@@ -9,7 +9,8 @@ from typing import TYPE_CHECKING, Self, cast
 
 import libvirt
 
-from .entity import ConfigProperty, ConfigurableEntity, LifecycleResult
+from .descriptors import ConfigProperty, MethodProperty
+from .entity import ConfigurableEntity, LifecycleResult
 from .entity_access import BaseEntityAccess, EntityAccess, NameMap
 from ..util.match import MatchAlias
 
@@ -39,23 +40,37 @@ class Volume(ConfigurableEntity):
        config values other than `name` are read-only. Configuration
        updates should be made by rewriting either the `config` or
        `configRaw`.'''
-    allocation: ConfigProperty[int] = ConfigProperty(
+    allocated: ConfigProperty[int] = ConfigProperty(
+        doc='The actual space allocated to the volume.',
         path='/volume/allocation',
-        typ=int,
+        type=int,
         units_to_bytes=True,
     )
     capacity: ConfigProperty[int] = ConfigProperty(
+        doc='The capacity of the volume.',
         path='/volume/capacity',
-        typ=int,
+        type=int,
         units_to_bytes=True,
     )
     type: ConfigProperty[str] = ConfigProperty(
+        doc='The volume type.',
         path='/volume/@type',
-        typ=str,
+        type=str,
     )
     format: ConfigProperty[str] = ConfigProperty(
+        doc='The volume format.',
         path='/volume/source/format/@type',
-        typ=str,
+        type=str,
+    )
+    key: MethodProperty[str] = MethodProperty(
+        doc='THe volume key.',
+        get='key',
+        type=str,
+    )
+    path: MethodProperty[str] = MethodProperty(
+        doc='THe volume path.',
+        get='path',
+        type=str,
     )
 
     def __init__(self: Self, vol: libvirt.virStorageVol | Volume, pool: StoragePool) -> None:
@@ -95,23 +110,6 @@ class Volume(ConfigurableEntity):
     @property
     def _config_flags(self: Self) -> int:
         return 0
-
-    @property
-    def key(self: Self) -> str:
-        '''The volume key.
-
-           This is a fixed identifier for the volume. Unlike the name,
-           it is not guaranteed to be unique within a storage pool,
-           but should uniquely identify the actual backing storage of
-           the volume.'''
-        return cast(str, self._entity.key())
-
-    @property
-    def path(self: Self) -> str:
-        '''The path of the volume.
-
-           The exact meaning of this is dependent on the storage pool backend.'''
-        return cast(str, self._entity.path())
 
     def delete(self: Self, idempotent: bool = True) -> LifecycleResult:
         '''Remove the volume from the storage pool.
@@ -200,7 +198,7 @@ class Volume(ConfigurableEntity):
 
         if shrink:
             flags |= libvirt.VIR_STORAGE_VOL_RESIZE_SHRINK
-        elif capacity < self.capacity:
+        elif capacity < cast(int, self.capacity):
             raise ValueError(f'{ capacity } is less than current volume size and shrink is False.')
 
         if delta:

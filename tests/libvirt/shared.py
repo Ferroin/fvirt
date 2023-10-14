@@ -88,25 +88,27 @@ def check_undefine(parent: Hypervisor | Entity, prop: str, entity: ConfigurableE
         if entity.running:
             entity.destroy()
 
+    should_be_valid = not entity._mark_invalid_on_undefine
+
     result = entity.undefine(idempotent=False)
 
     assert isinstance(result, LifecycleResult)
     assert result == LifecycleResult.SUCCESS
-    assert entity.valid == (not entity._mark_invalid_on_undefine)
+    assert entity.valid == should_be_valid
     assert getattr(parent, prop).get(name) is None
 
     result = entity.undefine(idempotent=False)
 
     assert isinstance(result, LifecycleResult)
     assert result == LifecycleResult.NO_OPERATION
-    assert entity.valid == (not entity._mark_invalid_on_undefine)
+    assert entity.valid == should_be_valid
     assert getattr(parent, prop).get(name) is None
 
     result = entity.undefine(idempotent=True)
 
     assert isinstance(result, LifecycleResult)
     assert result == LifecycleResult.SUCCESS
-    assert entity.valid == (not entity._mark_invalid_on_undefine)
+    assert entity.valid == should_be_valid
     assert getattr(parent, prop).get(name) is None
 
 

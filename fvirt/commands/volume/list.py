@@ -16,7 +16,7 @@ COLUMNS = {
     'format': Column(title='Format', prop='format'),
     'path': Column(title='Path', prop='path'),
     'capacity': Column(title='Capacity', prop='capacity', right_align=True),
-    'allocation': Column(title='Allocation', prop='allocation', right_align=True),
+    'allocated': Column(title='Allocated', prop='allocated', right_align=True),
 }
 
 DEFAULT_COLS = (
