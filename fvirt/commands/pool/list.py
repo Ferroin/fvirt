@@ -43,7 +43,7 @@ COLUMNS = {
     'autostart': Column(title='Autostart', prop='autostart', color=color_bool),
     'volumes': Column(title='Volumes', prop='numVolumes', right_align=True),
     'capacity': Column(title='Capacity', prop='capacity', right_align=True),
-    'allocation': Column(title='Allocation', prop='allocation', right_align=True),
+    'allocated': Column(title='Allocated', prop='allocated', right_align=True),
     'available': Column(title='Available', prop='available', right_align=True),
     'type': Column(title='Type', prop='type'),
     'format': Column(title='Format', prop='format'),
