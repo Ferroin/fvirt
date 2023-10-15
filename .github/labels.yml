@@ -44,29 +44,6 @@
   description: A bug report about intentional behavior
   color: c2e0c6
 
-# CI labels
-#
-# These explcitly trigger specific CI jobs on PRs.
-
-- name: ci/actionlint
-  description: Force running Actionlint against labelled PRs, even if it would not normally run.
-  color: &ci 50340e
-- name: ci/flake8
-  description: Force running flake8 against labelled PRs, even if it would not normally run.
-  color: *ci
-- name: ci/languagetool
-  description: Force running languagetool against labeled PRs, even if it would not normally run.
-  color: *ci
-- name: ci/markdownlint
-  description: Force running markdownlint against labeled PRs, even if it would not normally run.
-  color: *ci
-- name: ci/shellcheck
-  description: Force running shellcheck against labelled PRs, even if it would not normally be run.
-  color: *ci
-- name: ci/yamllint
-  description: Force running yamllint against labelled PRs, even if it would not normally be run.
-  color: *ci
-
 # Area labels
 #
 # These labels identify specific areas of the code.
