@@ -63,6 +63,22 @@
   description: Issues and PRs involving our test suite.
   color: *area
 
+- name: component/host
+  description: Issues and PRs involving the libvirt host handling functionality.
+  color: &component '328754'
+- name: component/domain
+  description: Issues and PRs involving the libvirt domain handling functionality.
+  color: *component
+- name: component/storage/pool
+  description: Issues and PRs involving the libvirt storage pool handling functionality.
+  color: *component
+- name: component/storage/volume
+  description: Issues and PRs involving the libvirt storage volume handling functionality.
+  color: *component
+- name: component/new
+  description: Issues and PRs involving support for new libvirt object types.
+  color: *component
+
 - name: infra
   description: Issues and PRs involving our infrastructure that have no more specific label.
   color: &infra f1f6b2

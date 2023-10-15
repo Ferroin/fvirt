@@ -23,6 +23,30 @@ area/util:
   - fvirt/util/**
   - tests/util/**
 
+component/host:
+  - fvirt/commands/host/**
+  - fvirt/libvirt/hypervisor.py
+  - tests/commands/host/**
+  - tests/libvirt/libvirt_hypervisor_test.py
+
+component/domain:
+  - fvirt/commands/domain/**
+  - fvirt/libvirt/domain.py
+  - tests/commands/domain/**
+  - tests/libvirt/libvirt_domain_test.py
+
+component/storage/pool:
+  - fvirt/commands/pool/**
+  - fvirt/libvirt/storage_pool.py
+  - tests/commands/pool/**
+  - tests/libvirt/libvirt_storage_pool_test.py
+
+component/storage/volume:
+  - fvirt/commands/volume/**
+  - fvirt/libvirt/volume.py
+  - tests/commands/volume/**
+  - tests/libvirt/libvirt_volume_test.py
+
 documentation:
   - LICENSE.md
   - README.md
