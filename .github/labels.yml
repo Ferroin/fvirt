@@ -70,11 +70,20 @@
 # Area labels
 #
 # These labels identify specific areas of the code.
+- name: area/common
+  description: Issues and PRs involving our package-level code.
+  color: &area afa4d5
 - name: area/cli
   description: Issues and PRs involving the cli interface.
-  color: &area afa4d5
-- name: area/common
+  color: *area
+- name: area/libvirt
+  description: Issues and PRs involving the libvirt wrappers.
+  color: *area
+- name: area/util
   description: Issues and PRs involving our utility functions.
+  color: *area
+- name: area/tests
+  description: Issues and PRs involving our test suite.
   color: *area
 
 - name: infra
