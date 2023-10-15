@@ -5,12 +5,14 @@
 
 from __future__ import annotations
 
+from typing import Final
+
 import click
 
 from .._base.command import Command
 from .._base.state import State
 
-HELP = '''
+HELP: Final = '''
 Print the host system libvirt version information.
 
 This will output two lines, one for the libvirt version on the target
@@ -42,7 +44,7 @@ def cb(ctx: click.Context, state: State) -> None:
         click.echo(f'Hypervisor ({ driver }): { version }')
 
 
-version = Command(
+version: Final = Command(
     name='version',
     help=HELP,
     callback=cb,

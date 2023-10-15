@@ -5,12 +5,12 @@
 
 from __future__ import annotations
 
-from typing import Self
+from typing import Final, Self, final
 
 from .._base.lifecycle import OperationHelpInfo, SimpleLifecycleCommand
 from ...libvirt.domain import MATCH_ALIASES
 
-EXTRA_HELP = '''
+EXTRA_HELP: Final = '''
 Saving a domain is conceptually equivalent to suspending it to disk,
 without needing any support from the guest OS to handle this. Saving a
 domain will suspend it’s execution, save it’s internal state to disk,
@@ -22,6 +22,7 @@ Only persistent domains may be saved.
 '''.lstrip().rstrip()
 
 
+@final
 class _SaveCommand(SimpleLifecycleCommand):
     '''Class for saving domains.'''
     @property
@@ -37,7 +38,7 @@ class _SaveCommand(SimpleLifecycleCommand):
         )
 
 
-save = _SaveCommand(
+save: Final = _SaveCommand(
     name='save',
     aliases=MATCH_ALIASES,
     hvprop='domains',

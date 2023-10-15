@@ -8,17 +8,16 @@ from __future__ import annotations
 import functools
 import importlib
 
-from typing import TYPE_CHECKING, Any, Concatenate, ParamSpec, Self, TypeVar, cast
+from typing import TYPE_CHECKING, Concatenate, ParamSpec, Self, TypeVar, cast
 
 import click
 
 from .help import AliasHelpTopic, HelpCommand, HelpTopic
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable, Mapping, MutableMapping, Sequence
+    from collections.abc import Callable, Iterable, Mapping, Sequence
 
     from ...util.match import MatchAlias
-
 
 P = ParamSpec('P')
 T = TypeVar('T')
@@ -43,7 +42,6 @@ class Group(click.Group):
             short_help: str | None = None,
             epilog: str | None = None,
             params: Sequence[click.Parameter] = [],
-            context_settings: MutableMapping[str, Any] = dict(),
             hidden: bool = False,
             deprecated: bool = False,
             ) -> None:
@@ -66,7 +64,6 @@ class Group(click.Group):
             short_help=short_help,
             callback=f,
             params=list(params),
-            context_settings=context_settings,
             commands=commands,
             add_help_option=True,
             no_args_is_help=False,

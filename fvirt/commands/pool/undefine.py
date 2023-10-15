@@ -5,10 +5,12 @@
 
 from __future__ import annotations
 
+from typing import Final
+
 from .._base.lifecycle import UndefineCommand
 from ...libvirt.storage_pool import MATCH_ALIASES
 
-undefine = UndefineCommand(
+undefine: Final = UndefineCommand(
     name='undefine',
     aliases=MATCH_ALIASES,
     hvprop='pools',

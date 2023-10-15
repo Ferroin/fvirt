@@ -41,7 +41,6 @@ class ListCommand(MatchCommand):
             hvmetavar: str | None = None,
             epilog: str | None = None,
             params: Sequence[click.Parameter] = [],
-            context_settings: MutableMapping[str, Any] = dict(),
             hidden: bool = False,
             deprecated: bool = False,
             ) -> None:
@@ -150,7 +149,6 @@ class ListCommand(MatchCommand):
             callback=cb,
             doc_name=doc_name,
             params=params,
-            context_settings=context_settings,
             hidden=hidden,
             deprecated=deprecated,
         )

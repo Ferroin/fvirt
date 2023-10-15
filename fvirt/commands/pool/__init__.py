@@ -5,10 +5,12 @@
 
 from __future__ import annotations
 
+from typing import Final
+
 from .._base.group import Group
 from ...libvirt.volume import MATCH_ALIASES
 
-pool = Group(
+pool: Final = Group(
     name='pool',
     doc_name='storage pool',
     help='Perform various operations on libvirt storage pools.',

@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import concurrent.futures
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 import click
 
@@ -19,7 +19,7 @@ from ...libvirt.volume import MATCH_ALIASES
 if TYPE_CHECKING:
     from .._base.state import State
 
-HELP = '''
+HELP: Final = '''
 Delete one or more volumes from the specified storage pool.
 
 The POOL argument should indicate which storage pool to delete the
@@ -118,7 +118,7 @@ def cb(ctx: click.Context, state: State, pool: str, match: MatchArgument, entity
         ctx.exit(3)
 
 
-delete = MatchCommand(
+delete: Final = MatchCommand(
     name='delete',
     help=HELP,
     aliases=MATCH_ALIASES,

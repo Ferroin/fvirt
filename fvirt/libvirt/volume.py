@@ -5,7 +5,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Self, cast
+from typing import TYPE_CHECKING, Final, Self, cast
 
 import libvirt
 
@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 
     from .storage_pool import StoragePool
 
-MATCH_ALIASES = {
+MATCH_ALIASES: Final = {
     'format': MatchAlias(property='format', desc='Match on the volume format.'),
     'key': MatchAlias(property='key', desc='Match on the volume key.'),
     'name': MatchAlias(property='name', desc='Match on the name of the volume.'),

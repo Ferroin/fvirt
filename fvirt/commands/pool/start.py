@@ -5,10 +5,12 @@
 
 from __future__ import annotations
 
+from typing import Final
+
 from .._base.lifecycle import StartCommand
 from ...libvirt.storage_pool import MATCH_ALIASES
 
-start = StartCommand(
+start: Final = StartCommand(
     name='start',
     aliases=MATCH_ALIASES,
     hvprop='pools',

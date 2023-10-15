@@ -18,7 +18,6 @@ import click
 from .command import Command
 from .match import MatchArgument, MatchCommand, get_match_or_entity
 from ...libvirt import InvalidConfig, InvalidOperation, LifecycleResult
-from ...libvirt.entity import RunnableEntity
 from ...libvirt.runner import RunnerResult, run_entity_method, run_hv_method, run_sub_entity_method
 
 if TYPE_CHECKING:

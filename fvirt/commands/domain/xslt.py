@@ -5,10 +5,12 @@
 
 from __future__ import annotations
 
+from typing import Final
+
 from .._base.xslt import XSLTCommand
 from ...libvirt.domain import MATCH_ALIASES
 
-xslt = XSLTCommand(
+xslt: Final = XSLTCommand(
     name='xslt',
     aliases=MATCH_ALIASES,
     hvprop='domains',

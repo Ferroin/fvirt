@@ -5,7 +5,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Final
 
 from .._base.list import ListCommand
 from ...libvirt import DomainState
@@ -49,7 +49,7 @@ def format_optional_attrib(value: Any) -> str:
         return str(value)
 
 
-COLUMNS = {
+COLUMNS: Final = {
     'id': Column(title='ID', prop='id', right_align=True, color=format_id),
     'name': Column(title='Name', prop='name'),
     'uuid': Column(title='UUID', prop='uuid'),
@@ -66,7 +66,7 @@ COLUMNS = {
     'title': Column(title='Domain Title', prop='title'),
 }
 
-DEFAULT_COLS = (
+DEFAULT_COLS: Final = (
     'id',
     'name',
     'state',
@@ -74,7 +74,7 @@ DEFAULT_COLS = (
     'autostart',
 )
 
-list_domains = ListCommand(
+list_domains: Final = ListCommand(
     name='list',
     aliases=MATCH_ALIASES,
     columns=COLUMNS,

@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Self, Type
+from typing import TYPE_CHECKING, Any, Final, Self, Type
 
 import click
 
@@ -116,7 +116,7 @@ def render_table(items: Sequence[Sequence[str]], columns: Sequence[Column], head
        `columns` is a list of corresponding Column instances for the
        columns to be used for the table.'''
     ret = ''
-    TERM = get_terminal()
+    TERM: Final = get_terminal()
 
     column_sizes = [
         max([

@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from enum import CONTINUOUS, UNIQUE, Enum, verify
 from time import sleep
-from typing import TYPE_CHECKING, Any, Literal, Self, cast
+from typing import TYPE_CHECKING, Any, Final, Literal, Self, cast
 from uuid import UUID
 
 import libvirt
@@ -24,7 +24,7 @@ if TYPE_CHECKING:
     from .hypervisor import Hypervisor
 
 
-MATCH_ALIASES = {
+MATCH_ALIASES: Final = {
     'arch': MatchAlias(property='osArch', desc='Match on the architecture of the domain.'),
     'autostart': MatchAlias(property='autostart', desc='Match on whether the domain is set to autostart or not.'),
     'currentSnapshot': MatchAlias(property='hasCurrentSnapshot', desc='Match on whether the domain has a current snapshot or not.'),

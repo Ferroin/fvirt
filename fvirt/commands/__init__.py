@@ -3,7 +3,11 @@
 
 '''Individual commands for the fvirt CLI interface.'''
 
-LAZY_COMMANDS = {
+from __future__ import annotations
+
+from typing import Final
+
+LAZY_COMMANDS: Final = {
     'domain': 'fvirt.commands.domain.domain',
     'host': 'fvirt.commands.host.host',
     'pool': 'fvirt.commands.pool.pool',

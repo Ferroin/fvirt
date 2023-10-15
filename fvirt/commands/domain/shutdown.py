@@ -5,7 +5,7 @@
 
 from __future__ import annotations
 
-from typing import Self
+from typing import Final, Self, final
 
 import click
 
@@ -13,6 +13,7 @@ from .._base.lifecycle import OperationHelpInfo, SimpleLifecycleCommand
 from ...libvirt.domain import MATCH_ALIASES
 
 
+@final
 class _ShutdownCommand(SimpleLifecycleCommand):
     '''Command for shutting down libvirt domains.'''
     @property
@@ -28,7 +29,7 @@ class _ShutdownCommand(SimpleLifecycleCommand):
         )
 
 
-shutdown = _ShutdownCommand(
+shutdown: Final = _ShutdownCommand(
     name='shutdown',
     aliases=MATCH_ALIASES,
     hvprop='domains',

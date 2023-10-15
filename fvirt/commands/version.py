@@ -5,7 +5,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 import click
 
@@ -16,7 +16,7 @@ from ..version import VERSION
 if TYPE_CHECKING:
     from ._base.state import State
 
-HELP = '''
+HELP: Final = '''
 Print version information for fvirt.
 '''.lstrip().rstrip()
 
@@ -25,7 +25,7 @@ def cb(ctx: click.Context, state: State) -> None:
     click.echo(f'fvirt { VERSION }, using libvirt-python { API_VERSION }')
 
 
-version = Command(
+version: Final = Command(
     name='version',
     help=HELP,
     callback=cb,

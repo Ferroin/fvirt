@@ -5,11 +5,13 @@
 
 from __future__ import annotations
 
+from typing import Final
+
 from .._base.list import ListCommand
 from ...libvirt.volume import MATCH_ALIASES
 from ...util.tables import Column
 
-COLUMNS = {
+COLUMNS: Final = {
     'name': Column(title='Name', prop='name'),
     'key': Column(title='Key', prop='key'),
     'type': Column(title='Type', prop='type'),
@@ -19,13 +21,13 @@ COLUMNS = {
     'allocated': Column(title='Allocated', prop='allocated', right_align=True),
 }
 
-DEFAULT_COLS = (
+DEFAULT_COLS: Final = (
     'name',
     'path',
     'capacity',
 )
 
-list_volumes = ListCommand(
+list_volumes: Final = ListCommand(
     name='list',
     aliases=MATCH_ALIASES,
     columns=COLUMNS,

@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import re
 
-from typing import TYPE_CHECKING, Any, Concatenate, ParamSpec, Self, Type, TypeVar
+from typing import TYPE_CHECKING, Any, Concatenate, Final, ParamSpec, Self, Type, TypeVar
 
 import click
 
@@ -18,7 +18,7 @@ from ...libvirt.entity import Entity
 from ...util.match import MatchAlias, MatchArgument, MatchTarget
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Mapping, MutableMapping, Sequence
+    from collections.abc import Callable, Mapping, Sequence
 
     from .state import State
     from ...libvirt import Hypervisor
@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 P = ParamSpec('P')
 T = TypeVar('T')
 
-DEFAULT_MATCH = re.compile('.*')
+DEFAULT_MATCH: Final = re.compile('.*')
 
 
 def MatchTargetParam(aliases: Mapping[str, MatchAlias]) -> Type[click.ParamType]:
@@ -124,7 +124,6 @@ class MatchCommand(Command):
             short_help: str | None = None,
             epilog: str | None = None,
             params: Sequence[click.Parameter] = [],
-            context_settings: MutableMapping[str, Any] = dict(),
             hidden: bool = False,
             deprecated: bool = False,
             ) -> None:
@@ -143,7 +142,6 @@ class MatchCommand(Command):
             short_help=short_help,
             callback=callback,
             params=params,
-            context_settings=context_settings,
             hidden=hidden,
             deprecated=deprecated,
         )

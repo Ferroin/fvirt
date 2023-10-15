@@ -5,10 +5,12 @@
 
 from __future__ import annotations
 
+from typing import Final
+
 from .._base.group import Group
 from ...libvirt.volume import MATCH_ALIASES
 
-volume = Group(
+volume: Final = Group(
     name='volume',
     help='Perform various operations on libvirt volumes.',
     callback=lambda x: None,

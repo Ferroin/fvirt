@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
-from typing import TYPE_CHECKING, Any, Self, cast
+from typing import TYPE_CHECKING, Any, Final, Self, cast
 
 import libvirt
 
@@ -20,7 +20,7 @@ from ..util.match import MatchAlias
 if TYPE_CHECKING:
     from .hypervisor import Hypervisor
 
-MATCH_ALIASES = {
+MATCH_ALIASES: Final = {
     'autostart': MatchAlias(property='autostart', desc='Match on whether the pool is set to autostart or not.'),
     'device': MatchAlias(property='device', desc='Match on the pool device.'),
     'directory': MatchAlias(property='dir', desc='Match on the pool directory.'),

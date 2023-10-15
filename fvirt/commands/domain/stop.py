@@ -5,10 +5,12 @@
 
 from __future__ import annotations
 
+from typing import Final
+
 from .._base.lifecycle import StopCommand
 from ...libvirt.domain import MATCH_ALIASES
 
-stop = StopCommand(
+stop: Final = StopCommand(
     name='stop',
     aliases=MATCH_ALIASES,
     hvprop='domains',

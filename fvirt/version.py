@@ -5,7 +5,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Self
+from typing import Any, Final, Self
 
 
 class VersionNumber:
@@ -77,7 +77,7 @@ class VersionNumber:
         return VersionNumber(major, minor, release)
 
 
-VERSION = VersionNumber(0, 0, 1)
+VERSION: Final = VersionNumber(0, 0, 1)
 
 __all__ = [
     'VERSION',

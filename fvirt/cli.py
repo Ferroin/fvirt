@@ -7,6 +7,8 @@ from __future__ import annotations
 
 import os
 
+from typing import Final
+
 import click
 
 from .commands import LAZY_COMMANDS
@@ -16,7 +18,7 @@ from .commands._base.state import State
 from .libvirt import URI, Driver, Transport
 from .util.match import MATCH_HELP
 
-DEFAULT_MAX_JOBS = 8
+DEFAULT_MAX_JOBS: Final = 8
 
 if hasattr(os, 'sched_getaffinity') and os.sched_getaffinity(0):
     DEFAULT_JOB_COUNT = min(DEFAULT_MAX_JOBS, len(os.sched_getaffinity(0)) + 4)
@@ -28,8 +30,8 @@ else:
     else:
         DEFAULT_JOB_COUNT = DEFAULT_MAX_JOBS
 
-RECOGNIZED_DRIVERS = sorted(list({e.value for e in Driver}))
-RECOGNIZED_TRANSPORTS = sorted(list({e.value for e in Transport if e.value}))
+RECOGNIZED_DRIVERS: Final = sorted(list({e.value for e in Driver}))
+RECOGNIZED_TRANSPORTS: Final = sorted(list({e.value for e in Transport if e.value}))
 
 CONNECTION_HELP = click.wrap_text('''
 fvirt uses standard libvirt connection URI syntax, just like virsh and
@@ -106,7 +108,7 @@ def cb(
     )
 
 
-cli = Group(
+cli: Final = Group(
     name='fvirt',
     help=FVIRT_HELP,
     callback=cb,

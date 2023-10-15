@@ -5,10 +5,12 @@
 
 from __future__ import annotations
 
+from typing import Final
+
 from .._base.autostart import AutostartCommand
 from ...libvirt.storage_pool import MATCH_ALIASES
 
-autostart = AutostartCommand(
+autostart: Final = AutostartCommand(
     name='autostart',
     aliases=MATCH_ALIASES,
     hvprop='pools',

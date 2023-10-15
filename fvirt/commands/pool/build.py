@@ -5,12 +5,13 @@
 
 from __future__ import annotations
 
-from typing import Self
+from typing import Final, Self, final
 
 from .._base.lifecycle import OperationHelpInfo, SimpleLifecycleCommand
 from ...libvirt.storage_pool import MATCH_ALIASES
 
 
+@final
 class _BuildCommand(SimpleLifecycleCommand):
     '''Class for building storage pools.'''
     @property
@@ -26,7 +27,7 @@ class _BuildCommand(SimpleLifecycleCommand):
         )
 
 
-build = _BuildCommand(
+build: Final = _BuildCommand(
     name='build',
     aliases=MATCH_ALIASES,
     hvprop='pools',

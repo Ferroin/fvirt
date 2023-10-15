@@ -5,12 +5,14 @@
 
 from __future__ import annotations
 
+from typing import Final
+
 from .._base.list import ListCommand
 from ...libvirt.storage_pool import MATCH_ALIASES
 from ...util.tables import Column, color_bool
 from ...util.terminal import get_terminal
 
-EPILOG = '''
+EPILOG: Final = '''
 For performance reasons, information about the volumes in any given
 storage pool is cached by the libvirt daemon. This information is only
 updated when a pool is started (or created), when certain operations
@@ -35,7 +37,7 @@ def color_state(value: bool) -> str:
         return 'inactive'
 
 
-COLUMNS = {
+COLUMNS: Final = {
     'name': Column(title='Name', prop='name'),
     'uuid': Column(title='UUID', prop='uuid'),
     'state': Column(title='State', prop='running', color=color_state),
@@ -52,7 +54,7 @@ COLUMNS = {
     'target': Column(title='Target', prop='target'),
 }
 
-DEFAULT_COLS = (
+DEFAULT_COLS: Final = (
     'name',
     'type',
     'format',
@@ -63,7 +65,7 @@ DEFAULT_COLS = (
     'available',
 )
 
-list_pools = ListCommand(
+list_pools: Final = ListCommand(
     name='list',
     aliases=MATCH_ALIASES,
     columns=COLUMNS,

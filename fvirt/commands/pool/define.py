@@ -5,9 +5,11 @@
 
 from __future__ import annotations
 
+from typing import Final
+
 from .._base.lifecycle import DefineCommand
 
-define = DefineCommand(
+define: Final = DefineCommand(
     name='define',
     method='defineStoragePool',
     doc_name='storage pool',

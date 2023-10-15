@@ -8,14 +8,14 @@ from __future__ import annotations
 import re
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Self
+from typing import TYPE_CHECKING, Final, Self
 
 from lxml import etree
 
 if TYPE_CHECKING:
     from ..libvirt.entity import ConfigurableEntity
 
-MATCH_HELP = '''fvirt object matching is based on two parameters passed to the --match
+MATCH_HELP: Final = '''fvirt object matching is based on two parameters passed to the --match
 option of a fvirt command. The first is the match target, and the second
 is the match pattern.
 

@@ -8,7 +8,7 @@ from __future__ import annotations
 import enum
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Literal, Self, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Literal, Self, TypeVar, cast, final
 from uuid import UUID
 
 import libvirt
@@ -106,6 +106,7 @@ class Entity(ABC):
         '''Whether or not the Entity should be marked invalid when undefined.'''
         return False
 
+    @final
     @property
     def _entity(self: Self) -> Any:
         '''The underlying libvirt object that this class is wrapping.
@@ -116,6 +117,7 @@ class Entity(ABC):
            the encapsulating Entity instance to stop working correctly.'''
         return self.__entity
 
+    @final
     @property
     def valid(self: Self) -> bool:
         '''Whether the Entity is valid or not.
@@ -378,7 +380,6 @@ class RunnableEntity(Entity):
         type=bool,
         get='isActive',
     )
-
     persistent: MethodProperty[bool] = MethodProperty(
         doc='Whether the entity is running or not.',
         type=bool,

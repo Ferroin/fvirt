@@ -5,9 +5,11 @@
 
 from __future__ import annotations
 
+from typing import Final
+
 from .._base.group import Group
 
-host = Group(
+host: Final = Group(
     name='host',
     help='Perform various operations on the libvirt host.',
     callback=lambda x: None,

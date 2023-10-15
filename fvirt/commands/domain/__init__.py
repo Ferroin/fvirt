@@ -5,10 +5,12 @@
 
 from __future__ import annotations
 
+from typing import Final
+
 from .._base.group import Group
 from ...libvirt.domain import MATCH_ALIASES
 
-domain = Group(
+domain: Final = Group(
     name='domain',
     help='Perform various operations on libvirt domains.',
     callback=lambda x: None,

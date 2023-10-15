@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import Iterable, Iterator, Mapping, Sized
-from typing import TYPE_CHECKING, Any, Self, cast
+from typing import TYPE_CHECKING, Any, Self, cast, final
 from uuid import UUID
 
 import libvirt
@@ -38,6 +38,7 @@ class BaseEntityAccess(ABC, Sized):
 
         return total
 
+    @final
     def _get_parent_link(self: Self) -> Any:
         if hasattr(self._parent, '_connection'):
             link = self._parent

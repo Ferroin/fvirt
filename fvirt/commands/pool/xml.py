@@ -5,9 +5,11 @@
 
 from __future__ import annotations
 
+from typing import Final
+
 from .._base.xml import XMLCommand
 
-xml = XMLCommand(
+xml: Final = XMLCommand(
     name='xml',
     hvprop='pools',
     metavar='POOL',

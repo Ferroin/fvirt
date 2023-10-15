@@ -5,14 +5,15 @@
 
 from __future__ import annotations
 
-from typing import Self
+from typing import Final, Self, final
 
 from .._base.lifecycle import OperationHelpInfo, SimpleLifecycleCommand
 from ...libvirt.storage_pool import MATCH_ALIASES
 
 
+@final
 class _RefreshCommand(SimpleLifecycleCommand):
-    '''Class for resetting domains.'''
+    '''Class for refreshing storage pools.'''
     @property
     def METHOD(self: Self) -> str: return 'refresh'
 
@@ -26,7 +27,7 @@ class _RefreshCommand(SimpleLifecycleCommand):
         )
 
 
-refresh = _RefreshCommand(
+refresh: Final = _RefreshCommand(
     name='refresh',
     aliases=MATCH_ALIASES,
     hvprop='pools',

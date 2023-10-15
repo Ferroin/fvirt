@@ -7,15 +7,14 @@ from __future__ import annotations
 
 import functools
 
-from typing import TYPE_CHECKING, Any, Concatenate, ParamSpec, Self, TypeVar
+from typing import TYPE_CHECKING, Concatenate, ParamSpec, Self, TypeVar
 
 import click
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, MutableMapping, Sequence
+    from collections.abc import Callable, Sequence
 
     from .state import State
-
 
 P = ParamSpec('P')
 T = TypeVar('T')
@@ -36,7 +35,6 @@ class Command(click.Command):
             short_help: str | None = None,
             epilog: str | None = None,
             params: Sequence[click.Parameter] = [],
-            context_settings: MutableMapping[str, Any] = dict(),
             hidden: bool = False,
             deprecated: bool = False,
             ) -> None:
@@ -55,7 +53,6 @@ class Command(click.Command):
             short_help=short_help,
             callback=f,
             params=list(params),
-            context_settings=context_settings,
             add_help_option=True,
             no_args_is_help=False,
             hidden=hidden,

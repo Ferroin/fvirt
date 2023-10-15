@@ -5,12 +5,14 @@
 
 from __future__ import annotations
 
+from typing import Final
+
 import click
 
 from .._base.command import Command
 from .._base.state import State
 
-HELP = '''
+HELP: Final = '''
 Print the hypervisor URI.
 
 This functions identically to the virsh `uri` command, except it uses
@@ -26,7 +28,7 @@ def cb(ctx: click.Context, state: State) -> None:
         click.echo(str(hv.uri))
 
 
-uri = Command(
+uri: Final = Command(
     name='uri',
     help=HELP,
     callback=cb,

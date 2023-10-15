@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, Self, Type
+from typing import Any, Final, Self, Type
 from urllib.parse import parse_qs, quote, urlparse
 
 from frozendict import frozendict
@@ -35,7 +35,7 @@ class Driver(Enum):
     HVF = 'qemu'
 
 
-SESSION_DRIVERS = frozenset({
+SESSION_DRIVERS: Final = frozenset({
     Driver.CLOUD_HYPERVISOR,
     Driver.LXC,
     Driver.QEMU,
@@ -45,7 +45,7 @@ SESSION_DRIVERS = frozenset({
     Driver.VMWARE_WORKSTATION,
 })
 
-SYSTEM_DRIVERS = frozenset({
+SYSTEM_DRIVERS: Final = frozenset({
     Driver.BHYVE,
     Driver.LXC,
     Driver.OPENVZ,
@@ -54,7 +54,7 @@ SYSTEM_DRIVERS = frozenset({
     Driver.XEN,
 })
 
-CLIENT_ONLY_DRIVERS = frozenset({
+CLIENT_ONLY_DRIVERS: Final = frozenset({
     Driver.HYPERV,
     Driver.VMWARE_ESX,
     Driver.VMWARE_GSX,
@@ -75,7 +75,7 @@ class Transport(Enum):
     LOCAL = 'unix'
 
 
-REMOTE_TRANSPORTS = frozenset({
+REMOTE_TRANSPORTS: Final = frozenset({
     Transport.EXTERNAL,
     Transport.LIBSSH2,
     Transport.LIBSSH,
@@ -298,7 +298,7 @@ class URI:
         )
 
 
-LIBVIRT_DEFAULT_URI = URI()
+LIBVIRT_DEFAULT_URI: Final = URI()
 
 
 __all__ = [

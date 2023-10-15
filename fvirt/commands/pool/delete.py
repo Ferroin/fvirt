@@ -5,12 +5,13 @@
 
 from __future__ import annotations
 
-from typing import Self
+from typing import Final, Self, final
 
 from .._base.lifecycle import OperationHelpInfo, SimpleLifecycleCommand
 from ...libvirt.storage_pool import MATCH_ALIASES
 
 
+@final
 class _DeleteCommand(SimpleLifecycleCommand):
     '''A class for deleting a libvirt object.
 
@@ -29,7 +30,7 @@ class _DeleteCommand(SimpleLifecycleCommand):
         )
 
 
-delete = _DeleteCommand(
+delete: Final = _DeleteCommand(
     name='delete',
     aliases=MATCH_ALIASES,
     hvprop='pools',

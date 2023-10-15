@@ -5,12 +5,13 @@
 
 from __future__ import annotations
 
-from typing import Self
+from typing import Final, Self, final
 
 from .._base.lifecycle import OperationHelpInfo, SimpleLifecycleCommand
 from ...libvirt.domain import MATCH_ALIASES
 
 
+@final
 class _ResetCommand(SimpleLifecycleCommand):
     '''Class for resetting domains.'''
     @property
@@ -26,7 +27,7 @@ class _ResetCommand(SimpleLifecycleCommand):
         )
 
 
-reset = _ResetCommand(
+reset: Final = _ResetCommand(
     name='reset',
     aliases=MATCH_ALIASES,
     hvprop='domains',

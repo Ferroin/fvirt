@@ -5,12 +5,13 @@
 
 from __future__ import annotations
 
-from typing import Self
+from typing import Final, Self, final
 
 from .._base.lifecycle import OperationHelpInfo, SimpleLifecycleCommand
 from ...libvirt.volume import MATCH_ALIASES
 
 
+@final
 class _WipeCommand(SimpleLifecycleCommand):
     '''Class for wiping volumes.'''
     @property
@@ -26,7 +27,7 @@ class _WipeCommand(SimpleLifecycleCommand):
         )
 
 
-wipe = _WipeCommand(
+wipe: Final = _WipeCommand(
     name='wipe',
     aliases=MATCH_ALIASES,
     hvprop='volumes',

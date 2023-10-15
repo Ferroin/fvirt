@@ -8,7 +8,7 @@ from __future__ import annotations
 import warnings
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Generic, Self, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Generic, Self, TypeVar, cast, final
 
 from lxml import etree
 
@@ -39,6 +39,7 @@ class ReadDescriptor(Generic[T], ABC):
         self._fallback = fallback
         self.__doc__ = doc
 
+    @final
     def __get__(self: Self, instance: Any, _owner: Any) -> T | Self:
         if instance is None:
             return self
@@ -93,6 +94,7 @@ class WriteDescriptor(Generic[T]):
     ) -> None:
         self._validator = validator
 
+    @final
     def __set__(self: Self, instance: Any, value: T) -> None:
         if hasattr(instance, '_check_valid'):
             instance._check_valid()

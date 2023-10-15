@@ -5,7 +5,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 import click
 
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
     from .._base.state import State
 
-HELP = '''
+HELP: Final = '''
 Create one or more new transient domains.
 
 The CONFIGPATH argument should point to one or more valid XML
@@ -85,7 +85,7 @@ def cb(
         ctx.exit(3)
 
 
-create = Command(
+create: Final = Command(
     name='create',
     callback=cb,
     help=HELP,
