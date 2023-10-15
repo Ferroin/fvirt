@@ -72,7 +72,7 @@ jobs:
       - name: Install Poetry
         uses: snok/install-poetry@v1
       - name: Install dependencies
-        run: poetry install --no-root --only dev
+        run: poetry install --no-root --only=dev
       - name: Run scripts/check-labels.py
         run: scripts/check-labels.py
 
@@ -89,7 +89,7 @@ jobs:
       - name: Install Poetry
         uses: snok/install-poetry@v1
       - name: Install dependencies
-        run: poetry install
+        run: poetry install --no-root --only=dev
       - name: Run yamllint
         run: poetry run yamllint .
 
@@ -105,8 +105,8 @@ jobs:
           python-version: "3.11"
       - name: Install Poetry
         uses: snok/install-poetry@v1
-      - name: Install dependencies
-        run: poetry install
+      - name: Install python dependencies
+        run: poetry install --no-root --only=dev
       - name: Run flake8
         run: poetry run flake8
 
@@ -122,8 +122,10 @@ jobs:
           python-version: "3.11"
       - name: Install Poetry
         uses: snok/install-poetry@v1
-      - name: Install dependencies
-        run: poetry install
+      - name: Install system dependencies
+        run: sudo apt-get install -y libvirt-dev build-essential
+      - name: Install python dependencies
+        run: poetry install --no-root
       - name: Run mypy
         run: poetry run mypy
 
@@ -139,7 +141,9 @@ jobs:
           python-version: "3.11"
       - name: Install Poetry
         uses: snok/install-poetry@v1
-      - name: Install dependencies
+      - name: Install system dependencies
+        run: sudo apt-get install -y libvirt-daemon libvirt-daemon-driver-qemu libvirt-dev build-essential
+      - name: Install python dependencies
         run: poetry install
       - name: Run pytest
         run: poetry run pytest -n logical --dist worksteal
@@ -156,7 +160,7 @@ jobs:
           python-version: "3.11"
       - name: Install Poetry
         uses: snok/install-poetry@v1
-      - name: Install dependencies
-        run: poetry install
+      - name: Install python dependencies
+        run: poetry install --no-root --only=dev
       - name: Run mypy
         run: poetry run bandit -r .
