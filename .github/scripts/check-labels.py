@@ -36,10 +36,9 @@ import re
 import sys
 
 from pathlib import Path
+from typing import Any
 
-from ruamel.yaml import YAML as Yaml
-from ruamel.yaml import YAMLError
-
+from ruamel.yaml import YAML as Yaml, YAMLError
 
 SCRIPT_PATH = Path(__file__).resolve()
 SCRIPT_DIR = SCRIPT_PATH.parent
@@ -55,10 +54,10 @@ COLOR_REGEX = re.compile('^[a-fA-F0-9]{6}$')
 YAML = Yaml(typ='safe')
 
 
-def validate_labels_config(labels_config):
+def validate_labels_config(labels_config: Any) -> bool:
     '''Validate the labels config file.'''
     if not isinstance(labels_config, list):
-        print('!!! Top level of labels configuration is not a list.')
+        print('!!! Top level of labels configuration is not a list.')  # noqa: DB100
         sys.exit(1)
 
     ret = True
@@ -67,62 +66,62 @@ def validate_labels_config(labels_config):
         match item:
             case {'name': n, 'description': d, 'color': c, **other}:
                 if other:
-                    print(f'!!! Unrecognized keys for { n } in labels config.')
+                    print(f'!!! Unrecognized keys for { n } in labels config.')  # noqa: DB100
                     ret = False
 
                 if not isinstance(n, str):
-                    print(f'!!! Label name is not a string at index { idx }' +
+                    print(f'!!! Label name is not a string at index { idx }' +  # noqa: DB100
                           ' in labels config.')
                     ret = False
                 elif not LABEL_REGEX.match(n):
-                    print(f'!!! Label name { n } is not valid. ' +
+                    print(f'!!! Label name { n } is not valid. ' +  # noqa: DB100
                           'Label names must consist only of English letters, numbers, ' +
                           '`/`, `-`, `_`, `.`, or spaces.')
                     ret = False
 
                 if not isinstance(d, str):
-                    print(f'!!! Description for label { n } is not a string.')
+                    print(f'!!! Description for label { n } is not a string.')  # noqa: DB100
                     ret = False
                 elif len(d) > 100:
-                    print(f'!!! Description for label { n } is too long. GitHub limits descriptions to 100 characters.')
+                    print(f'!!! Description for label { n } is too long. GitHub limits descriptions to 100 characters.')  # noqa: DB100
                     ret = False
 
                 if not isinstance(c, str):
-                    print(f'!!! Color for label { n } is not a string. Did you forget to quote it?')
+                    print(f'!!! Color for label { n } is not a string. Did you forget to quote it?')  # noqa: DB100
                     ret = False
                 elif not COLOR_REGEX.match(c):
-                    print(f'!!! Color for label { n } is not a six-digit hexidecimal string.')
+                    print(f'!!! Color for label { n } is not a six-digit hexidecimal string.')  # noqa: DB100
                     ret = False
             case {**other}:
                 for k in {'name', 'description', 'color'}:
                     if k not in other.keys():
-                        print(f'!!! Missing { k } entry at index { idx }' +
+                        print(f'!!! Missing { k } entry at index { idx }' +  # noqa: DB100
                               ' in labels config.')
                         ret = False
             case _:
-                print(f'!!! Incorrect type at index { idx } in labels config.')
+                print(f'!!! Incorrect type at index { idx } in labels config.')  # noqa: DB100
                 sys.exit(1)
 
     if ret:
-        print('>>> Labels config has valid syntax.')
+        print('>>> Labels config has valid syntax.')  # noqa: DB100
 
     return ret
 
 
-def validate_labeler_config(labeler_config):
+def validate_labeler_config(labeler_config: Any) -> bool:
     '''Validate the labeler config file.'''
     if not isinstance(labeler_config, dict):
-        print('!!! Top level of labeler configuration is not a mapping.')
+        print('!!! Top level of labeler configuration is not a mapping.')  # noqa: DB100
 
     ret = True
 
     for key, value in labeler_config.items():
         if not isinstance(key, str):
-            print(f"!!! \'{ key }\' in labeler config is not a string.")
+            print(f"!!! \'{ key }\' in labeler config is not a string.")  # noqa: DB100
             ret = False
 
         if not isinstance(value, list):
-            print(f'!!! Invalid type for value of { key } in labeler config.')
+            print(f'!!! Invalid type for value of { key } in labeler config.')  # noqa: DB100
             ret = False
             continue
 
@@ -138,31 +137,31 @@ def validate_labeler_config(labeler_config):
             case [*results]:
                 for idx, item in enumerate(results):
                     if not isinstance(item, str):
-                        print(f'!!! Invalid item at index { idx } for '
+                        print(f'!!! Invalid item at index { idx } for '  # noqa: DB100
                               f'{ key } in labeler configuration')
                         ret = False
 
     if ret:
-        print('>>> Labeler config has valid syntax.')
+        print('>>> Labeler config has valid syntax.')  # noqa: DB100
 
     return ret
 
 
-def check_labeler_labels(labels, labeler_config):
+def check_labeler_labels(labels: Any, labeler_config: Any) -> bool:
     '''Confirm that all labels in the labeler config exist.'''
     missing_labeler_labels = {x for x in labeler_config.keys()
                               if x not in labels}
 
     if missing_labeler_labels:
-        print('!!! Missing labels found in labeler config:' +
+        print('!!! Missing labels found in labeler config:' +  # noqa: DB100
               f'{ str(missing_labeler_labels) }')
         return False
 
-    print('>>> All labels in labeler config are defined in labels config.')
+    print('>>> All labels in labeler config are defined in labels config.')  # noqa: DB100
     return True
 
 
-def check_dependabot_labels(labels, dependabot_config):
+def check_dependabot_labels(labels: Any, dependabot_config: Any) -> bool:
     '''Confirm that dependabot labels are all correct.'''
     ret = True
 
@@ -171,12 +170,12 @@ def check_dependabot_labels(labels, dependabot_config):
             missing_labels = {x for x in entry['labels'] if x not in labels}
 
             if missing_labels:
-                print('!!! Missing labels found in dependabot config entry { idx }:' +
+                print('!!! Missing labels found in dependabot config entry { idx }:' +  # noqa: DB100
                       f'{ str(missing_labels) }')
                 ret = False
 
     if ret:
-        print('>>> All labels in dependabot config are defined in labels config.')
+        print('>>> All labels in dependabot config are defined in labels config.')  # noqa: DB100
 
     return ret
 
@@ -184,19 +183,19 @@ def check_dependabot_labels(labels, dependabot_config):
 try:
     LABELS_CONFIG = YAML.load(SRC_DIR / '.github' / 'labels.yml')
 except (YAMLError, IOError, OSError):
-    print('!!! Failed to load labels configuration file.')
+    print('!!! Failed to load labels configuration file.')  # noqa: DB100
     sys.exit(1)
 
 try:
     LABELER_CONFIG = YAML.load(SRC_DIR / '.github' / 'labeler.yml')
 except (YAMLError, IOError, OSError):
-    print('!!! Failed to load labeler configuration file.')
+    print('!!! Failed to load labeler configuration file.')  # noqa: DB100
     sys.exit(1)
 
 try:
     DEPENDABOT_CONFIG = YAML.load(SRC_DIR / '.github' / 'dependabot.yml')
 except (YAMLError, IOError, OSError):
-    print('!!! Failed to load labeler configuration file.')
+    print('!!! Failed to load labeler configuration file.')  # noqa: DB100
     sys.exit(1)
 
 if not all([
