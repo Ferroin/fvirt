@@ -8,7 +8,7 @@ from __future__ import annotations
 from collections.abc import Callable, Generator
 from contextlib import _GeneratorContextManager, contextmanager
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import pytest
 
@@ -192,7 +192,7 @@ def volume_xml(unique: Callable[[str], Any]) -> Callable[[StoragePool], str]:
        The storage pool used should be a directory type pool.'''
     def inner(pool: StoragePool) -> str:
         name = unique('text')
-        path = Path(pool.target) / name
+        path = Path(cast(str, pool.target)) / name
 
         return f'''
         <volume type='file'>
