@@ -10,6 +10,9 @@ concurrency:
 
 jobs:
   actionlint:
+    permissions:
+      contents: read
+      pull-requests: write
     name: actionlint
     runs-on: ubuntu-latest
     steps:
@@ -22,6 +25,9 @@ jobs:
           reporter: github-pr-review
 
   languagetool:
+    permissions:
+      contents: read
+      pull-requests: write
     name: languagetool
     runs-on: ubuntu-latest
     steps:
@@ -34,6 +40,9 @@ jobs:
           reporter: github-pr-review
 
   markdownlint:
+    permissions:
+      contents: read
+      pull-requests: write
     name: markdownlint
     runs-on: ubuntu-latest
     steps:
@@ -47,6 +56,9 @@ jobs:
           markdownlint_flags: -s ./.mdl-style.rb .
 
   detect-secrets:
+    permissions:
+      contents: read
+      pull-requests: write
     name: detect-secrets
     runs-on: ubuntu-latest
     steps:
@@ -74,7 +86,7 @@ jobs:
       - name: Install dependencies
         run: poetry install --no-root --only=dev
       - name: Run scripts/check-labels.py
-        run: scripts/check-labels.py
+        run: poetry run .github/scripts/check-labels.py
 
   yamllint:
     name: yamllint
