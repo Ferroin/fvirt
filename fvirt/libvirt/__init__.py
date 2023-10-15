@@ -25,7 +25,7 @@ from .entity import LifecycleResult
 from .exceptions import EntityNotRunning, EntityRunning, InsufficientPrivileges, InvalidConfig, InvalidEntity, InvalidOperation, NotConnected
 from .hypervisor import Hypervisor
 from .storage_pool import StoragePool
-from .uri import CLIENT_ONLY_DRIVERS, LIBVIRT_DEFAULT_URI, SESSION_DRIVERS, SYSTEM_DRIVERS, URI, Driver, Transport
+from .uri import DRIVER_INFO, LIBVIRT_DEFAULT_URI, URI, Driver, Transport
 from .volume import Volume
 from ..version import VersionNumber
 
@@ -47,9 +47,7 @@ __all__ = [
     'URI',
     'Driver',
     'Transport',
-    'SESSION_DRIVERS',
-    'SYSTEM_DRIVERS',
-    'CLIENT_ONLY_DRIVERS',
+    'DRIVER_INFO',
     'LIBVIRT_DEFAULT_URI',
     'Volume',
     'API_VERSION',

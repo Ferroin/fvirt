@@ -5,12 +5,16 @@
 
 import pytest
 
-from fvirt.libvirt.uri import CLIENT_ONLY_DRIVERS, SESSION_DRIVERS, SYSTEM_DRIVERS, URI
+from fvirt.libvirt.uri import DRIVER_INFO, URI, Driver, DriverFlag
 
 # Definitions used below
-CLIENT_ONLY_DRIVER = sorted(CLIENT_ONLY_DRIVERS, key=lambda x: x.value)[0].value
-SESSION_DRIVER = sorted(SESSION_DRIVERS - SYSTEM_DRIVERS, key=lambda x: x.value)[0].value
-SYSTEM_DRIVER = sorted(SYSTEM_DRIVERS - SESSION_DRIVERS, key=lambda x: x.value)[0].value
+CLIENT_ONLY_DRIVER = [x for x in Driver if DriverFlag.CLIENT_ONLY in DRIVER_INFO[x]][0].value
+NON_SYSTEM_DRIVER = [x for x in Driver if DriverFlag.SYSTEM not in DRIVER_INFO[x]][0].value
+SYSTEM_DRIVER = [x for x in Driver if DriverFlag.SYSTEM in DRIVER_INFO[x]][0].value
+NON_SESSION_DRIVER = [x for x in Driver if DriverFlag.SESSION not in DRIVER_INFO[x]][0].value
+NON_EMBED_DRIVER = [x for x in Driver if DriverFlag.EMBED not in DRIVER_INFO[x]][0].value
+EMBED_DRIVER = [x for x in Driver if DriverFlag.EMBED in DRIVER_INFO[x]][0].value
+NON_REMOTE_DRIVER = [x for x in Driver if DriverFlag.REMOTE not in DRIVER_INFO[x] and DriverFlag.SESSION in DRIVER_INFO[x]][0].value
 
 # An assortment of cannonical URIs used for the tests.
 SAMPLE_URIS = (
@@ -22,6 +26,7 @@ SAMPLE_URIS = (
     'hyperv://example-hyperv.com/?transport=http',
     'ch:///session',
     'bhyve+ext://example.com/system?command=nc',
+    'qemu:///embed?path=/foo',
 )
 
 # An assortment of known invalid URIs used for tests.
@@ -29,12 +34,15 @@ SAMPLE_URIS = (
 BAD_URIS = (
     'foo:///',  # Bogus driver
     'qemu+bar:///system',  # Bogus transport
-    'xen://example.com:0/',  # Invalid port number
-    'test+ext:///defaults',  # Ext driver without command.
+    'test://example.com:0/',  # Invalid port number
+    'test+ext:///defaults',  # Ext transport without command.
     f'{ CLIENT_ONLY_DRIVER }+ssh://example.com/',  # Client-only driver with transport
     f'{ CLIENT_ONLY_DRIVER }:///',  # Client-only driver without host
-    f'{ SESSION_DRIVER }:///system',  # Using system with session driver
-    f'{ SYSTEM_DRIVER }:///session',  # Using session with system driver
+    f'{ NON_SYSTEM_DRIVER }:///system',  # Using /system with non-system driver
+    f'{ NON_SESSION_DRIVER }:///session',  # Using /session path with non-session driver
+    f'{ NON_EMBED_DRIVER }:///embed?path=/foo',  # Using /embed path with non-embed driver
+    f'{ EMBED_DRIVER }:///embed',  # Using /embed without path parameter
+    f'{ NON_REMOTE_DRIVER }://example.com/session',  # Local-only driver with host
 )
 
 

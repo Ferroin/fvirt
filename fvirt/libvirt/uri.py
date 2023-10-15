@@ -5,11 +5,25 @@
 
 from __future__ import annotations
 
-from enum import Enum
-from typing import Any, Final, Self, Type
+from enum import Enum, Flag, auto
+from typing import TYPE_CHECKING, Any, Final, Self, Type
 from urllib.parse import parse_qs, quote, urlparse
 
 from frozendict import frozendict
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
+
+
+class DriverFlag(Flag):
+    '''Flags indicating specific properties of drivers.'''
+    NONE = 0
+    SESSION = auto()
+    SYSTEM = auto()
+    PATH = auto()
+    EMBED = auto()
+    REMOTE = auto()
+    CLIENT_ONLY = auto()
 
 
 class Driver(Enum):
@@ -35,30 +49,27 @@ class Driver(Enum):
     HVF = 'qemu'
 
 
-SESSION_DRIVERS: Final = frozenset({
-    Driver.CLOUD_HYPERVISOR,
-    Driver.LXC,
-    Driver.QEMU,
-    Driver.VIRTUALBOX,
-    Driver.VMWARE_FUSION,
-    Driver.VMWARE_PLAYER,
-    Driver.VMWARE_WORKSTATION,
-})
+__QEMU_FLAGS = DriverFlag.SYSTEM | DriverFlag.SESSION | DriverFlag.EMBED | DriverFlag.REMOTE
+__VMWARE_ESX_FLAGS = DriverFlag.CLIENT_ONLY | DriverFlag.PATH
+__VMWARE_FUSION_FLAGS = DriverFlag.SESSION | DriverFlag.REMOTE
 
-SYSTEM_DRIVERS: Final = frozenset({
-    Driver.BHYVE,
-    Driver.LXC,
-    Driver.OPENVZ,
-    Driver.QEMU,
-    Driver.VIRTUOZZO,
-    Driver.XEN,
-})
-
-CLIENT_ONLY_DRIVERS: Final = frozenset({
-    Driver.HYPERV,
-    Driver.VMWARE_ESX,
-    Driver.VMWARE_GSX,
-    Driver.VMWARE_VPX,
+DRIVER_INFO: Final = frozendict({
+    Driver.BHYVE: DriverFlag.SYSTEM | DriverFlag.REMOTE,
+    Driver.CLOUD_HYPERVISOR: DriverFlag.SESSION,
+    Driver.HYPERV: DriverFlag.CLIENT_ONLY | DriverFlag.REMOTE,
+    Driver.LXC: DriverFlag.SYSTEM | DriverFlag.SESSION | DriverFlag.REMOTE,
+    Driver.OPENVZ: DriverFlag.SYSTEM | DriverFlag.REMOTE,
+    Driver.QEMU: __QEMU_FLAGS,
+    Driver.TEST: DriverFlag.PATH | DriverFlag.REMOTE,
+    Driver.VIRTUALBOX: DriverFlag.SESSION | DriverFlag.REMOTE,
+    Driver.VMWARE_ESX: __VMWARE_ESX_FLAGS,
+    Driver.VMWARE_GSX: __VMWARE_ESX_FLAGS,
+    Driver.VMWARE_VPX: __VMWARE_ESX_FLAGS,
+    Driver.VMWARE_FUSION: __VMWARE_FUSION_FLAGS,
+    Driver.VMWARE_PLAYER: __VMWARE_FUSION_FLAGS,
+    Driver.VMWARE_WORKSTATION: __VMWARE_FUSION_FLAGS,
+    Driver.VIRTUOZZO: DriverFlag.SYSTEM | DriverFlag.REMOTE,
+    Driver.XEN: DriverFlag.SYSTEM | DriverFlag.REMOTE,
 })
 
 
@@ -107,8 +118,42 @@ class URI:
             host: str | None = None,
             port: int | None = None,
             path: str | None = None,
-            parameters: dict[str, str] = dict(),
+            parameters: Mapping[str, str] = dict(),
             ) -> None:
+        if driver is None:
+            transport = None
+            host = None
+            path = None
+            parameters = frozendict()
+
+        if host is None:
+            user = None
+            port = None
+
+        if driver is not None:
+            if path == '/session' and DriverFlag.SESSION not in DRIVER_INFO[driver]:
+                raise ValueError('Driver does not support /session paths.')
+            elif path == '/system' and DriverFlag.SYSTEM not in DRIVER_INFO[driver]:
+                raise ValueError('Driver does not support /system paths.')
+            elif path == '/embed' and DriverFlag.EMBED not in DRIVER_INFO[driver]:
+                raise ValueError('Driver does not support /embed paths.')
+            elif path == '/embed' and 'path' not in parameters:
+                raise ValueError('Parameter "path" must be specified for /embed URIs.')
+            elif path not in {'/session', '/system', '/embed', '/'} and DriverFlag.PATH not in DRIVER_INFO[driver]:
+                raise ValueError('Driver does not support arbitrary paths.')
+            elif transport is not None and DriverFlag.CLIENT_ONLY in DRIVER_INFO[driver]:
+                raise ValueError('Transport must be None for client only drivers.')
+            elif host is None and DriverFlag.CLIENT_ONLY in DRIVER_INFO[driver]:
+                raise ValueError('Host name must be specified with client-only drivers.')
+            elif host is not None and DriverFlag.REMOTE not in DRIVER_INFO[driver]:
+                raise ValueError('Driver does not support remote operation.')
+            elif transport is Transport.EXTERNAL and 'command' not in parameters:
+                raise ValueError('External transport requires a command to be specified in the URI parameters.')
+            elif transport not in REMOTE_TRANSPORTS and user is not None:
+                raise ValueError('User name is only supported for remote transports.')
+            elif port is not None and port not in range(1, 65536):
+                raise ValueError('Invalid port number.')
+
         self.__driver = driver
         self.__transport = transport
         self.__user = user
@@ -116,31 +161,6 @@ class URI:
         self.__port = port
         self.__path = path
         self.__parameters = frozendict(parameters)
-
-        if path == '/session' and driver not in SESSION_DRIVERS:
-            raise ValueError('Driver does not support /session paths.')
-        elif path == '/system' and driver not in SYSTEM_DRIVERS:
-            raise ValueError('Driver does not support /system paths.')
-        elif transport is not None and driver in CLIENT_ONLY_DRIVERS:
-            raise ValueError('Transport must be None for client only drivers.')
-        elif host is None and driver in CLIENT_ONLY_DRIVERS:
-            raise ValueError('Host name must be specified with client-only drivers.')
-        elif transport is Transport.EXTERNAL and 'command' not in parameters:
-            raise ValueError('External transport requires a command to be specified in the URI parameters.')
-        elif transport not in REMOTE_TRANSPORTS and user is not None:
-            raise ValueError('User name is only supported for remote transports.')
-        elif port is not None and port not in range(1, 65536):
-            raise ValueError('Invalid port number.')
-
-        if self.__driver is None:
-            self.__transport = None
-            self.__host = None
-            self.__path = None
-            self.__parameters = frozendict()
-
-        if self.__host is None:
-            self.__user = None
-            self.__port = None
 
     def __repr__(self: Self) -> str:
         return f'<fvirt.libvirt.URI driver={ self.driver } transport={ self.transport } user={ self.user } host={ self.host } ' + \
@@ -177,10 +197,10 @@ class URI:
         first = True
         for key, value in self.parameters.items():
             if first:
-                uri = f'{ uri }?{ key }={ quote(value, safe="") }'
+                uri = f'{ uri }?{ key }={ quote(value, safe="/") }'
                 first = False
             else:
-                uri = f'{ uri }&{ key }={ quote(value, safe="") } '
+                uri = f'{ uri }&{ key }={ quote(value, safe="/") } '
 
         return uri
 
@@ -245,7 +265,7 @@ class URI:
 
            A value of None is the same as an empty string.
 
-           Most drivers only support one or both of `session` or `system`.'''
+           Most drivers only support one or both of `/session` or `/system`.'''
         return self.__path
 
     @property
@@ -282,7 +302,7 @@ class URI:
         if urlparts.hostname is None and transport is Transport(''):
             transport = Transport.UNIX
 
-        if driver in CLIENT_ONLY_DRIVERS and transport is Transport.TLS:
+        if DriverFlag.CLIENT_ONLY in DRIVER_INFO[driver] and transport is Transport.TLS:
             transport = None
 
         params = {k: v[0] for k, v in parse_qs(urlparts.query, keep_blank_values=False, strict_parsing=True).items()}
@@ -303,9 +323,7 @@ LIBVIRT_DEFAULT_URI: Final = URI()
 
 __all__ = [
     'Driver',
-    'SESSION_DRIVERS',
-    'SYSTEM_DRIVERS',
-    'CLIENT_ONLY_DRIVERS',
+    'DRIVER_INFO',
     'Transport',
     'URI',
     'LIBVIRT_DEFAULT_URI',
