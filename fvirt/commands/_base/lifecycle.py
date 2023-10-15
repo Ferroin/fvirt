@@ -119,7 +119,7 @@ class LifecycleCommand(MatchCommand):
                     )]
                 else:
                     futures = [state.pool.submit(
-                        run_entity_method,
+                        run_entity_method,  # type: ignore
                         uri=uri,
                         hvprop=hvprop,
                         method=method,

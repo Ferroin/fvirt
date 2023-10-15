@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 from textwrap import dedent
-from typing import TYPE_CHECKING, Any, Self
+from typing import TYPE_CHECKING, Self
 
 import click
 
@@ -17,7 +17,7 @@ from ...util.tables import Column, ColumnsParam, print_columns, render_table, ta
 if TYPE_CHECKING:
     import re
 
-    from collections.abc import Mapping, MutableMapping, Sequence
+    from collections.abc import Mapping, Sequence
 
     from .state import State
 
