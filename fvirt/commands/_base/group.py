@@ -98,6 +98,11 @@ class Group(click.Group):
 
         return super().get_command(ctx, name)
 
+    @property
+    def lazy_commands(self: Self) -> Mapping[str, str]:
+        '''A mapping of the lazy-loaded commands for this group.'''
+        return self.__lazy_commands
+
     @functools.cache
     def _lazy_load(self: Self, cmd_name: str) -> click.BaseCommand:
         import_path = self.__lazy_commands[cmd_name]
