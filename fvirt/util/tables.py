@@ -40,7 +40,7 @@ def ColumnsParam(cols: Mapping[str, Column], type_name: str) -> Type[click.Param
     class ColumnsParam(click.ParamType):
         name = type_name
 
-        def convert(self: Self, value: str | list[str], param: Any, ctx: click.core.Context | None) -> list[str]:
+        def convert(self: Self, value: str | list[str], param: Any, ctx: click.Context | None) -> list[str]:
             if isinstance(value, str):
                 if value == 'list':
                     return ['list']
@@ -60,12 +60,12 @@ def ColumnsParam(cols: Mapping[str, Column], type_name: str) -> Type[click.Param
     return ColumnsParam
 
 
-def print_columns(columns: Mapping[str, Column], defaults: Sequence[str]) -> None:
-    '''Print out a list of supported columns.
+def column_info(columns: Mapping[str, Column], defaults: Sequence[str]) -> str:
+    '''Produce a list of supported columns.
 
        Takes the column definitions that would be passed to ColumnsParam
        or render_table, together with a list of default columns, then
-       uses click to print out info about supported columns.'''
+       produces info about the supported columns.'''
     output = 'Recognized columns:\n'
 
     for name in columns.keys():
@@ -73,7 +73,7 @@ def print_columns(columns: Mapping[str, Column], defaults: Sequence[str]) -> Non
 
     output += f'\nDefault columns: { ", ".join(defaults) }\n'
 
-    click.echo(output)
+    return output
 
 
 def color_bool(value: bool) -> str:
@@ -84,19 +84,19 @@ def color_bool(value: bool) -> str:
         return 'No'
 
 
-def tabulate_entities(domains: Iterable[Entity], columns: Mapping[str, Column], selected_cols: Sequence[str]) -> Sequence[Sequence[str]]:
-    '''Convert a list of domains to a list of values for columns.'''
+def tabulate_entities(entities: Iterable[Entity], columns: Mapping[str, Column], selected_cols: Sequence[str]) -> Sequence[Sequence[str]]:
+    '''Convert an iterable of entities to a list of values for columns.'''
     ret = []
 
-    for domain in domains:
+    for entity in entities:
         items = []
 
         for column in selected_cols:
             try:
-                prop = getattr(domain, columns[column].prop)
+                prop = getattr(entity, columns[column].prop)
 
                 if hasattr(prop, '__get__'):
-                    prop = prop.__get__(domain)
+                    prop = prop.__get__(entity)
             except AttributeError:
                 prop = '-'
 
@@ -107,7 +107,7 @@ def tabulate_entities(domains: Iterable[Entity], columns: Mapping[str, Column], 
     return ret
 
 
-def render_table(items: Sequence[Sequence[str]], columns: Sequence[Column], headings: bool = True) -> str:
+def render_table(items: Sequence[Sequence[Any]], columns: Sequence[Column], headings: bool = True) -> str:
     '''Render a table of items.
 
        `items` should be a list of rows, where each row is a list of
@@ -154,7 +154,8 @@ def render_table(items: Sequence[Sequence[str]], columns: Sequence[Column], head
 __all__ = [
     'Column',
     'ColumnsParam',
-    'print_columns',
     'color_bool',
+    'column_info',
+    'tabulate_entities',
     'render_table',
 ]

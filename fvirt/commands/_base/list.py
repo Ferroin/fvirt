@@ -12,7 +12,7 @@ import click
 
 from .match import MatchCommand
 from ...util.match import MatchAlias, MatchTarget
-from ...util.tables import Column, ColumnsParam, print_columns, render_table, tabulate_entities
+from ...util.tables import Column, ColumnsParam, column_info, render_table, tabulate_entities
 
 if TYPE_CHECKING:
     import re
@@ -77,7 +77,7 @@ class ListCommand(MatchCommand):
             name: str | None = None
         ) -> None:
             if cols == ['list']:
-                print_columns(columns, default_cols)
+                click.echo(column_info(columns, default_cols))
                 ctx.exit(0)
 
             with state.hypervisor as hv:
