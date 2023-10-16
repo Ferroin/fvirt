@@ -20,6 +20,7 @@ pool: Final = Group(
         'build': 'fvirt.commands.pool.build.build',
         'define': 'fvirt.commands.pool.define.define',
         'delete': 'fvirt.commands.pool.delete.delete',
+        'info': 'fvirt.commands.pool.info.info',
         'list': 'fvirt.commands.pool.list.list_pools',
         'refresh': 'fvirt.commands.pool.refresh.refresh',
         'start': 'fvirt.commands.pool.start.start',
