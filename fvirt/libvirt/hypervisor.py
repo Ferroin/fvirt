@@ -20,6 +20,112 @@ from .uri import URI
 from ..version import VersionNumber
 
 
+class HostInfo:
+    '''Class representing basic information about a Hypervisor host.'''
+    __slots__ = (
+        '__arch',
+        '__mem',
+        '__cpus',
+        '__cpufreq',
+        '__nodes',
+        '__sockets',
+        '__cores',
+        '__threads',
+    )
+
+    def __init__(
+        self: Self,
+        /,
+        arch: str,
+        mem: int,
+        cpus: int,
+        cpufreq: int,
+        nodes: int,
+        sockets: int,
+        cores: int,
+        threads: int,
+    ) -> None:
+        self.__arch = arch
+        self.__mem = 1024 * 1024 * mem
+        self.__cpus = cpus
+        self.__cpufreq = cpufreq
+        self.__nodes = nodes
+        self.__sockets = sockets
+        self.__cores = cores
+        self.__threads = threads
+
+    @property
+    def architecture(self: Self) -> str:
+        '''The CPU architecture of the host.
+
+           This will usually match what would be returned by `uname -m`
+           on a Linux system running on the host.'''
+        return self.__arch
+
+    @property
+    def memory(self: Self) -> int:
+        '''The total memory on the host, in bytes.
+
+           This is an approximation as the underlying API returns the
+           value in mibibytes instead of bytes.'''
+        return self.__mem
+
+    @property
+    def cpus(self: Self) -> int:
+        '''The total number of active logical CPU cores in the system.'''
+        return self.__cpus
+
+    @property
+    def cpu_frequency(self: Self) -> int:
+        '''The expected CPU frequency of the host CPU in megahertz.
+
+           A value of 0 indicates that this information could not be obtained.
+
+           Note that the actual CPU frequency may differ greatly from this value.'''
+        return self.__cpufreq
+
+    @property
+    def nodes(self: Self) -> int:
+        '''The number of NUMA nodes in the host.
+
+           A value of 1 may indicate that the system is not a NUMA system,
+           or it may indicate that the system has an unusual NUMA topology
+           that libvirt cannot figure out specific information about.'''
+        return self.__nodes
+
+    @property
+    def sockets(self: Self) -> int:
+        '''The number of CPU sockets per NUMA node in the host.
+
+           A value of 1 may indicate that the system has one socket per
+           node, or it may indicate that the system has an unusual NUMA
+           topology that libvirt cannot figure out specific information
+           about.'''
+        return self.__sockets
+
+    @property
+    def cores(self: Self) -> int:
+        '''The number of CPU cores per socket in the host.
+
+           If libvirt cannot figure out the specifcs of the underlying
+           NUMA toplogy, this property will instead indicate the total
+           number of logical processors present in the host.
+
+           If you just care about the number of usable logical CPUs in
+           the system, you should use the cpus property instead.'''
+        return self.__cores
+
+    @property
+    def threads(self: Self) -> int:
+        '''The number of threads per CPU core in the host.
+
+           A value of 1 may indicate that the system has one thread per
+           core, or it may indicate that the system has an unusual NUMA
+           topology that libvirt cannot figure out specific information
+           about.'''
+        return self.__threads
+
+
 class Hypervisor:
     '''Basic class encapsulating a hypervisor connection.
 
@@ -153,6 +259,22 @@ class Hypervisor:
 
            Automatically manages a connection when accessed.'''
         return self.__pools
+
+    @property
+    def host_info(self: Self) -> HostInfo:
+        '''Assorted information about the hypervisor host.'''
+        with self:
+            assert self._connection is not None
+
+            return HostInfo(*self._connection.getInfo())
+
+    @property
+    def hostname(self: Self) -> str:
+        '''The host name of the hypervisor host.'''
+        with self:
+            assert self._connection is not None
+
+            return cast(str, self._connection.getHostname())
 
     def open(self: Self) -> Self:
         '''Open the connection represented by this Hypervisor instance.

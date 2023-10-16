@@ -14,6 +14,7 @@ host: Final = Group(
     help='Perform various operations on the libvirt host.',
     callback=lambda x: None,
     lazy_commands={
+        'info': 'fvirt.commands.host.info.info',
         'version': 'fvirt.commands.host.version.version',
         'uri': 'fvirt.commands.host.uri.uri',
     },
