@@ -8,12 +8,12 @@ from __future__ import annotations
 import re
 
 from itertools import combinations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import click
 import pytest
 
-from fvirt.util.tables import Column, ColumnsParam, color_bool, column_info, render_table, tabulate_entities
+from fvirt.util.tables import Column, ColumnsParam, color_bool, color_optional, column_info, render_table, tabulate_entities
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -69,6 +69,20 @@ def test_color_bool(i: bool, e: str) -> None:
 
     assert isinstance(result, str)
     assert e in result
+
+
+@pytest.mark.parametrize('i, e', (
+    (None, '-'),
+    ('-', '-'),
+    (1, '1'),
+    ('', ''),
+))
+def test_color_optional(i: Any, e: str) -> None:
+    '''Check that the color_optional function renders things correctly.'''
+    result = color_optional(i)
+
+    assert isinstance(result, str)
+    assert result == e
 
 
 def test_column_info() -> None:

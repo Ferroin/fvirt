@@ -9,14 +9,14 @@ from typing import Final
 
 from .._base.list import ListCommand
 from ...libvirt.volume import MATCH_ALIASES
-from ...util.tables import Column
+from ...util.tables import Column, color_optional
 
 COLUMNS: Final = {
     'name': Column(title='Name', prop='name'),
     'key': Column(title='Key', prop='key'),
     'type': Column(title='Type', prop='type'),
     'format': Column(title='Format', prop='format'),
-    'path': Column(title='Path', prop='path'),
+    'path': Column(title='Path', prop='path', color=color_optional),
     'capacity': Column(title='Capacity', prop='capacity', right_align=True),
     'allocated': Column(title='Allocated', prop='allocated', right_align=True),
 }
