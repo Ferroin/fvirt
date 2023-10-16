@@ -42,24 +42,24 @@ class Volume(ConfigurableEntity):
        `configRaw`.'''
     allocated: ConfigProperty[int] = ConfigProperty(
         doc='The actual space allocated to the volume.',
-        path='/volume/allocation',
+        path='./allocation',
         type=int,
         units_to_bytes=True,
     )
     capacity: ConfigProperty[int] = ConfigProperty(
         doc='The capacity of the volume.',
-        path='/volume/capacity',
+        path='./capacity',
         type=int,
         units_to_bytes=True,
     )
     type: ConfigProperty[str] = ConfigProperty(
         doc='The volume type.',
-        path='/volume/@type',
+        path='./@type',
         type=str,
     )
     format: ConfigProperty[str] = ConfigProperty(
         doc='The volume format.',
-        path='/volume/source/format/@type',
+        path='./source/format/@type',
         type=str,
     )
     key: MethodProperty[str] = MethodProperty(

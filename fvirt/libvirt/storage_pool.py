@@ -45,47 +45,47 @@ class StoragePool(ConfigurableEntity, RunnableEntity):
        Volumes in the pool can be looked up by name using the `volumes_by_name` property.'''
     type: ConfigProperty[str] = ConfigProperty(
         doc='The storage pool type.',
-        path='/pool/@type',
+        path='./@type',
         typ=str,
     )
     capacity: ConfigProperty[int] = ConfigProperty(
         doc='The total capacity of the storage pool.',
-        path='/pool/capacity/text()[1]',
+        path='./capacity',
         typ=int,
     )
     available: ConfigProperty[int] = ConfigProperty(
         doc='The available space in the storage pool.',
-        path='/pool/available/text()[1]',
+        path='./available',
         typ=int,
     )
     allocated: ConfigProperty[int] = ConfigProperty(
         doc='The allocated space within the storage pool.',
-        path='/pool/allocation/text()[1]',
+        path='./allocation',
         typ=int,
     )
     host: ConfigProperty[str] = ConfigProperty(
         doc='The source host of the storage pool.',
-        path='/pool/source/host/@name',
+        path='./source/host/@name',
         typ=str,
     )
     format: ConfigProperty[str] = ConfigProperty(
         doc='The source format of the storage pool.',
-        path='/pool/source/format/@name',
+        path='./source/format/@name',
         typ=str,
     )
     dir: ConfigProperty[str] = ConfigProperty(
         doc='The source directory of the storage pool.',
-        path='/pool/source/dir/@path',
+        path='./source/dir/@path',
         typ=str,
     )
     device: ConfigProperty[str] = ConfigProperty(
         doc='The source device of the storage pool.',
-        path='/pool/source/device/@path',
+        path='./source/device/@path',
         typ=str,
     )
     target: ConfigProperty[str] = ConfigProperty(
         doc='The target path of the storage pool.',
-        path='/pool/target/path/text()[1]',
+        path='./target/path',
         typ=str,
     )
 
