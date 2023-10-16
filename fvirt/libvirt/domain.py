@@ -104,12 +104,12 @@ class Domain(ConfigurableEntity, RunnableEntity):
        of the useful parts in a nicer, more Pythonic interface.'''
     genid: ConfigElementProperty[UUID] = ConfigElementProperty(
         doc='The generation ID of the domain.',
-        path='./genid/text()[1]',
+        path='./genid',
         type=UUID,
     )
     osType: ConfigElementProperty[str] = ConfigElementProperty(
         doc='THe OS type of the domain.',
-        path='./os/type/text()[1]',
+        path='./os/type',
         typ=str,
     )
     osArch: ConfigAttributeProperty[str] = ConfigAttributeProperty(
@@ -126,18 +126,18 @@ class Domain(ConfigurableEntity, RunnableEntity):
     )
     emulator: ConfigElementProperty[str] = ConfigElementProperty(
         doc='The emulator used for the domain.',
-        path='./devices/emulator/text()[1]',
+        path='./devices/emulator',
         typ=str,
     )
     maxCPUs: ConfigElementProperty[int] = ConfigElementProperty(
         doc='The maximum number of virtuual CPUs for the domain.',
-        path='./vcpu/text()[1]',
+        path='./vcpu',
         typ=int,
         validator=_non_negative_integer,
     )
     currentCPUs: ConfigAttributeProperty[int] = ConfigAttributeProperty(
         doc='The current number of virtual CPUs attached to the domain.',
-        path='./vcpu/text()[1]',
+        path='./vcpu',
         attr='current',
         typ=int,
         fallback='maxCPUs',
@@ -145,21 +145,21 @@ class Domain(ConfigurableEntity, RunnableEntity):
     )
     maxMemory: ConfigElementProperty[int] = ConfigElementProperty(
         doc='The maximum amount of memory that can be allocated to the domain.',
-        path='./maxMemory/text()[1]',
+        path='./maxMemory',
         typ=int,
         units_to_bytes=True,
         validator=_non_negative_integer,
     )
     maxMemorySlots: ConfigAttributeProperty[int] = ConfigAttributeProperty(
         doc='The number of memory slots in the domain.',
-        path='./maxMemory/text()[1]',
+        path='./maxMemory',
         attr='slots',
         typ=int,
         validator=_non_negative_integer,
     )
     memory: ConfigElementProperty[int] = ConfigElementProperty(
         doc='The total memory allocated to the domain.',
-        path='./memory/text()[1]',
+        path='./memory',
         typ=int,
         fallback='maxMemory',
         units_to_bytes=True,
@@ -167,7 +167,7 @@ class Domain(ConfigurableEntity, RunnableEntity):
     )
     currentMemory: ConfigElementProperty[int] = ConfigElementProperty(
         doc='The current memory in use by the domain, not including any reclaimed by a memory balloon.',
-        path='./currentMemory/text()[1]',
+        path='./currentMemory',
         typ=int,
         fallback='memory',
         units_to_bytes=True,
@@ -205,8 +205,6 @@ class Domain(ConfigurableEntity, RunnableEntity):
     def _format_properties(self: Self) -> set[str]:
         return super()._format_properties | {
             'id',
-            'maxCPUs',
-            'currentCPUs',
         }
 
     @property

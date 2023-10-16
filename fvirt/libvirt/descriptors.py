@@ -211,10 +211,8 @@ class ConfigProperty(ReadDescriptor[T]):
         **kwargs: Any,
     ) -> None:
         self._path = path
+        self._xpath = etree.XPath(path, smart_strings=False)
         self._units_to_bytes = units_to_bytes
-
-        if not units_to_bytes:
-            self._xpath = etree.XPath(path, smart_strings=False)
 
         super().__init__(doc=doc, type=type, fallback=fallback, **kwargs)
 
@@ -223,24 +221,25 @@ class ConfigProperty(ReadDescriptor[T]):
 
     def _get_value(self: Self, instance: ConfigurableEntity) -> Any:
         ret: Any = None
+        result = self._xpath(instance.config)
 
-        if self._units_to_bytes:
-            e = instance.config.find(self._path)
+        if result is None or result == []:
+            raise AttributeError(f'{ instance }:{ repr(self) }')
 
-            if e is None:
-                raise AttributeError(f'{ instance }:{ repr(self) }')
-            else:
-                unit = str(e.get('unit', default='bytes'))
-                value = int(str(e.text))
-
-                ret = unit_to_bytes(value, unit)
+        if isinstance(result, list):
+            e: Any = result[0]
         else:
-            ret = self._xpath(instance.config)
+            e = result
 
-            if ret is None or ret == []:
-                raise AttributeError(f'{ instance }:{ repr(self) }')
-            elif isinstance(ret, list):
-                ret = ret[0]
+        if isinstance(e, bool) or isinstance(e, str) or isinstance(e, float) or isinstance(e, bytes) or isinstance(e, tuple):
+            ret = e
+        elif self._units_to_bytes:
+            unit = e.get('unit', default='bytes')
+            value = int(str(e.text))
+
+            ret = unit_to_bytes(value, unit)
+        else:
+            ret = e.text
 
         return ret
 

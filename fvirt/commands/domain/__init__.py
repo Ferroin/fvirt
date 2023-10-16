@@ -18,6 +18,7 @@ domain: Final = Group(
         'autostart': 'fvirt.commands.domain.autostart.autostart',
         'create': 'fvirt.commands.domain.create.create',
         'define': 'fvirt.commands.domain.define.define',
+        'info': 'fvirt.commands.domain.info.info',
         'list': 'fvirt.commands.domain.list.list_domains',
         'reset': 'fvirt.commands.domain.reset.reset',
         'save': 'fvirt.commands.domain.save.save',
