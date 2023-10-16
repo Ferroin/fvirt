@@ -17,6 +17,7 @@ volume: Final = Group(
     lazy_commands={
         'define': 'fvirt.commands.volume.define.define',
         'delete': 'fvirt.commands.volume.delete.delete',
+        'info': 'fvirt.commands.volume.info.info',
         'list': 'fvirt.commands.volume.list.list_volumes',
         'xml': 'fvirt.commands.volume.xml.xml',
         'wipe': 'fvirt.commands.volume.wipe.wipe',
