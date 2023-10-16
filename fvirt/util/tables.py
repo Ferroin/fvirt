@@ -84,6 +84,14 @@ def color_bool(value: bool) -> str:
         return 'No'
 
 
+def color_optional(value: Any) -> str:
+    '''Format an optionally empty attribute.'''
+    if value is None:
+        return '-'
+    else:
+        return str(value)
+
+
 def tabulate_entities(entities: Iterable[Entity], columns: Mapping[str, Column], selected_cols: Sequence[str]) -> Sequence[Sequence[str]]:
     '''Convert an iterable of entities to a list of values for columns.'''
     ret = []
@@ -155,6 +163,7 @@ __all__ = [
     'Column',
     'ColumnsParam',
     'color_bool',
+    'color_optional',
     'column_info',
     'tabulate_entities',
     'render_table',

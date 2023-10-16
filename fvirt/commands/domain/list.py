@@ -5,12 +5,12 @@
 
 from __future__ import annotations
 
-from typing import Any, Final
+from typing import Final
 
 from .._base.list import ListCommand
 from ...libvirt import DomainState
 from ...libvirt.domain import MATCH_ALIASES
-from ...util.tables import Column, color_bool
+from ...util.tables import Column, color_bool, color_optional
 from ...util.terminal import get_terminal
 
 
@@ -41,28 +41,20 @@ def format_id(value: int) -> str:
         return str(value)
 
 
-def format_optional_attrib(value: Any) -> str:
-    '''Format an optionally empty attribute.'''
-    if value is None:
-        return '-'
-    else:
-        return str(value)
-
-
 COLUMNS: Final = {
     'id': Column(title='ID', prop='id', right_align=True, color=format_id),
     'name': Column(title='Name', prop='name'),
     'uuid': Column(title='UUID', prop='uuid'),
-    'genid': Column(title='GenID', prop='genid'),
+    'genid': Column(title='GenID', prop='genid', color=color_optional),
     'state': Column(title='State', prop='state', color=color_state),
     'persistent': Column(title='Persistent', prop='persistent', color=color_bool),
     'managed-save': Column(title='Managed Save', prop='hasManagedSave', color=color_bool),
     'current-snapshot': Column(title='Current Snapshot', prop='hasCurrentSnapshot', color=color_bool),
     'autostart': Column(title='Autostart', prop='autostart', color=color_bool),
-    'osType': Column(title='OS Type', prop='osType', color=format_optional_attrib),
-    'osArch': Column(title='Architecture', prop='osArch', color=format_optional_attrib),
-    'osMachine': Column(title='Machine', prop='osMachine', color=format_optional_attrib),
-    'emulator': Column(title='Emulator', prop='emulator'),
+    'osType': Column(title='OS Type', prop='osType', color=color_optional),
+    'osArch': Column(title='Architecture', prop='osArch', color=color_optional),
+    'osMachine': Column(title='Machine', prop='osMachine', color=color_optional),
+    'emulator': Column(title='Emulator', prop='emulator', color=color_optional),
     'title': Column(title='Domain Title', prop='title'),
 }
 

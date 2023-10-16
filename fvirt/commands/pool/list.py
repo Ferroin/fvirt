@@ -9,7 +9,7 @@ from typing import Final
 
 from .._base.list import ListCommand
 from ...libvirt.storage_pool import MATCH_ALIASES
-from ...util.tables import Column, color_bool
+from ...util.tables import Column, color_bool, color_optional
 from ...util.terminal import get_terminal
 
 EPILOG: Final = '''
@@ -48,10 +48,10 @@ COLUMNS: Final = {
     'allocated': Column(title='Allocated', prop='allocated', right_align=True),
     'available': Column(title='Available', prop='available', right_align=True),
     'type': Column(title='Type', prop='type'),
-    'format': Column(title='Format', prop='format'),
-    'dir': Column(title='Directory', prop='dir'),
-    'device': Column(title='Device', prop='device'),
-    'target': Column(title='Target', prop='target'),
+    'format': Column(title='Format', prop='format', color=color_optional),
+    'dir': Column(title='Directory', prop='dir', color=color_optional),
+    'device': Column(title='Device', prop='device', color=color_optional),
+    'target': Column(title='Target', prop='target', color=color_optional),
 }
 
 DEFAULT_COLS: Final = (
