@@ -124,9 +124,12 @@ class StoragePool(ConfigurableEntity, RunnableEntity):
         return self.__volumes
 
     @property
-    def numVolumes(self: Self) -> int:
-        '''The number of volumes in the pool.'''
-        return len(self.volumes)
+    def numVolumes(self: Self) -> int | None:
+        '''The number of volumes in the pool, or None if the value cannot be determined.'''
+        if self.running:
+            return len(self.volumes)
+        else:
+            return None
 
     def build(self: Self) -> LifecycleResult:
         '''Build the storage pool.'''
