@@ -40,9 +40,9 @@ class ReadDescriptor(Generic[T], ABC):
         self.__doc__ = doc
 
     @final
-    def __get__(self: Self, instance: Any, _owner: Any) -> T | Self:
+    def __get__(self: Self, instance: Any, _owner: Any) -> T:
         if instance is None:
-            return self
+            return self  # type: ignore
 
         if hasattr(instance, '_check_valid'):
             instance._check_valid()
