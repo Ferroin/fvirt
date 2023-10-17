@@ -15,6 +15,7 @@ import pytest
 from lxml import etree
 
 from fvirt.libvirt import EntityRunning, Hypervisor, LifecycleResult, Volume
+from fvirt.libvirt.entity_access import EntityAccess
 from fvirt.libvirt.storage_pool import MATCH_ALIASES, StoragePool
 from fvirt.util.match import MatchArgument, MatchTarget
 
@@ -26,16 +27,19 @@ if TYPE_CHECKING:
     from contextlib import _GeneratorContextManager
 
 
+@pytest.mark.libvirtd
 def test_check_match_aliases(live_pool: StoragePool) -> None:
     '''Check typing for match aliases.'''
     check_match_aliases(MATCH_ALIASES, live_pool)
 
 
+@pytest.mark.libvirtd
 def test_name(live_pool: StoragePool) -> None:
     '''Check the name attribute.'''
     assert isinstance(live_pool.name, str)
 
 
+@pytest.mark.libvirtd
 def test_defineVolume(
         live_pool: StoragePool,
         volume_xml: Callable[[StoragePool], str],
@@ -47,6 +51,7 @@ def test_defineVolume(
     assert isinstance(result, Volume)
 
 
+@pytest.mark.libvirtd
 def test_numVolumes(
         live_pool: StoragePool,
         volume_factory: Callable[[StoragePool], Volume],
@@ -66,26 +71,31 @@ def test_numVolumes(
     assert live_pool.numVolumes == 2
 
 
+@pytest.mark.libvirtd
 def test_stop(live_pool: StoragePool) -> None:
     '''Check that stopping a pool works.'''
     check_runnable_destroy(live_pool)
 
 
+@pytest.mark.libvirtd
 def test_start(live_pool: StoragePool) -> None:
     '''Check that starting a pool works.'''
     check_runnable_start(live_pool)
 
 
+@pytest.mark.libvirtd
 def test_undefine(live_pool: StoragePool) -> None:
     '''Check that undefining a pool works.'''
     check_undefine(live_pool._hv, 'pools', live_pool)
 
 
+@pytest.mark.libvirtd
 def test_refresh(live_pool: StoragePool) -> None:
     '''Check that refreshing a pool works.'''
     assert live_pool.refresh() == LifecycleResult.SUCCESS
 
 
+@pytest.mark.libvirtd
 def test_build(live_hv: Hypervisor, pool_xml: Callable[[], str]) -> None:
     '''Check that building a pool works.'''
     pool = live_hv.defineStoragePool(pool_xml())
@@ -98,6 +108,7 @@ def test_build(live_hv: Hypervisor, pool_xml: Callable[[], str]) -> None:
     pool.undefine()
 
 
+@pytest.mark.libvirtd
 def test_delete(
         live_pool: StoragePool,
         volume_factory: Callable[[StoragePool], Volume],
@@ -168,3 +179,13 @@ def test_pool_access_match(test_hv: Hypervisor, m: MatchArgument) -> None:
 def test_pool_access_mapping(test_hv: Hypervisor, p: str, k: Sequence[Any], c: Type[object]) -> None:
     '''Test pool entity access mappings.'''
     check_entity_access_mapping(test_hv.pools, p, k, c, StoragePool)
+
+
+@pytest.mark.parametrize('t', (
+    'volumes',
+))
+def test_entities(test_pool: StoragePool, t: str) -> None:
+    '''Check that entity access attributes exist.'''
+    assert hasattr(test_pool, t)
+
+    assert isinstance(getattr(test_pool, t), EntityAccess)

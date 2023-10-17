@@ -22,7 +22,8 @@ import libvirt
 
 from .domain import Domain, DomainState
 from .entity import LifecycleResult
-from .exceptions import EntityNotRunning, EntityRunning, InsufficientPrivileges, InvalidConfig, InvalidEntity, InvalidOperation, NotConnected
+from .exceptions import (EntityNotRunning, EntityRunning, InsufficientPrivileges, InvalidConfig,
+                         InvalidEntity, InvalidOperation, NotConnected, PlatformNotSupported)
 from .hypervisor import Hypervisor
 from .storage_pool import StoragePool
 from .uri import DRIVER_INFO, LIBVIRT_DEFAULT_URI, URI, Driver, Transport
@@ -39,6 +40,7 @@ __all__ = [
     'InvalidEntity',
     'InvalidOperation',
     'NotConnected',
+    'PlatformNotSupported',
     'LifecycleResult',
     'Hypervisor',
     'Domain',
