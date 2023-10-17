@@ -5,9 +5,14 @@
 
 from __future__ import annotations
 
+import filecmp
+import math
+import os
+import random
 import re
 
-from typing import TYPE_CHECKING
+from pathlib import Path
+from typing import TYPE_CHECKING, Any
 
 from fvirt.libvirt import LifecycleResult, StoragePool
 from fvirt.libvirt.volume import MATCH_ALIASES, Volume
@@ -97,3 +102,39 @@ def test_volume_access_mapping(live_pool: StoragePool, volume_factory: Callable[
     vol = volume_factory(live_pool)
     check_entity_access_mapping(live_pool.volumes, 'by_name', (vol.name,), str, Volume)
     vol.undefine()
+
+
+def test_volume_download(live_volume: Volume, unique: Callable[[str], Any]) -> None:
+    '''Test volume download functionality.'''
+    vol_path = Path(live_volume.path)
+    target_path = vol_path.with_name(unique('text'))
+
+    vol_path.write_bytes(random.randbytes(live_volume.capacity))
+
+    with target_path.open('wb') as f:
+        result = live_volume.download(f, sparse=False, bufsz=4096)
+
+    assert isinstance(result, int)
+    assert result == live_volume.capacity
+    assert filecmp.cmp(vol_path, target_path, shallow=False)
+
+
+def test_volume_sparse_download(live_volume: Volume, unique: Callable[[str], Any]) -> None:
+    '''Test volume sparse download functionality.'''
+    vol_path = Path(live_volume.path)
+    target_path = vol_path.with_name(unique('text'))
+
+    block = math.floor(live_volume.capacity / 4)
+
+    with vol_path.open('wb') as f:
+        f.seek(block, os.SEEK_CUR)
+        f.write(random.randbytes(block))
+        f.seek(block, os.SEEK_CUR)
+        f.write(random.randbytes(block))
+
+    with target_path.open('wb') as f:
+        result = live_volume.download(f, sparse=True, bufsz=4096)
+
+    assert isinstance(result, int)
+    assert result == (block * 2)
+    assert filecmp.cmp(vol_path, target_path, shallow=False)
