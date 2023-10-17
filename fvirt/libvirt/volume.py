@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import io
 import os
+import sys
 
 from typing import TYPE_CHECKING, Final, Self, cast
 
@@ -15,6 +16,7 @@ import libvirt
 from .descriptors import ConfigProperty, MethodProperty
 from .entity import ConfigurableEntity, LifecycleResult
 from .entity_access import BaseEntityAccess, EntityAccess, NameMap
+from .exceptions import PlatformNotSupported
 from ..util.match import MatchAlias
 
 if TYPE_CHECKING:
@@ -167,6 +169,9 @@ class Volume(ConfigurableEntity):
            is 'raw', otherwise the downloaded data will be in whatever
            format the volume itself is in.'''
         assert self._hv._connection is not None
+
+        if sparse and sys.platform == 'win32':
+            raise PlatformNotSupported
 
         stream = self._hv._connection.newStream()
 

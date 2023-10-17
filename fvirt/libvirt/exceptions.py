@@ -8,51 +8,47 @@ from __future__ import annotations
 
 class FVirtException(Exception):
     '''Base exception for all fvirt exceptions.'''
-    pass
+
+
+class PlatformNotSupported(FVirtException, NotImplementedError):
+    '''Raised when attempting an operation which is not supported on this platform.'''
 
 
 class NotConnected(FVirtException):
     '''Raised when a hypervisor method is called without the hypervisor being connected.'''
-    pass
 
 
 class InvalidConfig(FVirtException):
     '''Raised when attempting to apply an invalid configuration.'''
-    pass
 
 
 class InvalidEntity(FVirtException):
     '''Raised when attempting to access an Entity that is no longer valid.'''
-    pass
 
 
 class InvalidOperation(FVirtException):
     '''Raised when attempting an operation that is not valid on a particular entity.'''
-    pass
 
 
 class EntityNotRunning(InvalidOperation):
     '''Raised when attempting runtime-only operations on an entity that is not running.'''
-    pass
 
 
 class EntityRunning(InvalidOperation):
     '''Raised when attempting an operation that requires an entity to not be running on a running entity.'''
-    pass
 
 
-class InsufficientPrivileges(FVirtException):
+class InsufficientPrivileges(FVirtException, PermissionError):
     '''Raised when attempting to perform write operations on a read only connection.'''
-    pass
 
 
-class TimedOut(FVirtException):
+class TimedOut(FVirtException, TimeoutError):
     '''Raised when an operation with a timeout times out.'''
-    pass
 
 
 __all__ = [
     'FVirtException',
+    'PlatformNotSupported',
     'EntityNotRunning',
     'EntityRunning',
     'InsufficientPrivileges',
