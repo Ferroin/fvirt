@@ -5,15 +5,19 @@
 
 from __future__ import annotations
 
-from typing import Final
+from typing import Final, final
 
+from .._base.objects import DomainMixin
 from .._base.xml import XMLCommand
 
-xml: Final = XMLCommand(
+
+@final
+class _DomainXML(XMLCommand, DomainMixin):
+    pass
+
+
+xml: Final = _DomainXML(
     name='xml',
-    hvprop='domains',
-    metavar='DOMAIN',
-    doc_name='domain',
 )
 
 __all__ = [

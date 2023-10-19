@@ -5,16 +5,21 @@
 
 from __future__ import annotations
 
-from typing import Final
+from typing import Final, final
 
 from .._base.autostart import AutostartCommand
+from .._base.objects import StoragePoolMixin
 from ...libvirt.storage_pool import MATCH_ALIASES
 
-autostart: Final = AutostartCommand(
+
+@final
+class _PoolAutostart(AutostartCommand, StoragePoolMixin):
+    pass
+
+
+autostart: Final = _PoolAutostart(
     name='autostart',
     aliases=MATCH_ALIASES,
-    hvprop='pools',
-    doc_name='storage pool',
 )
 
 __all__ = (

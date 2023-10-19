@@ -5,14 +5,19 @@
 
 from __future__ import annotations
 
-from typing import Final
+from typing import Final, final
 
 from .._base.lifecycle import DefineCommand
+from .._base.objects import DomainMixin
 
-define: Final = DefineCommand(
+
+@final
+class _DomainDefine(DefineCommand, DomainMixin):
+    pass
+
+
+define: Final = _DomainDefine(
     name='define',
-    method='defineDomain',
-    doc_name='domain',
 )
 
 __all__ = [

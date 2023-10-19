@@ -5,17 +5,21 @@
 
 from __future__ import annotations
 
-from typing import Final
+from typing import Final, final
 
+from .._base.objects import DomainMixin
 from .._base.xslt import XSLTCommand
 from ...libvirt.domain import MATCH_ALIASES
 
-xslt: Final = XSLTCommand(
+
+@final
+class _DomainXSLT(XSLTCommand, DomainMixin):
+    pass
+
+
+xslt: Final = _DomainXSLT(
     name='xslt',
     aliases=MATCH_ALIASES,
-    hvprop='domains',
-    metavar='DOMAIN',
-    doc_name='domain',
 )
 
 __all__ = [

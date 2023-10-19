@@ -5,14 +5,19 @@
 
 from __future__ import annotations
 
-from typing import Final
+from typing import Final, final
 
 from .._base.lifecycle import DefineCommand
+from .._base.objects import StoragePoolMixin
 
-define: Final = DefineCommand(
+
+@final
+class _PoolDefine(DefineCommand, StoragePoolMixin):
+    pass
+
+
+define: Final = _PoolDefine(
     name='define',
-    method='defineStoragePool',
-    doc_name='storage pool',
 )
 
 __all__ = [

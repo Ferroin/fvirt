@@ -5,16 +5,21 @@
 
 from __future__ import annotations
 
-from typing import Final
+from typing import Final, final
 
 from .._base.lifecycle import StartCommand
+from .._base.objects import StoragePoolMixin
 from ...libvirt.storage_pool import MATCH_ALIASES
 
-start: Final = StartCommand(
+
+@final
+class _PoolStart(StartCommand, StoragePoolMixin):
+    pass
+
+
+start: Final = _PoolStart(
     name='start',
     aliases=MATCH_ALIASES,
-    hvprop='pools',
-    doc_name='storage pool',
 )
 
 __all__ = [

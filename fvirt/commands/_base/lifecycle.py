@@ -16,7 +16,9 @@ from typing import TYPE_CHECKING, Any, Self, cast
 import click
 
 from .command import Command
+from .exitcode import ExitCode
 from .match import MatchArgument, MatchCommand, get_match_or_entity
+from .objects import is_object_mixin
 from ...libvirt import InvalidConfig, InvalidOperation, LifecycleResult
 from ...libvirt.runner import RunnerResult, run_entity_method, run_hv_method, run_sub_entity_method
 
@@ -64,28 +66,20 @@ class LifecycleCommand(MatchCommand):
             name: str,
             method: str,
             aliases: Mapping[str, MatchAlias],
-            doc_name: str,
             op_help: OperationHelpInfo,
-            hvprop: str,
-            parent: str | None = None,
-            parent_name: str | None = None,
-            parent_metavar: str | None = None,
             epilog: str | None = None,
             params: Sequence[click.Parameter] = [],
             hidden: bool = False,
             deprecated: bool = False,
             ) -> None:
-        parent_args = {parent, parent_name, parent_metavar}
-
-        if None in parent_args and parent_args != {None}:
-            raise ValueError('Either all of parent, parent_name, and parent_metavar must be specified, or neither must be specified.')
+        assert is_object_mixin(self)
 
         def cb(
             ctx: click.Context,
             state: State,
             match: MatchArgument | None,
-            name: str | None,
-            parent_obj: str | None = None,
+            entity: str | None,
+            parent: str | None = None,
             *args: Any,
             **kwargs: Any
         ) -> None:
@@ -95,44 +89,40 @@ class LifecycleCommand(MatchCommand):
             with state.hypervisor as hv:
                 uri = hv.uri
 
-                if parent_obj is not None:
-                    assert parent is not None
-
-                    parent_entity = getattr(hv, hvprop).get(parent_obj)
+                if parent is not None:
+                    parent_obj = self.get_parent_obj(ctx, hv, parent)
 
                     futures = [state.pool.submit(
-                        run_sub_entity_method,
+                        run_sub_entity_method,  # type: ignore
                         uri=uri,
-                        hvprop=hvprop,
-                        parentprop=parent,
+                        hvprop=self.PARENT_ATTR,
+                        parentprop=self.LOOKUP_ATTR,
                         method=method,
-                        ident=(parent_entity.name, e.name),
+                        ident=(parent_obj.name, e.name),
                         arguments=args,
                         kwarguments=kwargs
                     ) for e in get_match_or_entity(
-                        hv=parent_entity,
-                        hvprop=parent,
+                        hv=hv,
+                        obj=self,
                         match=match,
-                        entity=name,
+                        entity=entity,
                         ctx=ctx,
-                        doc_name=doc_name,
                     )]
                 else:
                     futures = [state.pool.submit(
                         run_entity_method,  # type: ignore
                         uri=uri,
-                        hvprop=hvprop,
+                        hvprop=self.LOOKUP_ATTR,
                         method=method,
                         ident=e.name,
                         arguments=args,
                         kwarguments=kwargs,
                     ) for e in get_match_or_entity(
                         hv=hv,
-                        hvprop=hvprop,
+                        obj=self,
                         match=match,
-                        entity=name,
+                        entity=entity,
                         ctx=ctx,
-                        doc_name=doc_name,
                     )]
 
             success = 0
@@ -145,50 +135,50 @@ class LifecycleCommand(MatchCommand):
                 try:
                     match f.result():
                         case RunnerResult(attrs_found=False) as r:
-                            ctx.fail(f'Unexpected internal error processing { doc_name } "{ r.ident }".')
+                            ctx.fail(f'Unexpected internal error processing { self.NAME } "{ r.ident }".')
                         case RunnerResult(entity_found=False) as r:
-                            click.echo(f'Could not find { doc_name } "{ r.ident }".')
+                            click.echo(f'Could not find { self.NAME } "{ r.ident }".')
                             not_found += 1
 
                             if state.fail_fast:
                                 break
                         case RunnerResult(method_success=False) as r:
-                            click.echo(f'Unexpected error processing { doc_name } "{ r.ident }".')
+                            click.echo(f'Unexpected error processing { self.NAME } "{ r.ident }".')
 
                             if state.fail_fast:
                                 break
                         case RunnerResult(method_success=True, result=LifecycleResult.SUCCESS) as r:
-                            click.echo(f'{ op_help.continuous.capitalize() } { doc_name } "{ r.ident }".')
+                            click.echo(f'{ op_help.continuous.capitalize() } { self.NAME } "{ r.ident }".')
                             success += 1
                         case RunnerResult(method_success=True, result=LifecycleResult.NO_OPERATION) as r:
-                            click.echo(f'{ doc_name.capitalize() } "{ r.ident }" is already { op_help.idempotent_state }.')
+                            click.echo(f'{ self.NAME.capitalize() } "{ r.ident }" is already { op_help.idempotent_state }.')
                             skipped += 1
 
                             if state.idempotent:
                                 success += 1
                         case RunnerResult(method_success=True, result=LifecycleResult.FAILURE) as r:
-                            click.echo(f'Failed to { op_help.verb } { doc_name } "{ r.ident }".')
+                            click.echo(f'Failed to { op_help.verb } { self.NAME } "{ r.ident }".')
 
                             if state.fail_fast:
                                 break
                         case RunnerResult(method_success=True, result=LifecycleResult.TIMED_OUT) as r:
-                            click.echo(f'Timed out waiting for { doc_name } "{ r.ident }" to { op_help.verb }.')
+                            click.echo(f'Timed out waiting for { self.NAME } "{ r.ident }" to { op_help.verb }.')
                             timed_out += 1
 
                             if state.fail_fast:
                                 break
                         case RunnerResult(method_success=True, result=LifecycleResult.FORCED) as r:
-                            click.echo(f'{ doc_name.capitalize() } "{ r.ident }" failed to { op_help.verb } and was forced to do so anyway.')
+                            click.echo(f'{ self.NAME.capitalize() } "{ r.ident }" failed to { op_help.verb } and was forced to do so anyway.')
                             forced += 1
                         case _:
                             raise RuntimeError
                 except InvalidOperation:
-                    click.echo(f'Failed to { op_help.verb } { doc_name } "{ r.ident }", operation is not supported for this { doc_name }.')
+                    click.echo(f'Failed to { op_help.verb } { self.NAME } "{ r.ident }", operation is not supported for this { self.NAME }.')
 
                     if state.fail_fast:
                         break
 
-                click.echo(f'Finished { op_help.continuous } specified { doc_name }s.')
+                click.echo(f'Finished { op_help.continuous } specified { self.NAME }s.')
                 click.echo('')
                 click.echo('Results:')
                 click.echo(f'  Success:     { success }')
@@ -206,63 +196,49 @@ class LifecycleCommand(MatchCommand):
                 click.echo(f'Total:         { len(futures) }')
 
                 if success != len(futures) or (not futures and state.fail_if_no_match):
-                    ctx.exit(3)
+                    ctx.exit(ExitCode.FAILURE)
 
-        params = tuple(params)
+        params = tuple(params) + self.mixin_params(required=False)
 
-        if parent is not None:
-            params += (click.Argument(
-                param_decls=('parent_obj',),
-                nargs=1,
-                required=True,
-                metavar=parent_metavar,
-            ),)
-
-        params += (click.Argument(
-            param_decls=('name',),
-            metavar=doc_name,
-            nargs=1,
-            required=False,
-        ),)
-
-        if parent is not None:
+        if self.HAS_PARENT:
             header = dedent(f'''
-            { op_help.verb.capitalize() } one or more { doc_name }s in the specified { parent_name }.
+            { op_help.verb.capitalize() } one or more { self.NAME }s in the specified { self.PARENT_NAME }.
 
-            The { parent_metavar } argument should indicate which {
-            parent_name } to look for the { doc_name }s in.''').lstrip()
+            The { self.PARENT_METAVAR } argument should indicate
+            which { self.PARENT_NAME } to look for the { self.NAME }s
+            in.''').lstrip()
         else:
-            header = f'{ op_help.verb.capitalize() } one or more { doc_name }s.'
+            header = f'{ op_help.verb.capitalize() } one or more { self.NAME }s.'
 
         docstr = dedent(f'''
         { header }
 
-        Either a specific { doc_name } name to { op_help.verb } should
+        Either a specific { self.NAME } name to { op_help.verb } should
         be specified as NAME, or matching parameters should be specified
         using the --match option, which will then cause all active {
-        doc_name }s that match to be { op_help.past }.
+        self.NAME }s that match to be { op_help.past }.
 
-        If more than one { doc_name } is requested to be { op_help.past },
-        a failure { op_help.continuous } any { doc_name } will result
-        in a non-zero exit code even if some { doc_name }s were {
+        If more than one { self.NAME } is requested to be { op_help.past },
+        a failure { op_help.continuous } any { self.NAME } will result
+        in a non-zero exit code even if some { self.NAME }s were {
         op_help.past }.
 
         This command supports fvirt's fail-fast logic. In fail-fast
-        mode, the first { doc_name } that fails to be { op_help.past }
+        mode, the first { self.NAME } that fails to be { op_help.past }
         will cause the operation to stop, and any failure will result
         in a non-zero exit code.''').lstrip()
 
         if op_help.idempotent_state:
             docstr += '\n\n' + dedent(f'''
-            This command supports fvirt's idempotent
-            logic. In idempotent mode, failing to { op_help.verb } a {
-            doc_name } because it is already { op_help.idempotent_state }
-            will not be treated as an error.''').lstrip()
+            This command supports fvirt's idempotent logic. In idempotent
+            mode, failing to { op_help.verb } a { self.NAME } because it
+            is already { op_help.idempotent_state } will not be treated
+            as an error.''').lstrip()
         else:
             docstr += '\n\n' + dedent('''
-            This command does not support fvirt's idempotent
-            logic. It will not behave any differently in idempotent mode
-            than it does normally.''').lstrip()
+            This command does not support fvirt's idempotent logic. It
+            will not behave any differently in idempotent mode than it
+            does normally.''').lstrip()
 
         super().__init__(
             name=name,
@@ -270,7 +246,6 @@ class LifecycleCommand(MatchCommand):
             epilog=epilog,
             callback=cb,
             aliases=aliases,
-            doc_name=doc_name,
             params=params,
             hidden=hidden,
             deprecated=deprecated,
@@ -293,11 +268,6 @@ class SimpleLifecycleCommand(ABC, LifecycleCommand):
             self: Self,
             name: str,
             aliases: Mapping[str, MatchAlias],
-            doc_name: str,
-            hvprop: str,
-            parent: str | None = None,
-            parent_name: str | None = None,
-            parent_metavar: str | None = None,
             epilog: str | None = None,
             params: Sequence[click.Parameter] = [],
             hidden: bool = False,
@@ -308,11 +278,6 @@ class SimpleLifecycleCommand(ABC, LifecycleCommand):
             epilog=epilog,
             aliases=aliases,
             method=self.METHOD,
-            hvprop=hvprop,
-            parent=parent,
-            parent_name=parent_name,
-            parent_metavar=parent_metavar,
-            doc_name=doc_name,
             op_help=self.OP_HELP,
             params=params,
             hidden=hidden,
@@ -392,21 +357,13 @@ class DefineCommand(Command):
     def __init__(
             self: Self,
             name: str,
-            doc_name: str,
-            method: str,
             epilog: str | None = None,
-            parent: str | None = None,
-            parent_name: str | None = None,
-            parent_metavar: str | None = None,
             hidden: bool = False,
             deprecated: bool = False,
             ) -> None:
-        parent_args = {parent, parent_name, parent_metavar}
+        assert is_object_mixin(self)
 
-        if None in parent_args and parent_args != {None}:
-            raise ValueError('Either all of parent, parent_name, and parent_metavar must be specified, or neither must be specified.')
-
-        def cb(ctx: click.Context, state: State, confpath: Sequence[str], parent_obj: str | None = None) -> None:
+        def cb(ctx: click.Context, state: State, confpath: Sequence[str], parent: str | None = None) -> None:
             success = 0
 
             confdata = list(state.pool.map(__read_file, confpath))
@@ -418,18 +375,18 @@ class DefineCommand(Command):
             uri = state.hypervisor.uri
 
             if state.hypervisor.read_only:
-                ctx.fail(f'Unable to define { doc_name }s, the hypervisor connection is read-only.')
+                ctx.fail(f'Unable to define { self.NAME }s, the hypervisor connection is read-only.')
 
             for conf in confdata:
-                if parent is not None:
-                    assert parent_obj is not None
+                if self.HAS_PARENT:
+                    assert parent is not None
 
                     futures = [state.pool.submit(
                         run_entity_method,  # type: ignore
                         uri=uri,
-                        hvprop=parent,
-                        method=method,
-                        ident=parent_obj,
+                        hvprop=self.PARENT_ATTR,
+                        method=self.DEFINE_METHOD,
+                        ident=parent,
                         postproc=lambda x: x.name,
                         arguments=[c],
                     ) for c in confdata]
@@ -437,7 +394,7 @@ class DefineCommand(Command):
                     futures = [state.pool.submit(
                         run_hv_method,  # type: ignore
                         uri=uri,
-                        method=method,
+                        method=self.DEFINE_METHOD,
                         ident='',
                         postproc=lambda x: x.name,
                         arguments=[c],
@@ -446,27 +403,27 @@ class DefineCommand(Command):
             for f in concurrent.futures.as_completed(futures):
                 match f.result():
                     case RunnerResult(attrs_found=False):
-                        ctx.fail(f'Unexpected internal error defining new { doc_name }.')
+                        ctx.fail(f'Unexpected internal error defining new { self.NAME }.')
                     case RunnerResult(method_success=False, exception=InvalidConfig()):
-                        click.echo(f'The configuration at { cpath } is not valid for a { doc_name }.')
+                        click.echo(f'The configuration at { cpath } is not valid for a { self.NAME }.')
 
                         if state.fail_fast:
                             break
                     case RunnerResult(method_success=False):
-                        click.echo(f'Failed to create { doc_name }.')
+                        click.echo(f'Failed to create { self.NAME }.')
 
                         if state.fail_fast:
                             break
                     case RunnerResult(method_success=True, postproc_success=False):
-                        click.echo(f'Successfully defined { doc_name }.')
+                        click.echo(f'Successfully defined { self.NAME }.')
                         success += 1
                     case RunnerResult(method_success=True, postproc_success=True, result=name):
-                        click.echo(f'Successfully defined { doc_name }: "{ name }".')
+                        click.echo(f'Successfully defined { self.NAME }: "{ name }".')
                         success += 1
                     case _:
                         raise RuntimeError
 
-            click.echo(f'Finished defining specified { doc_name }s.')
+            click.echo(f'Finished defining specified { self.NAME }s.')
             click.echo('')
             click.echo('Results:')
             click.echo(f'  Success:     { success }')
@@ -474,35 +431,37 @@ class DefineCommand(Command):
             click.echo(f'Total:         { len(confdata) }')
 
             if success != len(confdata) and confdata:
-                ctx.exit(3)
+                ctx.exit(ExitCode.FAILURE)
 
-        if parent is not None:
+        if self.HAS_PARENT:
             header = dedent(f'''
-            Define one or more new { doc_name }s in the specified { parent_name }.
+            Define one or more new { self.NAME }s in the specified { self.PARENT_NAME }.
 
-            The { parent_metavar } argument should indicate which { parent_name } to create the { doc_name }s in.''').lstrip()
+            The { self.PARENT_METAVAR } argument should indicate
+            which { self.PARENT_NAME } to create the { self.NAME }s
+            in.''').lstrip()
         else:
-            header = f'Define one or more new { doc_name }s.'
+            header = f'Define one or more new { self.NAME }s.'
 
         trailer = dedent(f'''
         The CONFIGPATH argument should point to a valid XML configuration
-        for a { doc_name }. If more than one CONFIGPATH is specified, each
-        should correspond to a separate { doc_name } to be defined.
+        for a { self.NAME }. If more than one CONFIGPATH is specified, each
+        should correspond to a separate { self.NAME } to be defined.
 
-        If a specified configuration describes a { doc_name } that already
+        If a specified configuration describes a { self.NAME } that already
         exists, it will silently overwrite the the existing configuration
-        for that { doc_name }.
+        for that { self.NAME }.
 
         All specified configuration files will be read before attempting
-        to define any { doc_name }s. Thus, if any configuration file is
-        invalid, no { doc_name }s will be defined.
+        to define any { self.NAME }s. Thus, if any configuration file is
+        invalid, no { self.NAME }s will be defined.
 
-        If more than one { doc_name } is requested to be defined, a failure
-        defining any { doc_name } will result in a non-zero exit code even if
-        some { doc_name }s were defined.
+        If more than one { self.NAME } is requested to be defined, a failure
+        defining any { self.NAME } will result in a non-zero exit code even if
+        some { self.NAME }s were defined.
 
         This command supports fvirt's fail-fast logic. In fail-fast mode, the
-        first { doc_name } that fails to be defined will cause the operation
+        first { self.NAME } that fails to be defined will cause the operation
         to stop, and any failure will result in a non-zero exit code.
 
         This command does not support fvirt's idempotent mode.''').lstrip()
@@ -511,13 +470,8 @@ class DefineCommand(Command):
 
         params: tuple[click.Parameter, ...] = tuple()
 
-        if parent is not None:
-            params += (click.Argument(
-                param_decls=('parent_obj',),
-                nargs=1,
-                required=True,
-                metavar=parent_metavar,
-            ),)
+        if self.HAS_PARENT:
+            params += self.mixin_parent_params()
 
         params += (click.Argument(
             param_decls=('configpath',),

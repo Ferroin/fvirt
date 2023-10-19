@@ -5,15 +5,19 @@
 
 from __future__ import annotations
 
-from typing import Final
+from typing import Final, final
 
+from .._base.objects import StoragePoolMixin
 from .._base.xml import XMLCommand
 
-xml: Final = XMLCommand(
+
+@final
+class _PoolXML(XMLCommand, StoragePoolMixin):
+    pass
+
+
+xml: Final = _PoolXML(
     name='xml',
-    hvprop='pools',
-    metavar='POOL',
-    doc_name='storage pool',
 )
 
 __all__ = [

@@ -5,9 +5,10 @@
 
 from __future__ import annotations
 
-from typing import Final
+from typing import Final, final
 
 from .._base.list import ListCommand
+from .._base.objects import VolumeMixin
 from ...libvirt.volume import MATCH_ALIASES
 from ...util.tables import Column, color_optional
 
@@ -27,20 +28,23 @@ DEFAULT_COLS: Final = (
     'capacity',
 )
 
-list_volumes: Final = ListCommand(
+SIMPLE_LIST_PROPS = (
+    'name',
+    'key',
+)
+
+
+@final
+class _VolList(ListCommand, VolumeMixin):
+    pass
+
+
+list_volumes: Final = _VolList(
     name='list',
     aliases=MATCH_ALIASES,
     columns=COLUMNS,
     default_cols=DEFAULT_COLS,
-    hvprop='pools',
-    hvmetavar='POOL',
-    obj_prop='volumes',
-    doc_name='volume',
-    obj_name='storage pool',
-    single_list_props=(
-        'name',
-        'key',
-    ),
+    single_list_props=SIMPLE_LIST_PROPS
 )
 
 __all__ = [

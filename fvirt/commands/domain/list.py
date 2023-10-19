@@ -5,9 +5,10 @@
 
 from __future__ import annotations
 
-from typing import Final
+from typing import Final, final
 
 from .._base.list import ListCommand
+from .._base.objects import DomainMixin
 from ...libvirt import DomainState
 from ...libvirt.domain import MATCH_ALIASES
 from ...util.tables import Column, color_bool, color_optional
@@ -66,18 +67,24 @@ DEFAULT_COLS: Final = (
     'autostart',
 )
 
-list_domains: Final = ListCommand(
+SINGLE_LIST_PROPS: Final = (
+    'name',
+    'uuid',
+    'id',
+)
+
+
+@final
+class _DomainList(ListCommand, DomainMixin):
+    pass
+
+
+list_domains: Final = _DomainList(
     name='list',
     aliases=MATCH_ALIASES,
     columns=COLUMNS,
     default_cols=DEFAULT_COLS,
-    hvprop='domains',
-    doc_name='domain',
-    single_list_props=(
-        'name',
-        'uuid',
-        'id',
-    ),
+    single_list_props=SINGLE_LIST_PROPS,
 )
 
 __all__ = [

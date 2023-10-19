@@ -10,7 +10,9 @@ from typing import TYPE_CHECKING, Self
 
 import click
 
+from .exitcode import ExitCode
 from .match import MatchCommand
+from .objects import is_object_mixin
 from ...util.match import MatchAlias, MatchTarget
 from ...util.tables import Column, ColumnsParam, column_info, render_table, tabulate_entities
 
@@ -20,6 +22,8 @@ if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
 
     from .state import State
+    from ...libvirt import Hypervisor
+    from ...libvirt.entity import Entity
 
 
 class ListCommand(MatchCommand):
@@ -33,37 +37,33 @@ class ListCommand(MatchCommand):
             aliases: Mapping[str, MatchAlias],
             columns: Mapping[str, Column],
             default_cols: Sequence[str],
-            doc_name: str,
-            hvprop: str,
             single_list_props: tuple[str, ...] = ('name', 'uuid'),
-            obj_prop: str | None = None,
-            obj_name: str | None = None,
-            hvmetavar: str | None = None,
             epilog: str | None = None,
-            params: Sequence[click.Parameter] = [],
             hidden: bool = False,
             deprecated: bool = False,
-            ) -> None:
-        params = tuple(params) + (
+    ) -> None:
+        assert is_object_mixin(self)
+
+        params: tuple[click.Parameter, ...] = (
             click.Option(
                 param_decls=('--columns', 'cols'),
-                type=ColumnsParam(columns, f'{ doc_name } columns')(),
+                type=ColumnsParam(columns, f'{ self.NAME } columns')(),
                 nargs=1,
-                help=f'A comma separated list of columns to show when listing { doc_name }s. Use `--columns list` to list recognized column names.',
+                help=f'A comma separated list of columns to show when listing { self.NAME }s. Use `--columns list` to list recognized column names.',
                 default=default_cols,
             ),
             click.Option(
                 param_decls=('--only',),
                 type=click.Choice(single_list_props),
                 nargs=1,
-                help=f'Limit the output to a simple list of { doc_name }s by the specified property.',
+                help=f'Limit the output to a simple list of { self.NAME }s by the specified property.',
                 default=None,
             ),
             click.Option(
                 param_decls=('--no-headings',),
                 is_flag=True,
                 default=False,
-                help=f'Don’t print headings when outputing the table of { doc_name }s.',
+                help=f'Don’t print headings when outputing the table of { self.NAME }s.',
             ),
         )
 
@@ -74,32 +74,25 @@ class ListCommand(MatchCommand):
             only: str | None,
             no_headings: bool,
             match: tuple[MatchTarget, re.Pattern] | None,
-            name: str | None = None
+            parent: str | None = None
         ) -> None:
             if cols == ['list']:
                 click.echo(column_info(columns, default_cols))
-                ctx.exit(0)
+                ctx.exit(ExitCode.SUCCESS)
 
             with state.hypervisor as hv:
-                if obj_prop is None:
-                    obj = hv
-                    prop = hvprop
+                if self.HAS_PARENT:
+                    obj: Entity | Hypervisor = self.get_parent_obj(ctx, hv, parent)
                 else:
-                    assert obj_prop is not None
-
-                    obj = getattr(hv, hvprop).get(name)
-                    prop = obj_prop
-
-                    if obj is None:
-                        ctx.fail(f'No { obj_name } with name, UUID, or ID of "{ name }" is defined on this hypervisor.')
+                    obj = hv
 
                 if match is None:
-                    entities = getattr(obj, prop)
+                    entities = getattr(obj, self.LOOKUP_ATTR)
                 else:
-                    entities = getattr(obj, prop).match(match)
+                    entities = getattr(obj, self.LOOKUP_ATTR).match(match)
 
                 if not entities and state.fail_if_no_match:
-                    ctx.fail('No { doc_name }s found matching the specified parameters.')
+                    ctx.fail('No { self.NAME }s found matching the specified parameters.')
 
                 if only is None:
                     data = tabulate_entities(entities, columns, cols)
@@ -114,30 +107,22 @@ class ListCommand(MatchCommand):
                     headings=not no_headings,
                 ))
 
-        if obj_prop is None:
+        if self.HAS_PARENT:
             docstr = f'''
-            List { doc_name }s.
+            List { self.NAME }s in a given { self.PARENT_NAME }.
 
             This will produce a (reasonably) nicely formatted table of
-            { doc_name }s, possibly limited by the specified matching
-            parameters.'''
-        else:
-            assert obj_name is not None
-            assert hvmetavar is not None
-
-            docstr = f'''
-            List { doc_name }s in a given { obj_name }.
-
-            This will produce a (reasonably) nicely formatted table of
-            { doc_name }s in the { obj_name } specified by { hvmetavar },
+            { self.NAME }s in the { self.PARENT_NAME } specified by { self.PARENT_METAVAR },
             possibly limited by the specified matching parameters.'''
 
-            params += (click.Argument(
-                param_decls=('name',),
-                metavar=hvmetavar,
-                nargs=1,
-                required=True,
-            ),)
+            params += self.mixin_parent_params()
+        else:
+            docstr = f'''
+            List { self.NAME }s.
+
+            This will produce a (reasonably) nicely formatted table of
+            { self.NAME }s, possibly limited by the specified matching
+            parameters.'''
 
         docstr = dedent(docstr).lstrip()
 
@@ -147,7 +132,6 @@ class ListCommand(MatchCommand):
             aliases=aliases,
             epilog=epilog,
             callback=cb,
-            doc_name=doc_name,
             params=params,
             hidden=hidden,
             deprecated=deprecated,

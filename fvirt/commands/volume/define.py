@@ -5,17 +5,19 @@
 
 from __future__ import annotations
 
-from typing import Final
+from typing import Final, final
 
 from .._base.lifecycle import DefineCommand
+from .._base.objects import VolumeMixin
 
-define: Final = DefineCommand(
+
+@final
+class _VolDefine(DefineCommand, VolumeMixin):
+    pass
+
+
+define: Final = _VolDefine(
     name='define',
-    method='defineVolume',
-    doc_name='volume',
-    parent='pools',
-    parent_name='storage pool',
-    parent_metavar='POOL',
 )
 
 __all__ = [

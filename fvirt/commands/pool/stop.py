@@ -5,16 +5,21 @@
 
 from __future__ import annotations
 
-from typing import Final
+from typing import Final, final
 
 from .._base.lifecycle import StopCommand
+from .._base.objects import StoragePoolMixin
 from ...libvirt.storage_pool import MATCH_ALIASES
 
-stop: Final = StopCommand(
+
+@final
+class _PoolStop(StopCommand, StoragePoolMixin):
+    pass
+
+
+stop: Final = _PoolStop(
     name='stop',
     aliases=MATCH_ALIASES,
-    hvprop='pools',
-    doc_name='storage pool',
 )
 
 __all__ = [

@@ -5,16 +5,21 @@
 
 from __future__ import annotations
 
-from typing import Final
+from typing import Final, final
 
 from .._base.lifecycle import StartCommand
+from .._base.objects import DomainMixin
 from ...libvirt.domain import MATCH_ALIASES
 
-start: Final = StartCommand(
+
+@final
+class _DomainStart(StartCommand, DomainMixin):
+    pass
+
+
+start: Final = _DomainStart(
     name='start',
     aliases=MATCH_ALIASES,
-    hvprop='domains',
-    doc_name='domain',
 )
 
 __all__ = [

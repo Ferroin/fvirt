@@ -15,6 +15,7 @@ import click
 from lxml import etree
 
 from .match import MatchCommand, get_match_or_entity
+from .objects import is_object_mixin
 from ...libvirt.runner import RunnerResult, run_entity_method, run_sub_entity_method
 from ...util.match import MatchAlias, MatchTarget
 
@@ -35,17 +36,11 @@ class XSLTCommand(MatchCommand):
             self: Self,
             name: str,
             aliases: Mapping[str, MatchAlias],
-            doc_name: str,
-            hvprop: str,
-            metavar: str,
-            parent_prop: str | None = None,
-            parent_name: str | None = None,
-            parent_metavar: str | None = None,
             epilog: str | None = None,
             hidden: bool = False,
             deprecated: bool = False,
-            ) -> None:
-        params: tuple[click.Parameter, ...] = tuple()
+    ) -> None:
+        assert is_object_mixin(self)
 
         def cb(
                 ctx: click.Context,
@@ -60,42 +55,40 @@ class XSLTCommand(MatchCommand):
             with state.hypervisor as hv:
                 uri = hv.uri
 
-                if parent is None:
+                if self.HAS_PARENT:
+                    assert self.PARENT_ATTR is not None
+
+                    parent_obj = self.get_parent_obj(ctx, hv, parent)
+
                     futures = [state.pool.submit(
-                        run_entity_method,
+                        run_sub_entity_method,
                         uri=uri,
-                        hvprop=hvprop,
+                        hvprop=self.PARENT_ATTR,
+                        parentprop=self.LOOKUP_ATTR,
+                        method='applyXSLT',
+                        ident=(parent_obj.name, e.name),
+                        arguments=[xform],
+                    ) for e in get_match_or_entity(
+                        hv=hv,
+                        obj=self,
+                        match=match,
+                        entity=entity,
+                        ctx=ctx,
+                    )]
+                else:
+                    futures = [state.pool.submit(
+                        run_entity_method,  # type: ignore
+                        uri=uri,
+                        hvprop=self.LOOKUP_ATTR,
                         method='applyXSLT',
                         ident=e.name,
                         arguments=[xform],
                     ) for e in get_match_or_entity(
                         hv=hv,
-                        hvprop=hvprop,
+                        obj=self,
                         match=match,
                         entity=entity,
                         ctx=ctx,
-                        doc_name=doc_name,
-                    )]
-                else:
-                    assert parent_prop is not None
-
-                    parent_obj = getattr(hv, hvprop).get(parent)
-
-                    futures = [state.pool.submit(
-                        run_sub_entity_method,
-                        uri=uri,
-                        hvprop=hvprop,
-                        parentprop=parent_prop,
-                        method='applyXSLT',
-                        ident=(parent_obj.name, e.name),
-                        arguments=[xform],
-                    ) for e in get_match_or_entity(
-                        hv=parent_obj,
-                        hvprop=parent_prop,
-                        match=match,
-                        entity=entity,
-                        ctx=ctx,
-                        doc_name=doc_name,
                     )]
 
             success = 0
@@ -108,17 +101,17 @@ class XSLTCommand(MatchCommand):
                         if parent is not None:
                             name = r.ident[1]
 
-                        ctx.fail(f'Unexpected internal error processing { doc_name } "{ name }".')
+                        ctx.fail(f'Unexpected internal error processing { self.NAME } "{ name }".')
                     case RunnerResult(entity_found=False) as r if parent is None:
-                        click.echo(f'{ doc_name } "{ r.ident }" disappeared before we could modify it.')
+                        click.echo(f'{ self.NAME } "{ r.ident }" disappeared before we could modify it.')
 
                         if state.fail_fast:
                             break
                     case RunnerResult(entity_found=False) as r:
-                        click.echo(f'{ parent_name } "{ r.ident[0] }" not found when trying to modify { doc_name } "{ r.ident[1] }".')
+                        click.echo(f'{ self.PARENT_NAME } "{ r.ident[0] }" not found when trying to modify { self.NAME } "{ r.ident[1] }".')
                         break  # Can't recover in this case, but we should still print our normal summary.
                     case RunnerResult(entity_found=True, sub_entity_found=False) as r:
-                        click.echo(f'{ doc_name } "{ r.ident[1] }" disappeared before we could modify it.')
+                        click.echo(f'{ self.NAME } "{ r.ident[1] }" disappeared before we could modify it.')
 
                         if state.fail_fast:
                             break
@@ -128,7 +121,7 @@ class XSLTCommand(MatchCommand):
                         if parent is not None:
                             name = r.ident[1]
 
-                        click.echo(f'Failed to modify { doc_name } "{ name }".')
+                        click.echo(f'Failed to modify { self.NAME } "{ name }".')
 
                         if state.fail_fast:
                             break
@@ -138,12 +131,12 @@ class XSLTCommand(MatchCommand):
                         if parent is not None:
                             name = r.ident[1]
 
-                        click.echo(f'Successfully modified { doc_name } "{ name }".')
+                        click.echo(f'Successfully modified { self.NAME } "{ name }".')
                         success += 1
                     case _:
                         raise RuntimeError
 
-            click.echo(f'Finished modifying specified { doc_name }s using XSLT document at { xslt }.')
+            click.echo(f'Finished modifying specified { self.NAME }s using XSLT document at { xslt }.')
             click.echo('')
             click.echo('Results:')
             click.echo(f'  Success:     { success }')
@@ -153,71 +146,38 @@ class XSLTCommand(MatchCommand):
             if success != len(futures) or (not futures and state.fail_if_no_match):
                 ctx.exit(3)
 
-        if parent_prop is None:
-            docstr = f'''
-            Apply an XSLT document to one or more { doc_name }s.
-
-            XSLT must be a path to a valid XSLT document. It must specify an
-            output element, and the output element must specify an encoding
-            of UTF-8. Note that xsl:strip-space directives may cause issues
-            in the XSLT processor.
-
-            Either a specific { doc_name } name to modify should be specified as
-            { metavar }, or matching parameters should be specified using the --match
-            option, which will then cause all matching { doc_name }s to be modified.
-
-            This command supports fvirt's fail-fast logic. In fail-fast mode,
-            the first { doc_name } which the XSLT document fails to apply to will
-            cause the operation to stop, and any failure will result in a
-            non-zero exit code.
-
-            This command does not support fvirt's idempotent mode. It's
-            behavior will not change regardless of whether idempotent mode
-            is enabled or not.'''
+        if self.HAS_PARENT:
+            header = f'Apply an XSLT document to one or more { self.NAME }s.'
         else:
-            assert parent_name is not None
-            assert parent_metavar is not None
+            header = f'''
+            Apply an XSLT document to one or more { self.NAME }s in a given { self.PARENT_NAME }.
 
-            docstr = f'''
-            Apply an XSLT document to one or more { doc_name }s in a given { parent_name }.
-
-            XSLT must be a path to a valid XSLT document. It must specify an
-            output element, and the output element must specify an encoding
-            of UTF-8. Note that xsl:strip-space directives may cause issues
-            in the XSLT processor.
-
-            A { parent_name } must be exlicitly specified with the { parent_metavar }
+            A { self.PARENT_NAME } must be exlicitly specified with the { self.PARENT_METAVAR }
             argument.
+            '''
 
-            Either a specific { doc_name } name to modify should be specified as
-            { metavar }, or matching parameters should be specified using the --match
-            option, which will then cause all matching { doc_name }s to be modified.
+        body = f'''
+        Either a specific { self.NAME } name to modify should be specified as
+        { self.METAVAR }, or matching parameters should be specified using the --match
+        option, which will then cause all matching { self.NAME }s to be modified.
 
-            This command supports fvirt's fail-fast logic. In fail-fast mode,
-            the first { doc_name } which the XSLT document fails to apply to will
-            cause the operation to stop, and any failure will result in a
-            non-zero exit code.
+        XSLT must be a path to a valid XSLT document. It must specify an
+        output element, and the output element must specify an encoding
+        of UTF-8. Note that xsl:strip-space directives may cause issues
+        in the XSLT processor.
 
-            This command does not support fvirt's idempotent mode. It's
-            behavior will not change regardless of whether idempotent mode
-            is enabled or not.'''
+        This command supports fvirt's fail-fast logic. In fail-fast mode,
+        the first { self.NAME } which the XSLT document fails to apply to will
+        cause the operation to stop, and any failure will result in a
+        non-zero exit code.
 
-            params += (click.Argument(
-                param_decls=('parent',),
-                metavar=parent_metavar,
-                nargs=1,
-                required=True,
-            ),)
+        This command does not support fvirt's idempotent mode. It's
+        behavior will not change regardless of whether idempotent mode
+        is enabled or not.'''
 
-        docstr = dedent(docstr).lstrip()
+        docstr = dedent(f'{ header }\n{ body }').lstrip()
 
-        params += (
-            click.Argument(
-                param_decls=('object',),
-                nargs=1,
-                metavar=metavar,
-                required=False,
-            ),
+        params = self.mixin_params() + (
             click.Argument(
                 param_decls=('xslt',),
                 nargs=1,
@@ -232,7 +192,6 @@ class XSLTCommand(MatchCommand):
             aliases=aliases,
             epilog=epilog,
             callback=cb,
-            doc_name=doc_name,
             params=params,
             hidden=hidden,
             deprecated=deprecated,

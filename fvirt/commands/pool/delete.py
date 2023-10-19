@@ -8,15 +8,13 @@ from __future__ import annotations
 from typing import Final, Self, final
 
 from .._base.lifecycle import OperationHelpInfo, SimpleLifecycleCommand
+from .._base.objects import StoragePoolMixin
 from ...libvirt.storage_pool import MATCH_ALIASES
 
 
 @final
-class _DeleteCommand(SimpleLifecycleCommand):
-    '''A class for deleting a libvirt object.
-
-       This class takes care of the callback and operation info for
-       a LifecycleCommand.'''
+class _DeleteCommand(SimpleLifecycleCommand, StoragePoolMixin):
+    '''A class for deleting a storage pool.'''
     @property
     def METHOD(self: Self) -> str: return 'delete'
 
@@ -33,8 +31,6 @@ class _DeleteCommand(SimpleLifecycleCommand):
 delete: Final = _DeleteCommand(
     name='delete',
     aliases=MATCH_ALIASES,
-    hvprop='pools',
-    doc_name='storage pool',
 )
 
 __all__ = [

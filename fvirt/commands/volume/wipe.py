@@ -8,11 +8,12 @@ from __future__ import annotations
 from typing import Final, Self, final
 
 from .._base.lifecycle import OperationHelpInfo, SimpleLifecycleCommand
+from .._base.objects import VolumeMixin
 from ...libvirt.volume import MATCH_ALIASES
 
 
 @final
-class _WipeCommand(SimpleLifecycleCommand):
+class _WipeCommand(SimpleLifecycleCommand, VolumeMixin):
     '''Class for wiping volumes.'''
     @property
     def METHOD(self: Self) -> str: return 'wipe'
@@ -30,11 +31,6 @@ class _WipeCommand(SimpleLifecycleCommand):
 wipe: Final = _WipeCommand(
     name='wipe',
     aliases=MATCH_ALIASES,
-    hvprop='volumes',
-    doc_name='volume',
-    parent='pools',
-    parent_name='storage pool',
-    parent_metavar='POOL',
 )
 
 __all__ = [
