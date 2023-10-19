@@ -125,7 +125,7 @@ def test_volume_download(live_volume: Volume, unique: Callable[[str], Any]) -> N
     vol_path.write_bytes(random.randbytes(live_volume.capacity))
 
     with target_path.open('wb') as f:
-        result = live_volume.download(f, sparse=False, bufsz=4096)
+        result = live_volume.download(f, sparse=False)
 
     assert isinstance(result, int)
     assert result == live_volume.capacity
@@ -149,7 +149,7 @@ def test_volume_sparse_download(live_volume: Volume, unique: Callable[[str], Any
             f.write(random.randbytes(block))
 
     with target_path.open('wb') as f:
-        result = live_volume.download(f, sparse=True, bufsz=4096)
+        result = live_volume.download(f, sparse=True)
 
     assert isinstance(result, int)
     assert result == (block * (block_count / 2))
