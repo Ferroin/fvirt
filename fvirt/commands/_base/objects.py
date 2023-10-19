@@ -78,6 +78,11 @@ class ObjectMixin(ABC):
         return NotImplemented
 
     @property
+    def CREATE_METHOD(self: Self) -> str | None:
+        '''Sepcifies the name of the method used to create the entity.'''
+        return None
+
+    @property
     def PARENT_ATTR(self: Self) -> str | None:
         '''Specifies the name of the EntityAccess attribute needed to look up a parent.'''
         return None
@@ -169,6 +174,9 @@ class DomainMixin(ObjectMixin):
     @property
     def DEFINE_METHOD(self: Self) -> str: return 'defineDomain'
 
+    @property
+    def CREATE_METHOD(self: Self) -> str: return 'createDomain'
+
 
 class StoragePoolMixin(ObjectMixin):
     '''Mixin for commands that operate on domains.'''
@@ -183,6 +191,9 @@ class StoragePoolMixin(ObjectMixin):
 
     @property
     def DEFINE_METHOD(self: Self) -> str: return 'defineStoragePool'
+
+    @property
+    def CREATE_METHOD(self: Self) -> str: return 'createStoragePool'
 
 
 class VolumeMixin(ObjectMixin):
