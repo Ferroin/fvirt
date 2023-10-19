@@ -46,6 +46,10 @@ class TimedOut(FVirtException, TimeoutError):
     '''Raised when an operation with a timeout times out.'''
 
 
+class SubOperationFailed(FVirtException):
+    '''Raised when an operation being performed as part of another operation fails.'''
+
+
 __all__ = [
     'FVirtException',
     'PlatformNotSupported',
@@ -57,4 +61,5 @@ __all__ = [
     'InvalidOperation',
     'NotConnected',
     'TimedOut',
+    'SubOperationFailed',
 ]

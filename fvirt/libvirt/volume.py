@@ -16,7 +16,7 @@ import libvirt
 from .descriptors import ConfigProperty, MethodProperty
 from .entity import ConfigurableEntity, LifecycleResult
 from .entity_access import BaseEntityAccess, EntityAccess, NameMap
-from .exceptions import PlatformNotSupported
+from .exceptions import SubOperationFailed
 from .stream import BulkStream
 from ..util.match import MatchAlias
 
@@ -146,7 +146,7 @@ class Volume(ConfigurableEntity):
         '''Alias for delete() to preserve compatibility with other entities.'''
         return self.delete(idempotent=idempotent)
 
-    def download(self: Self, target: io.BufferedWriter, sparse: bool = False) -> int:
+    def download(self: Self, target: io.BufferedWriter, *, sparse: bool = False) -> int:
         '''Download the raw data from a storage volume.
 
            Takes a writable binary IO stream to copy the data to.
@@ -174,6 +174,50 @@ class Volume(ConfigurableEntity):
             self._entity.download(stream.stream, 0, self.capacity, 0)
 
         stream.recv_into(target)
+        stream.close()
+
+        return stream.transferred
+
+    def upload(self: Self, source: io.BufferedRandom, *, sparse: bool = False, resize: bool = False) -> int:
+        '''Upload the raw data from a file to the volume.
+
+           Takes a readable binary IO stream to read data from.
+
+           If sparse is False, all data will be copied directly.
+
+           If sparse is True, sparse regions in the source file will be
+           detected and seekd over in the local stream.
+
+           If resize is True, the volume will be resized to match the size of the source stream, and an exce
+
+           Returns the total number of bytes transferred, which may be
+           less than the volume capacity if sparse is True.
+
+           This is a potentially slow, long-running operation.
+
+           The source file should be in the same format as the volume
+           itself (for example, if the volume is a QCOW2 volume, then
+           the source file also needs to be a valid QCOW2 file.'''
+        assert self._hv._connection is not None
+
+        if resize:
+            size = source.seek(0, os.SEEK_END)
+            source.seek(0, os.SEEK_SET)
+
+            match self.resize(size, shrink=(size < self.capacity)):
+                case LifecycleResult.SUCCESS:
+                    pass
+                case _:
+                    raise SubOperationFailed('Failed to resize volume.')
+
+        stream = BulkStream(self._hv, sparse)
+
+        if sparse:
+            self._entity.upload(stream.stream, 0, self.capacity, libvirt.VIR_STORAGE_VOL_DOWNLOAD_SPARSE_STREAM)
+        else:
+            self._entity.upload(stream.stream, 0, self.capacity, 0)
+
+        stream.send_from(source)
         stream.close()
 
         return stream.transferred
@@ -236,7 +280,7 @@ class Volume(ConfigurableEntity):
 
         if shrink:
             flags |= libvirt.VIR_STORAGE_VOL_RESIZE_SHRINK
-        elif capacity < cast(int, self.capacity):
+        elif capacity < self.capacity:
             raise ValueError(f'{ capacity } is less than current volume size and shrink is False.')
 
         if delta:
