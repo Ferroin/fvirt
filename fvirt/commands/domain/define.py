@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from typing import Final, final
 
-from .._base.lifecycle import DefineCommand
+from .._base.new import DefineCommand
 from .._base.objects import DomainMixin
 
 
