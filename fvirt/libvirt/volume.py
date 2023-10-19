@@ -17,6 +17,7 @@ from .descriptors import ConfigProperty, MethodProperty
 from .entity import ConfigurableEntity, LifecycleResult
 from .entity_access import BaseEntityAccess, EntityAccess, NameMap
 from .exceptions import PlatformNotSupported
+from .stream import BulkStream
 from ..util.match import MatchAlias
 
 if TYPE_CHECKING:
@@ -145,7 +146,7 @@ class Volume(ConfigurableEntity):
         '''Alias for delete() to preserve compatibility with other entities.'''
         return self.delete(idempotent=idempotent)
 
-    def download(self: Self, target: io.BufferedWriter, sparse: bool = False, bufsz: int = 65536) -> int:
+    def download(self: Self, target: io.BufferedWriter, sparse: bool = False) -> int:
         '''Download the raw data from a storage volume.
 
            Takes a writable binary IO stream to copy the data to.
@@ -154,11 +155,6 @@ class Volume(ConfigurableEntity):
 
            If sparse is True, sparse regions in the volume will be
            detected and seekd over in the local stream.
-
-           The bufsz argument controls the largest read size used when
-           fetching data from the volume. The default of 64 KiB is
-           reasonable, but large numbers may provide better pefromance
-           in some cases.
 
            Returns the total number of bytes transferred, which may be
            less than the volume capacity if sparse is True.
@@ -170,42 +166,17 @@ class Volume(ConfigurableEntity):
            format the volume itself is in.'''
         assert self._hv._connection is not None
 
-        if sparse and sys.platform == 'win32':
-            raise PlatformNotSupported
-
-        stream = self._hv._connection.newStream()
-
-        done = False
-        total = 0
+        stream = BulkStream(self._hv, sparse)
 
         if sparse:
-            flags = libvirt.VIR_STREAM_RECV_STOP_AT_HOLE
-            self._entity.download(stream, 0, self.capacity, libvirt.VIR_STORAGE_VOL_DOWNLOAD_SPARSE_STREAM)
+            self._entity.download(stream.stream, 0, self.capacity, libvirt.VIR_STORAGE_VOL_DOWNLOAD_SPARSE_STREAM)
         else:
-            flags = 0
-            self._entity.download(stream, 0, self.capacity, 0)
+            self._entity.download(stream.stream, 0, self.capacity, 0)
 
-        while not done:
-            match stream.recvFlags(bufsz, flags):
-                case -1 | b'':
-                    done = True
-                case -2:
-                    raise RuntimeError  # Should never happen
-                case -3:
-                    hole_size = stream.recvHole(0)
+        stream.recv_into(target)
+        stream.close()
 
-                    if hole_size == 0:
-                        done = True
-                    else:
-                        target.seek(hole_size - 1, os.SEEK_CUR)
-                        target.write(b'\0')
-                case bytes() as data:
-                    total += len(data)
-                    target.write(data)
-
-        stream.finish()
-
-        return total
+        return stream.transferred
 
     def wipe(self: Self) -> LifecycleResult:
         '''Wipe the data in the volume.
