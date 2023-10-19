@@ -14,6 +14,8 @@ import click
 from lxml import etree
 
 from .command import Command
+from .exitcode import ExitCode
+from .objects import ObjectMixin, is_object_mixin
 from ...libvirt.entity import Entity
 from ...util.match import MatchAlias, MatchArgument, MatchTarget
 
@@ -78,12 +80,12 @@ class MatchPatternParam(click.ParamType):
 
 def get_match_or_entity(
         *,
-        hv: Hypervisor | Entity,
-        hvprop: str,
+        obj: ObjectMixin,
+        hv: Hypervisor,
+        ctx: click.core.Context,
         match: tuple[MatchTarget, re.Pattern] | None,
         entity: str | None,
-        ctx: click.core.Context,
-        doc_name: str,
+        parent: str | None = None,
         ) -> Sequence[Entity]:
     '''Get a list of entities based on the given parameters.
 
@@ -92,22 +94,28 @@ def get_match_or_entity(
     state: State = ctx.obj
 
     if match is not None:
-        entities = list(getattr(hv, hvprop).match(match))
+        if obj.HAS_PARENT:
+            assert parent is not None
+
+            entities = list(obj.match_sub_entities(ctx, hv, parent, match))
+        else:
+            entities = list(obj.match_entities(ctx, hv, match))
 
         if not entities and state.fail_if_no_match:
-            click.echo(f'No { doc_name }s found matching the specified criteria.', err=True)
-            ctx.exit(2)
+            click.echo(f'No { obj.NAME }s found matching the specified criteria.', err=True)
+            ctx.exit(ExitCode.ENTITY_NOT_FOUND)
     elif entity is not None:
-        item = getattr(hv, hvprop).get(entity)
+        if obj.HAS_PARENT:
+            assert parent is not None
 
-        if item is None:
-            click.echo(f'No { doc_name }s found with a name, UUID, or ID of "{ entity }" found.')
-            ctx.exit(2)
+            item = obj.get_sub_entity(ctx, hv, parent, entity)
+        else:
+            item = obj.get_entity(ctx, hv, entity)
 
         entities = [item]
     else:
-        click.echo(f'Either match parameters or a { doc_name } name is required.', err=True)
-        ctx.exit(1)
+        click.echo(f'Either match parameters or a { obj.NAME } spicifier is required.', err=True)
+        ctx.exit(ExitCode.FAILURE)
 
     return entities
 
@@ -120,18 +128,18 @@ class MatchCommand(Command):
             help: str,
             callback: Callable[Concatenate[click.Context, State, P], T],
             aliases: Mapping[str, MatchAlias],
-            doc_name: str,
-            short_help: str | None = None,
             epilog: str | None = None,
             params: Sequence[click.Parameter] = [],
             hidden: bool = False,
             deprecated: bool = False,
-            ) -> None:
+    ) -> None:
+        assert is_object_mixin(self)
+
         params = tuple(params) + (click.Option(
             param_decls=('--match',),
             type=(MatchTargetParam(aliases)(), MatchPatternParam()),
             nargs=2,
-            help=f'Limit { doc_name }s to operate on by match parameter. For more info, see `fvirt help matching`',
+            help=f'Limit { self.NAME }s to operate on by match parameter. For more info, see `fvirt help matching`',
             default=None,
         ),)
 
@@ -139,7 +147,6 @@ class MatchCommand(Command):
             name=name,
             help=help,
             epilog=epilog,
-            short_help=short_help,
             callback=callback,
             params=params,
             hidden=hidden,

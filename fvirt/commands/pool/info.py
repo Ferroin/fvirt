@@ -5,10 +5,13 @@
 
 from __future__ import annotations
 
+from typing import Final, final
+
 from .list import COLUMNS
 from .._base.info import InfoCommand, InfoItem
+from .._base.objects import StoragePoolMixin
 
-INFO_ITEMS = (
+INFO_ITEMS: Final = (
     InfoItem(name='Name', prop='name'),
     InfoItem(name='UUID', prop='uuid'),
     InfoItem(name='State', prop='running', color=COLUMNS['state'].color),
@@ -25,11 +28,15 @@ INFO_ITEMS = (
     InfoItem(name='Available Space', prop='available', color=COLUMNS['available'].color),
 )
 
-info = InfoCommand(
+
+@final
+class _PoolInfo(InfoCommand, StoragePoolMixin):
+    pass
+
+
+info: Final = _PoolInfo(
     name='info',
     info_items=INFO_ITEMS,
-    hvprop='pools',
-    doc_name='storage pool',
 )
 
 __all__ = [

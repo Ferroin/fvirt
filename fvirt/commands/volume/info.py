@@ -5,10 +5,13 @@
 
 from __future__ import annotations
 
+from typing import Final, final
+
 from .list import COLUMNS
 from .._base.info import InfoCommand, InfoItem
+from .._base.objects import VolumeMixin
 
-INFO_ITEMS = (
+INFO_ITEMS: Final = (
     InfoItem(name='Name', prop='name'),
     InfoItem(name='Key', prop='key'),
     InfoItem(name='Volume Type', prop='type', color=COLUMNS['type'].color),
@@ -18,14 +21,15 @@ INFO_ITEMS = (
     InfoItem(name='Allocated Space', prop='allocated', color=COLUMNS['allocated'].color),
 )
 
-info = InfoCommand(
+
+@final
+class _VolInfo(InfoCommand, VolumeMixin):
+    pass
+
+
+info: Final = _VolInfo(
     name='info',
     info_items=INFO_ITEMS,
-    hvprop='pools',
-    doc_name='volume',
-    parent='volumes',
-    parent_name='storage pool',
-    parent_metavar='POOL',
 )
 
 __all__ = [

@@ -5,9 +5,10 @@
 
 from __future__ import annotations
 
-from typing import Final
+from typing import Final, final
 
 from .._base.list import ListCommand
+from .._base.objects import StoragePoolMixin
 from ...libvirt.storage_pool import MATCH_ALIASES
 from ...util.tables import Column, color_bool, color_optional
 from ...util.terminal import get_terminal
@@ -65,13 +66,17 @@ DEFAULT_COLS: Final = (
     'available',
 )
 
-list_pools: Final = ListCommand(
+
+@final
+class _PoolList(ListCommand, StoragePoolMixin):
+    pass
+
+
+list_pools: Final = _PoolList(
     name='list',
     aliases=MATCH_ALIASES,
     columns=COLUMNS,
     default_cols=DEFAULT_COLS,
-    hvprop='pools',
-    doc_name='storage pool',
 )
 
 __all__ = [

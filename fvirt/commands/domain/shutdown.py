@@ -10,11 +10,12 @@ from typing import Final, Self, final
 import click
 
 from .._base.lifecycle import OperationHelpInfo, SimpleLifecycleCommand
+from .._base.objects import DomainMixin
 from ...libvirt.domain import MATCH_ALIASES
 
 
 @final
-class _ShutdownCommand(SimpleLifecycleCommand):
+class _ShutdownCommand(SimpleLifecycleCommand, DomainMixin):
     '''Command for shutting down libvirt domains.'''
     @property
     def METHOD(self: Self) -> str: return 'shutdown'
@@ -32,8 +33,6 @@ class _ShutdownCommand(SimpleLifecycleCommand):
 shutdown: Final = _ShutdownCommand(
     name='shutdown',
     aliases=MATCH_ALIASES,
-    hvprop='domains',
-    doc_name='domain',
     params=(
         click.Option(
             param_decls=('--timeout',),

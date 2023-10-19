@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Self, cast
 import click
 
 from .command import Command
+from .exitcode import ExitCode
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping
@@ -90,23 +91,23 @@ class HelpCommand(Command):
                 case '' | None:
                     ctx.info_name = group.name
                     click.echo(group.get_help(ctx))
-                    ctx.exit(0)
+                    ctx.exit(ExitCode.SUCCESS)
                 case t if t in topic_map:
                     click.echo(topic_map[t].help_text)
-                    ctx.exit(0)
+                    ctx.exit(ExitCode.SUCCESS)
                 case t:
                     subcmd = group.get_command(ctx, topic)
 
                     if subcmd is None:
                         click.echo(f'{ topic } is not a recognized help topic.')
                         _print_topics(ctx, group, topics)
-                        ctx.exit(1)
+                        ctx.exit(ExitCode.FAILURE)
                     else:
                         ctx.info_name = topic
                         click.echo(subcmd.get_help(ctx))
                         if t == 'help':
                             _print_topics(ctx, group, topics)
-                        ctx.exit(0)
+                        ctx.exit(ExitCode.SUCCESS)
 
         super().__init__(
             name='help',

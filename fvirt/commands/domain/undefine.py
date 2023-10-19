@@ -5,16 +5,21 @@
 
 from __future__ import annotations
 
-from typing import Final
+from typing import Final, final
 
 from .._base.lifecycle import UndefineCommand
+from .._base.objects import DomainMixin
 from ...libvirt.domain import MATCH_ALIASES
 
-undefine: Final = UndefineCommand(
+
+@final
+class _DomainUndefine(UndefineCommand, DomainMixin):
+    pass
+
+
+undefine: Final = _DomainUndefine(
     name='undefine',
     aliases=MATCH_ALIASES,
-    hvprop='domains',
-    doc_name='domain',
 )
 
 __all__ = [

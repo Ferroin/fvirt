@@ -8,11 +8,12 @@ from __future__ import annotations
 from typing import Final, Self, final
 
 from .._base.lifecycle import OperationHelpInfo, SimpleLifecycleCommand
+from .._base.objects import DomainMixin
 from ...libvirt.domain import MATCH_ALIASES
 
 
 @final
-class _ResetCommand(SimpleLifecycleCommand):
+class _ResetCommand(SimpleLifecycleCommand, DomainMixin):
     '''Class for resetting domains.'''
     @property
     def METHOD(self: Self) -> str: return 'reset'
@@ -30,8 +31,6 @@ class _ResetCommand(SimpleLifecycleCommand):
 reset: Final = _ResetCommand(
     name='reset',
     aliases=MATCH_ALIASES,
-    hvprop='domains',
-    doc_name='domain',
 )
 
 __all__ = [

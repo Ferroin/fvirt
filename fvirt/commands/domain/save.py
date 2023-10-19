@@ -8,6 +8,7 @@ from __future__ import annotations
 from typing import Final, Self, final
 
 from .._base.lifecycle import OperationHelpInfo, SimpleLifecycleCommand
+from .._base.objects import DomainMixin
 from ...libvirt.domain import MATCH_ALIASES
 
 EXTRA_HELP: Final = '''
@@ -23,7 +24,7 @@ Only persistent domains may be saved.
 
 
 @final
-class _SaveCommand(SimpleLifecycleCommand):
+class _SaveCommand(SimpleLifecycleCommand, DomainMixin):
     '''Class for saving domains.'''
     @property
     def METHOD(self: Self) -> str: return 'managedSave'
@@ -41,8 +42,6 @@ class _SaveCommand(SimpleLifecycleCommand):
 save: Final = _SaveCommand(
     name='save',
     aliases=MATCH_ALIASES,
-    hvprop='domains',
-    doc_name='domain',
     epilog=EXTRA_HELP,
 )
 

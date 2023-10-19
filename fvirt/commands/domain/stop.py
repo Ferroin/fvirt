@@ -5,16 +5,21 @@
 
 from __future__ import annotations
 
-from typing import Final
+from typing import Final, final
 
 from .._base.lifecycle import StopCommand
+from .._base.objects import DomainMixin
 from ...libvirt.domain import MATCH_ALIASES
 
-stop: Final = StopCommand(
+
+@final
+class _DomainStop(StopCommand, DomainMixin):
+    pass
+
+
+stop: Final = _DomainStop(
     name='stop',
     aliases=MATCH_ALIASES,
-    hvprop='domains',
-    doc_name='domain',
 )
 
 __all__ = [

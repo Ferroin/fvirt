@@ -5,16 +5,21 @@
 
 from __future__ import annotations
 
-from typing import Final
+from typing import Final, final
 
 from .._base.lifecycle import UndefineCommand
+from .._base.objects import StoragePoolMixin
 from ...libvirt.storage_pool import MATCH_ALIASES
 
-undefine: Final = UndefineCommand(
+
+@final
+class _PoolUndefine(UndefineCommand, StoragePoolMixin):
+    pass
+
+
+undefine: Final = _PoolUndefine(
     name='undefine',
     aliases=MATCH_ALIASES,
-    hvprop='pools',
-    doc_name='storage pool',
 )
 
 __all__ = [

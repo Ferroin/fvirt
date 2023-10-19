@@ -8,11 +8,12 @@ from __future__ import annotations
 from typing import Final, Self, final
 
 from .._base.lifecycle import OperationHelpInfo, SimpleLifecycleCommand
+from .._base.objects import StoragePoolMixin
 from ...libvirt.storage_pool import MATCH_ALIASES
 
 
 @final
-class _RefreshCommand(SimpleLifecycleCommand):
+class _RefreshCommand(SimpleLifecycleCommand, StoragePoolMixin):
     '''Class for refreshing storage pools.'''
     @property
     def METHOD(self: Self) -> str: return 'refresh'
@@ -30,8 +31,6 @@ class _RefreshCommand(SimpleLifecycleCommand):
 refresh: Final = _RefreshCommand(
     name='refresh',
     aliases=MATCH_ALIASES,
-    hvprop='pools',
-    doc_name='storage pool',
 )
 
 __all__ = [

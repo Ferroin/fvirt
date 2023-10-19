@@ -5,17 +5,21 @@
 
 from __future__ import annotations
 
-from typing import Final
+from typing import Final, final
 
+from .._base.objects import StoragePoolMixin
 from .._base.xslt import XSLTCommand
 from ...libvirt.storage_pool import MATCH_ALIASES
 
-xslt: Final = XSLTCommand(
+
+@final
+class _PoolXSLT(XSLTCommand, StoragePoolMixin):
+    pass
+
+
+xslt: Final = _PoolXSLT(
     name='xslt',
     aliases=MATCH_ALIASES,
-    hvprop='pools',
-    metavar='POOL',
-    doc_name='storage pool',
 )
 
 __all__ = [

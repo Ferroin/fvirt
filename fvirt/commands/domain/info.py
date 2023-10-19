@@ -5,11 +5,14 @@
 
 from __future__ import annotations
 
+from typing import Final, final
+
 from .list import COLUMNS
 from .._base.info import InfoCommand, InfoItem
+from .._base.objects import DomainMixin
 from ...util.tables import color_optional
 
-INFO_ITEMS = (
+INFO_ITEMS: Final = (
     InfoItem(name='Name', prop='name'),
     InfoItem(name='UUID', prop='uuid'),
     InfoItem(name='Generation ID', prop='genid', color=COLUMNS['genid'].color),
@@ -28,11 +31,15 @@ INFO_ITEMS = (
     InfoItem(name='Domain Title', prop='title'),
 )
 
-info = InfoCommand(
+
+@final
+class _DomainInfo(InfoCommand, DomainMixin):
+    pass
+
+
+info: Final = _DomainInfo(
     name='info',
     info_items=INFO_ITEMS,
-    hvprop='domains',
-    doc_name='domain',
 )
 
 __all__ = [

@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Self, cast
 import click
 
 from .command import Command
+from .objects import is_object_mixin
 from ...libvirt.entity import ConfigurableEntity
 
 if TYPE_CHECKING:
@@ -24,72 +25,38 @@ class XMLCommand(Command):
     def __init__(
         self: Self,
         name: str,
-        hvprop: str,
-        metavar: str,
-        doc_name: str,
-        parent_prop: str | None = None,
-        parent_name: str | None = None,
-        parent_metavar: str | None = None,
         epilog: str | None = None,
         hidden: bool = False,
         deprecated: bool = False,
     ) -> None:
-        parent_args = {parent_prop, parent_name, parent_metavar}
+        assert is_object_mixin(self)
 
-        if None in parent_args and parent_args != {None}:
-            raise ValueError('Either all of parent_prop, parent_name, and parent_metavar must be specified, or neither must be specified.')
-
-        def cb(ctx: click.Context, state: State, name: str, parent: str | None = None) -> None:
+        def cb(ctx: click.Context, state: State, entity: str, parent: str | None = None) -> None:
             with state.hypervisor as hv:
-                if parent is None:
-                    entity = cast(ConfigurableEntity, getattr(hv, hvprop).get(name))
+                if self.HAS_PARENT:
+                    e = cast(ConfigurableEntity, self.get_sub_entity(ctx, hv, parent, entity))
                 else:
-                    assert parent_prop is not None
+                    e = cast(ConfigurableEntity, self.get_entity(ctx, hv, entity))
 
-                    parent_obj = getattr(hv, hvprop).get(parent)
-
-                    if parent_obj is None:
-                        ctx.fail(f'Unable to find { parent_name } "{ parent }".')
-
-                    entity = cast(ConfigurableEntity, getattr(parent, parent_prop).get(name))
-
-                if entity is None:
-                    ctx.fail(f'Unable to find { doc_name } "{ name }".')
-
-                xml = entity.configRaw.rstrip().lstrip()
+                xml = e.configRaw.rstrip().lstrip()
 
             click.echo(xml)
 
-        if parent_prop is not None:
+        if self.HAS_PARENT:
             header = dedent(f'''
-            Dump the XML configuration for the specified { doc_name }
+            Dump the XML configuration for the specified { self.NAME }
 
-            The { parent_metavar } argument should indicate which { parent_name } the { doc_name } is in.''').lstrip()
+            The { self.PARENT_METAVAR } argument should indicate which { self.PARENT_NAME } the { self.NAME } is in.''').lstrip()
         else:
-            header = f'Dump the XML configuration for the specified { doc_name }.'
+            header = f'Dump the XML configuration for the specified { self.NAME }.'
 
         trailer = dedent('''
-        This only operates on single { doc_name }s.
+        This only operates on single { self.NAME }s.
         ''').lstrip()
 
         docstr = f'{ header }\n\n{ trailer }'
 
-        params: tuple[click.Parameter, ...] = tuple()
-
-        if parent_prop is not None:
-            params += (click.Argument(
-                param_decls=('parent',),
-                nargs=1,
-                required=True,
-                metavar=parent_metavar,
-            ),)
-
-        params = (click.Argument(
-            param_decls=('name',),
-            nargs=1,
-            required=True,
-            metavar=metavar,
-        ),)
+        params = self.mixin_params(required=True)
 
         super().__init__(
             name=name,

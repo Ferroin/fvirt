@@ -5,18 +5,19 @@
 
 from __future__ import annotations
 
-from typing import Final
+from typing import Final, final
 
+from .._base.objects import VolumeMixin
 from .._base.xml import XMLCommand
 
-xml: Final = XMLCommand(
+
+@final
+class _VolXML(XMLCommand, VolumeMixin):
+    pass
+
+
+xml: Final = _VolXML(
     name='xml',
-    hvprop='pools',
-    metavar='VOLUME',
-    doc_name='volume',
-    parent_prop='volumes',
-    parent_name='storage pool',
-    parent_metavar='POOL',
 )
 
 __all__ = [
