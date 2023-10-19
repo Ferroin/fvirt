@@ -154,3 +154,61 @@ def test_volume_sparse_download(live_volume: Volume, unique: Callable[[str], Any
     assert isinstance(result, int)
     assert result == (block * (block_count / 2))
     assert filecmp.cmp(vol_path, target_path, shallow=False)
+
+
+@pytest.mark.slow
+@pytest.mark.libvirtd
+def test_volume_upload(live_volume: Volume, unique: Callable[[str], Any]) -> None:
+    '''Test volume upload functionality.'''
+    vol_path = Path(live_volume.path)
+    target_path = vol_path.with_name(unique('text'))
+
+    target_path.write_bytes(random.randbytes(live_volume.capacity))
+
+    with target_path.open('r+b') as f:
+        result = live_volume.upload(f, sparse=False, resize=False)
+
+    assert isinstance(result, int)
+    assert result == live_volume.capacity
+    assert filecmp.cmp(vol_path, target_path, shallow=False)
+
+
+@pytest.mark.slow
+@pytest.mark.libvirtd
+def test_volume_upload_resize(live_volume: Volume, unique: Callable[[str], Any]) -> None:
+    '''Test volume upload functionality.'''
+    vol_path = Path(live_volume.path)
+    target_path = vol_path.with_name(unique('text'))
+
+    target_path.write_bytes(random.randbytes(live_volume.capacity * 2))
+
+    with target_path.open('r+b') as f:
+        result = live_volume.upload(f, sparse=False, resize=True)
+
+    assert isinstance(result, int)
+    assert result == live_volume.capacity
+    assert filecmp.cmp(vol_path, target_path, shallow=False)
+
+
+@pytest.mark.slow
+@pytest.mark.libvirtd
+@pytest.mark.xfail(condition=sys.platform == 'win32', reason='Sparse data handling not supported on Windows', raises=PlatformNotSupported)
+def test_volume_sparse_upload(live_volume: Volume, unique: Callable[[str], Any]) -> None:
+    '''Test volume sparse upload functionality.'''
+    vol_path = Path(live_volume.path)
+    target_path = vol_path.with_name(unique('text'))
+
+    block_count = 8
+    block = live_volume.capacity // block_count
+
+    with target_path.open('wb') as f:
+        for k in range(0, block_count // 2):
+            f.seek(block, os.SEEK_CUR)
+            f.write(random.randbytes(block))
+
+    with target_path.open('r+b') as f:
+        result = live_volume.upload(f, sparse=True, resize=False)
+
+    assert isinstance(result, int)
+    assert result == (block * (block_count / 2))
+    assert filecmp.cmp(vol_path, target_path, shallow=False)
