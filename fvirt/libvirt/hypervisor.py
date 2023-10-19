@@ -361,7 +361,7 @@ class Hypervisor:
         return cast(Domain, self.__define_entity(Domain, 'defineXMLFlags', config, 0))
 
     def createDomain(self: Self, config: str, paused: bool = False, reset_nvram: bool = False, auto_destroy: bool = False) -> Domain:
-        '''Define and start a domain from an XML config string.
+        '''Create a domain from an XML config string.
 
            If `paused` is True, the domain will be started in the paused state.
 
@@ -402,8 +402,42 @@ class Hypervisor:
            Raises fvirt.libvirt.InvalidConfig if config is not a valid
            libvirt storage pool configuration.
 
-           Returns a StoragePool instance for the defined storage pool on success.'''
+           Returns a StoragePool instance for the defined storage pool
+           on success.'''
         return cast(StoragePool, self.__define_entity(StoragePool, 'storagePoolDefineXML', config, 0))
+
+    def createStoragePool(self: Self, config: str, build: bool = True, overwrite: bool | None = None) -> StoragePool:
+        '''Create a storage pool from an XML config string.
+
+           If `build` is True, then the pool will also be built during creation.
+
+           The `overwrite` argument controls how overwrites are handled
+           when build is True, if None then no preference is epxressed. If
+           True, then any existing data will be overwritten. If False,
+           then creation will fail if data would be overwritten.
+
+           Raises fvirt.libvirt.NotConnected if called on a Hypervisor
+           instance that is not connected.
+
+           Raises fvirt.libvirt.InvalidConfig if config is not a valid
+           libvirt storage pool configuration.
+
+           Returns a StoragePool instance for the defined storage pool
+           on success.'''
+        flags = 0
+
+        if build:
+            match overwrite:
+                case True:
+                    flags |= libvirt.VIR_STORAGE_POOL_CREATE_WITH_BUILD_OVERWRITE
+                case False:
+                    flags |= libvirt.VIR_STORAGE_POOL_CREATE_WITH_BUILD_NO_OVERWRITE
+                case None:
+                    flags |= libvirt.VIR_STORAGE_POOL_CREATE_WITH_BUILD
+                case _:
+                    raise RuntimeError
+
+        return cast(StoragePool, self.__define_entity(StoragePool, 'storagePoolCreateXML', config, flags))
 
 
 __all__ = [
