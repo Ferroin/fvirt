@@ -18,8 +18,8 @@ COLUMNS: Final = {
     'type': Column(title='Type', prop='type'),
     'format': Column(title='Format', prop='format'),
     'path': Column(title='Path', prop='path', color=color_optional),
-    'capacity': Column(title='Capacity', prop='capacity', right_align=True),
-    'allocated': Column(title='Allocated', prop='allocated', right_align=True),
+    'capacity': Column(title='Capacity', prop='capacity', right_align=True, use_units=True),
+    'allocated': Column(title='Allocated', prop='allocated', right_align=True, use_units=True),
 }
 
 DEFAULT_COLS: Final = (

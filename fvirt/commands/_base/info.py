@@ -25,6 +25,7 @@ class InfoItem:
     '''Represent an item to be printed by an InfoCommand.'''
     name: str
     prop: str
+    use_units: bool = False
     color: Callable[[Any], str] = lambda x: str(x)
 
 
@@ -61,10 +62,15 @@ class InfoCommand(Command):
                     obj = self.get_entity(ctx, hv, entity)
 
                 for item in info_items:
-                    value = item.color(getattr(obj, item.prop, None))
+                    value = getattr(obj, item.prop, None)
 
                     if value is not None:
-                        output += f'  { item.name }: { value }\n'
+                        if item.use_units:
+                            v = state.convert_units(value)
+                        else:
+                            v = value
+
+                        output += f'  { item.name }: { v }\n'
 
             click.echo(output.rstrip())
 

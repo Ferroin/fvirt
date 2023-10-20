@@ -95,7 +95,7 @@ class ListCommand(MatchCommand):
                     ctx.fail('No { self.NAME }s found matching the specified parameters.')
 
                 if only is None:
-                    data = tabulate_entities(entities, columns, cols)
+                    data = tabulate_entities(entities, columns, cols, lambda x: state.convert_units(x))
                 else:
                     for e in entities:
                         click.echo(getattr(e, only))
