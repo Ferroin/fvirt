@@ -77,6 +77,34 @@ value of 1 will run everything in sequence.
 The default number of jobs on this system is { DEFAULT_JOB_COUNT }.
 '''.lstrip().rstrip()
 
+UNITS_HELP = '''
+fvirt supports three different modes when printing a number indicating
+a count of bytes:
+
+- 'raw' or 'bytes' mode
+- 'si' mode
+- 'iec' mode
+
+The 'raw' mode simply displays the total number of bytes as an
+integer. This is provided to allow other tools to more easily parse
+fvirt's output.
+
+The other two modes convert the raw number of bytes to a larger unit
+such that there are between one and four digits to the left of the
+decimal point, with the largest supported nit currently being
+exabytes/ebibytes. Between zero and three digits will be provided after
+the decimal point depending on how many digits preceed it.
+
+The 'si' mode uses official SI units based on every third power of ten,
+with the special exception that the `k` for kilobytes is capitalized
+for consistency with libvirt’s own unit representations.
+
+The `iec` mode uses IEC units based on every tenth power of two. These
+units are more common in the context of computers.
+
+By default, fvirt will display units using the 'si' mode.
+'''.lstrip().rstrip()
+
 FVIRT_HELP = '''
 A lightweight frontend for libvirt.
 
@@ -94,6 +122,7 @@ def cb(
         fail_fast: bool,
         idempotent: bool,
         fail_if_no_match: bool,
+        units: str,
         jobs: int,
         ) -> None:
     if jobs == 0:
@@ -104,6 +133,7 @@ def cb(
         fail_fast=fail_fast,
         idempotent=idempotent,
         fail_if_no_match=fail_if_no_match,
+        units=units,
         jobs=jobs,
     )
 
@@ -137,6 +167,12 @@ cli: Final = Group(
             help='If using the --match option, return with a non-zero exist status if no match is found.',
         ),
         click.Option(
+            param_decls=('--units',),
+            default='si',
+            type=click.Choice(('raw', 'bytes', 'si', 'iec'), case_sensitive=False),
+            help='Indicate how units should be printed. See `fvirt help units` for more info.',
+        ),
+        click.Option(
             param_decls=('--jobs', '-j'),
             default=DEFAULT_JOB_COUNT,
             type=click.IntRange(min=0),
@@ -158,6 +194,11 @@ cli: Final = Group(
             name='concurrency',
             description="Information about fvirt's concurrent processing functionality.",
             help_text=CONCURRENCY_HELP,
+        ),
+        HelpTopic(
+            name='units',
+            description='Information about how fvirt handles units when displaying byte values.',
+            help_text=UNITS_HELP,
         ),
     ),
 )

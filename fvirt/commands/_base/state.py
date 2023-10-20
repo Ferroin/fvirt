@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import math
 import threading
 
 from concurrent.futures import ThreadPoolExecutor
@@ -13,6 +14,7 @@ from typing import Self
 from ...libvirt import URI, Hypervisor
 from ...libvirt.events import start_libvirt_event_thread
 from ...util.dummy_pool import DummyExecutor
+from ...util.units import bytes_to_unit
 
 
 class State:
@@ -25,10 +27,11 @@ class State:
         '__jobs',
         '__pool',
         '__thread',
+        '__units',
         '__uri',
     ]
 
-    def __init__(self: Self, uri: URI, fail_fast: bool, idempotent: bool, fail_if_no_match: bool, jobs: int):
+    def __init__(self: Self, uri: URI, fail_fast: bool, idempotent: bool, fail_if_no_match: bool, units: str, jobs: int):
         if jobs < 1:
             raise ValueError('Number of jobs must be at least 1')
 
@@ -39,6 +42,7 @@ class State:
         self.__jobs = jobs
         self.__pool: ThreadPoolExecutor | DummyExecutor | None = None
         self.__thread: threading.Thread | None = None
+        self.__units = units
         self.__uri = uri
 
     def __del__(self: Self) -> None:
@@ -94,3 +98,21 @@ class State:
                 )
 
         return self.__pool
+
+    def convert_units(self: Self, value: int) -> str:
+        '''Convert units for output.'''
+        if self.__units in {'raw', 'bytes'}:
+            return f'{value:z.0F}'
+
+        v, u = bytes_to_unit(value, iec=(self.__units == 'iec'))
+
+        # The below code only works reliably for values with an absolute
+        # value less than 10e15, but because our conversions down-shift
+        # by up to 18 places, it’s probably fine (we’re unlikely
+        # to ever have to deal with byte counts in excess of 1000
+        # quettabytes/quibibytes).
+        digits = math.floor(math.log10(v))+1
+
+        p = max(3 - digits, 0)
+
+        return f'{v:z.{p}F} {u}'
