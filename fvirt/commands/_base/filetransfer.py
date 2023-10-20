@@ -24,14 +24,14 @@ if TYPE_CHECKING:
 class FileTransferCommand(Command):
     '''Command class for performing file transfers to/from the hypervisor.
 
-       This handles the required callback and parameters, but must be
-       subclassed to be usable.'''
+       This handles the required callback and parameters.'''
     def __init__(
         self: Self,
         name: str,
         help: str,
         transfer_method: str,
         file_mode: str,
+        require_file: bool,
         support_sparse: bool = False,
         epilog: str | None = None,
         params: Sequence[click.Parameter] = [],
@@ -51,6 +51,19 @@ class FileTransferCommand(Command):
         ) -> None:
             transfer_args = {k: v for k, v in kwargs.items()}
             transfer_args['sparse'] = sparse
+
+            if require_file:
+                if not target.exists():
+                    click.echo(f'{ str(target) } does not exist.', err=True)
+                    ctx.exit(ExitCode.PATH_NOT_VALID)
+            else:
+                if not (target.parent.exists() and target.parent.is_dir()):
+                    click.echo(f'{ str(target.parent) } either does not exist or is not a directory.', err=True)
+                    ctx.exit(ExitCode.PATH_NOT_VALID)
+
+            if target.exists() and not (target.is_file() or target.is_block_device()):
+                click.echo(f'{ str(target) } must be a regular file or a block device.', err=True)
+                ctx.exit(ExitCode.PATH_NOT_VALID)
 
             with state.hypervisor as hv:
                 if self.HAS_PARENT:
@@ -72,10 +85,10 @@ class FileTransferCommand(Command):
                         click.echo(f'Operation failed due to local system error: { e.strerror }.', err=True)
                         ctx.exit(ExitCode.FAILURE)
                     except libvirt.libvirtError:
-                        click.echo(f'Operation failed due to libvirt error.', err=True)
+                        click.echo('Operation failed due to libvirt error.', err=True)
                         ctx.exit(ExitCode.FAILURE)
 
-                click.echo(f'Finished transferring data, copied { transferred } bytes.')
+                click.echo(f'Finished transferring data, copied { state.convert_units(transferred) } of data.')
                 ctx.exit(ExitCode.SUCCESS)
 
         params = tuple(params) + self.mixin_params(required=True) + (

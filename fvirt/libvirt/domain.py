@@ -48,21 +48,21 @@ def _non_negative_integer(value: int, _instance: Any) -> None:
 def _currentCPUs_validator(value: int, instance: Domain) -> None:
     _non_negative_integer(value, instance)
 
-    if value > cast(int, instance.maxCPUs):
+    if value > instance.maxCPUs:
         raise ValueError('Current CPU count may not exceed max CPU count.')
 
 
 def _memory_validator(value: int, instance: Domain) -> None:
     _non_negative_integer(value, instance)
 
-    if value > cast(int, instance.maxMemory):
+    if value > instance.maxMemory:
         raise ValueError('Memory cannot exceed maxMemory value.')
 
 
 def _currentMemory_validator(value: int, instance: Domain) -> None:
     _non_negative_integer(value, instance)
 
-    if value > cast(int, instance.memory):
+    if value > instance.memory:
         raise ValueError('Current memory cannot exceed memory value.')
 
 

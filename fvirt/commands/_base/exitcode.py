@@ -16,3 +16,4 @@ class ExitCode(IntEnum):
     ENTITY_NOT_FOUND = 2
     PARENT_NOT_FOUND = 3
     OPERATION_FAILED = 4
+    PATH_NOT_VALID = 5
