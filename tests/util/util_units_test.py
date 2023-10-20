@@ -90,8 +90,13 @@ def test_si_back_conversion(v: int, e: str) -> None:
     value, unit = bytes_to_unit(v, iec=False)
 
     assert isinstance(value, float)
-    assert isinstance(unit, str)
-    assert value == 1.0 or value == 1000.0
+    assert value == 1.0
+    assert unit == e
+
+    value, unit = bytes_to_unit(v * 2, iec=False)
+
+    assert isinstance(value, float)
+    assert value == 2.0
     assert unit == e
 
 
@@ -103,6 +108,29 @@ def test_iec_back_conversion(v: int, e: str) -> None:
     value, unit = bytes_to_unit(v, iec=True)
 
     assert isinstance(value, float)
-    assert isinstance(unit, str)
-    assert value == 1.0 or value == 1000.0
+    assert value == 1.0
     assert unit == e
+
+    value, unit = bytes_to_unit(v * 2, iec=True)
+
+    assert isinstance(value, float)
+    assert value == 2.0
+    assert unit == e
+
+
+def test_si_zero_back_conversion() -> None:
+    '''Test that converting 0 to SI units works correctly.'''
+    value, unit = bytes_to_unit(0, iec=False)
+
+    assert isinstance(value, float)
+    assert value == 0.0
+    assert unit == 'B'
+
+
+def test_iec_zero_back_conversion() -> None:
+    '''Test that converting 0 to IEC units works correctly.'''
+    value, unit = bytes_to_unit(0, iec=True)
+
+    assert isinstance(value, float)
+    assert value == 0.0
+    assert unit == 'B'
