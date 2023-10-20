@@ -11,13 +11,13 @@ from typing import TYPE_CHECKING, Any, Self, TypeGuard, cast
 import click
 
 from .exitcode import ExitCode
+from ...libvirt.entity_access import EntityAccess
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
     from ...libvirt import Hypervisor
     from ...libvirt.entity import Entity
-    from ...libvirt.entity_access import EntityAccess
     from ...util.match import MatchArgument
 
 
