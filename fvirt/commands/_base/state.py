@@ -111,8 +111,11 @@ class State:
         # by up to 18 places, it’s probably fine (we’re unlikely
         # to ever have to deal with byte counts in excess of 1000
         # quettabytes/quibibytes).
-        digits = math.floor(math.log10(v))+1
+        if v == 0.0:
+            digits = 1
+        else:
+            digits = math.floor(math.log10(v))+1
 
-        p = max(3 - digits, 0)
+        p = max(4 - digits, 0)
 
-        return f'{v:z.{p}F} {u}'
+        return f'{v:z#.{p}F} {u}'
