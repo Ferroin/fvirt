@@ -24,6 +24,7 @@ class Column:
     title: str
     prop: str
     right_align: bool = False
+    use_units: bool = False
     color: Callable[[Any], str] = lambda x: str(x)
 
 
@@ -92,7 +93,12 @@ def color_optional(value: Any) -> str:
         return str(value)
 
 
-def tabulate_entities(entities: Iterable[Entity], columns: Mapping[str, Column], selected_cols: Sequence[str]) -> Sequence[Sequence[str]]:
+def tabulate_entities(
+    entities: Iterable[Entity],
+    columns: Mapping[str, Column],
+    selected_cols: Sequence[str],
+    convert: Callable[[int], str] = lambda x: str(x)
+) -> Sequence[Sequence[str]]:
     '''Convert an iterable of entities to a list of values for columns.'''
     ret = []
 
@@ -107,6 +113,9 @@ def tabulate_entities(entities: Iterable[Entity], columns: Mapping[str, Column],
                     prop = prop.__get__(entity)
             except AttributeError:
                 prop = '-'
+            else:
+                if columns[column].use_units:
+                    prop = convert(prop)
 
             items.append(prop)
 

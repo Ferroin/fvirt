@@ -27,7 +27,7 @@ INFO_ITEMS: Final = (
     InfoItem(name='Guest Machine Type', prop='osMatchine', color=COLUMNS['osMachine'].color),
     InfoItem(name='Emulator Binary', prop='emulator', color=COLUMNS['emulator'].color),
     InfoItem(name='Current Virtual CPUs', prop='currentCPUs', color=color_optional),
-    InfoItem(name='Current Memory', prop='currentMemory', color=color_optional),
+    InfoItem(name='Current Memory', prop='currentMemory', color=color_optional, use_units=True),
     InfoItem(name='Domain Title', prop='title'),
 )
 

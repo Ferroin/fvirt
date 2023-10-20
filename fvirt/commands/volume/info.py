@@ -17,8 +17,8 @@ INFO_ITEMS: Final = (
     InfoItem(name='Volume Type', prop='type', color=COLUMNS['type'].color),
     InfoItem(name='Volume Format', prop='format', color=COLUMNS['format'].color),
     InfoItem(name='Volume Path', prop='path', color=COLUMNS['path'].color),
-    InfoItem(name='Total Capacity', prop='capacity', color=COLUMNS['capacity'].color),
-    InfoItem(name='Allocated Space', prop='allocated', color=COLUMNS['allocated'].color),
+    InfoItem(name='Total Capacity', prop='capacity', color=COLUMNS['capacity'].color, use_units=True),
+    InfoItem(name='Allocated Space', prop='allocated', color=COLUMNS['allocated'].color, use_units=True),
 )
 
 
