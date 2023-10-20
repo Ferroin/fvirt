@@ -135,7 +135,9 @@ jobs:
       - name: Install Poetry
         uses: snok/install-poetry@v1
       - name: Install system dependencies
-        run: sudo apt-get install -y libvirt-dev build-essential
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libvirt-dev build-essential
       - name: Install python dependencies
         run: poetry install --no-root
       - name: Run mypy
@@ -155,6 +157,7 @@ jobs:
         uses: snok/install-poetry@v1
       - name: Install system dependencies
         run: |
+          sudo apt-get update
           sudo apt-get install -y --no-install-recommends libvirt-daemon libvirt-daemon-driver-qemu qemu-kvm qemu-utils
           sudo apt-get install -y libvirt-dev build-essential
       - name: Install python dependencies
