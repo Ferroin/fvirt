@@ -8,6 +8,10 @@ concurrency:
   group: review-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  PYTHON_VERSION: '3.11'
+  POETRY_VERSION: '1.6.1'
+
 jobs:
   actionlint:
     permissions:
@@ -80,9 +84,11 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.11"
+          python-version: ${{ env.PYTHON_VERSION }}
       - name: Install Poetry
         uses: snok/install-poetry@v1
+        with:
+          poetry-version: ${{ env.POETRY_VERSION }}
       - name: Install dependencies
         run: poetry install --no-root --only=dev
       - name: Run scripts/check-labels.py
@@ -97,9 +103,11 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.11"
+          python-version: ${{ env.PYTHON_VERSION }}
       - name: Install Poetry
         uses: snok/install-poetry@v1
+        with:
+          poetry-version: ${{ env.POETRY_VERSION }}
       - name: Install dependencies
         run: poetry install --no-root --only=dev
       - name: Run yamllint
@@ -114,9 +122,11 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.11"
+          python-version: ${{ env.PYTHON_VERSION }}
       - name: Install Poetry
         uses: snok/install-poetry@v1
+        with:
+          poetry-version: ${{ env.POETRY_VERSION }}
       - name: Install python dependencies
         run: poetry install --no-root --only=dev
       - name: Run flake8
@@ -132,14 +142,16 @@ jobs:
         id: setup-python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.11"
+          python-version: ${{ env.PYTHON_VERSION }}
       - name: Handle mypy Cache
         uses: actions/cache@v3
         with:
           path: .mypy_cache
-          key: mypy-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+          key: mypy-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/poetry.lock') }}
       - name: Install Poetry
         uses: snok/install-poetry@v1
+        with:
+          poetry-version: ${{ env.POETRY_VERSION }}
       - name: Install system dependencies
         run: |
           sudo apt-get update
@@ -158,9 +170,11 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.11"
+          python-version: ${{ env.PYTHON_VERSION }}
       - name: Install Poetry
         uses: snok/install-poetry@v1
+        with:
+          poetry-version: ${{ env.POETRY_VERSION }}
       - name: Install system dependencies
         run: |
           sudo apt-get update
@@ -180,9 +194,11 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.11"
+          python-version: ${{ env.PYTHON_VERSION }}
       - name: Install Poetry
         uses: snok/install-poetry@v1
+        with:
+          poetry-version: ${{ env.POETRY_VERSION }}
       - name: Install python dependencies
         run: poetry install --no-root --only=dev
       - name: Run mypy
