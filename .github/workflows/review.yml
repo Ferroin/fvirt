@@ -85,15 +85,15 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PYTHON_VERSION }}
+      - name: Handle Poetry Cache
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pypoetry
+          key: poetry-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ env.POETRY_VERSION }}
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
           poetry-version: ${{ env.POETRY_VERSION }}
-      - name: Handle Poetry Cache
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/poetry
-          key: poetry-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ env.POETRY_VERSION }}
       - name: Install dependencies
         run: poetry install --no-root --only=dev
       - name: Run scripts/check-labels.py
@@ -109,15 +109,15 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PYTHON_VERSION }}
+      - name: Handle Poetry Cache
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pypoetry
+          key: poetry-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ env.POETRY_VERSION }}
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
           poetry-version: ${{ env.POETRY_VERSION }}
-      - name: Handle Poetry Cache
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/poetry
-          key: poetry-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ env.POETRY_VERSION }}
       - name: Install dependencies
         run: poetry install --no-root --only=dev
       - name: Run yamllint
@@ -133,15 +133,15 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PYTHON_VERSION }}
+      - name: Handle Poetry Cache
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pypoetry
+          key: poetry-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ env.POETRY_VERSION }}
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
           poetry-version: ${{ env.POETRY_VERSION }}
-      - name: Handle Poetry Cache
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/poetry
-          key: poetry-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ env.POETRY_VERSION }}
       - name: Install python dependencies
         run: poetry install --no-root --only=dev
       - name: Run flake8
@@ -163,15 +163,15 @@ jobs:
         with:
           path: .mypy_cache
           key: mypy-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/poetry.lock') }}
+      - name: Handle Poetry Cache
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pypoetry
+          key: poetry-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ env.POETRY_VERSION }}
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
           poetry-version: ${{ env.POETRY_VERSION }}
-      - name: Handle Poetry Cache
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/poetry
-          key: poetry-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ env.POETRY_VERSION }}
       - name: Install system dependencies
         run: |
           sudo apt-get update
@@ -191,15 +191,15 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PYTHON_VERSION }}
+      - name: Handle Poetry Cache
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pypoetry
+          key: poetry-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ env.POETRY_VERSION }}
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
           poetry-version: ${{ env.POETRY_VERSION }}
-      - name: Handle Poetry Cache
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/poetry
-          key: poetry-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ env.POETRY_VERSION }}
       - name: Install system dependencies
         run: |
           sudo apt-get update
@@ -220,16 +220,16 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PYTHON_VERSION }}
+      - name: Handle Poetry Cache
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pypoetry
+          key: poetry-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ env.POETRY_VERSION }}
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
           poetry-version: ${{ env.POETRY_VERSION }}
-      - name: Handle Poetry Cache
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/poetry
-          key: poetry-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ env.POETRY_VERSION }}
       - name: Install python dependencies
         run: poetry install --no-root --only=dev
-      - name: Run mypy
+      - name: Run bandit
         run: poetry run bandit -r .
