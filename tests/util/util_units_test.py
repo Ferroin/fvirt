@@ -7,42 +7,54 @@ from __future__ import annotations
 
 import pytest
 
-from fvirt.util.units import unit_to_bytes
+from fvirt.util.units import IEC_FACTOR_TO_NAME, NAME_TO_FACTOR, SI_FACTOR_TO_NAME, bytes_to_unit, unit_to_bytes
 
 
-def test_wrong_value_type() -> None:
+def test_name_mapping() -> None:
+    '''Confirm that the name to factor mapping is valid.'''
+    for k, v in NAME_TO_FACTOR.items():
+        assert isinstance(k, str)
+        assert isinstance(v, int)
+
+
+def test_si_units() -> None:
+    '''Confirm that the SI unit mapping is valid.'''
+    last_k = 0
+
+    for k, v in SI_FACTOR_TO_NAME.items():
+        assert isinstance(k, int)
+        assert isinstance(v, str)
+        assert k > last_k
+        last_k = k
+        assert NAME_TO_FACTOR[v] == k
+
+
+def test_iec_units() -> None:
+    '''Confirm that the IEC unit mapping is valid.'''
+    last_k = 0
+
+    for k, v in IEC_FACTOR_TO_NAME.items():
+        assert isinstance(k, int)
+        assert isinstance(v, str)
+        assert k > last_k
+        last_k = k
+        assert NAME_TO_FACTOR[v] == k
+
+
+def test_convert_wrong_value_type() -> None:
     '''Test that value errors are raised appropriately.'''
-    with pytest.raises(ValueError, match=' is not an integer or float'):
+    with pytest.raises(TypeError, match=' is not an integer or float'):
         unit_to_bytes('', 'B')  # type: ignore
 
 
-def test_negative_value() -> None:
+def test_convert_negative_value() -> None:
     '''Test that negative values are rejected.'''
     with pytest.raises(ValueError, match='Conversion is only supported for positive values.'):
         unit_to_bytes(-1, 'B')
 
 
 @pytest.mark.parametrize('u, e', (
-    ('B', 1),
-    ('bytes', 1),
-    ('KB', 10**3),
-    ('K', 2**10),
-    ('KiB', 2**10),
-    ('MB', 10**6),
-    ('M', 2**20),
-    ('MiB', 2**20),
-    ('GB', 10**9),
-    ('G', 2**30),
-    ('GiB', 2**30),
-    ('TB', 10**12),
-    ('T', 2**40),
-    ('TiB', 2**40),
-    ('PB', 10**15),
-    ('P', 2**50),
-    ('PiB', 2**50),
-    ('EB', 10**18),
-    ('E', 2**60),
-    ('EiB', 2**60),
+    (k, v) for k, v in NAME_TO_FACTOR.items()
 ))
 def test_conversion(u: str, e: int) -> None:
     '''Test that unit conversion works correctly.'''
@@ -50,5 +62,47 @@ def test_conversion(u: str, e: int) -> None:
 
 
 def test_invalid_unit() -> None:
-    '''Test that an invalid unit returns NotImplemented.'''
-    assert unit_to_bytes(1, 'invalid') == NotImplemented
+    '''Test that an invalid unit throws an error.'''
+    with pytest.raises(ValueError, match='Unrecognized unit name'):
+        unit_to_bytes(1, 'invalid') == NotImplemented
+
+
+def test_back_convert_invalid_type() -> None:
+    '''Test that type errors are raised appropriately.'''
+    with pytest.raises(TypeError, match='Value must be an integer.'):
+        bytes_to_unit(1.0)  # type: ignore
+
+    with pytest.raises(TypeError, match='Value must be an integer.'):
+        bytes_to_unit('')  # type: ignore
+
+
+def test_back_convert_invalid_value() -> None:
+    '''Test that value errors are raised appropriately.'''
+    with pytest.raises(ValueError, match='Value must be a positive integer.'):
+        bytes_to_unit(-1)
+
+
+@pytest.mark.parametrize('v, e', (
+    (k, v) for k, v in SI_FACTOR_TO_NAME.items()
+))
+def test_si_back_conversion(v: int, e: str) -> None:
+    '''Test that back-converting to SI units works correctly.'''
+    value, unit = bytes_to_unit(v, iec=False)
+
+    assert isinstance(value, float)
+    assert isinstance(unit, str)
+    assert value == 1.0 or value == 1000.0
+    assert unit == e
+
+
+@pytest.mark.parametrize('v, e', (
+    (k, v) for k, v in IEC_FACTOR_TO_NAME.items()
+))
+def test_iec_back_conversion(v: int, e: str) -> None:
+    '''Test that back-converting to IEC units works correctly.'''
+    value, unit = bytes_to_unit(v, iec=True)
+
+    assert isinstance(value, float)
+    assert isinstance(unit, str)
+    assert value == 1.0 or value == 1000.0
+    assert unit == e
