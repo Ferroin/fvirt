@@ -7,10 +7,12 @@ from __future__ import annotations
 
 import math
 
-from bisect import bisect_left
-from typing import Final
+from typing import TYPE_CHECKING, Final
 
 from frozendict import frozendict
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
 
 NAME_TO_FACTOR: Final = frozendict({
     'B': 1,
@@ -81,6 +83,18 @@ def unit_to_bytes(value: int | float, unit: str) -> int:
     return math.ceil(value * factor)
 
 
+def __get_factor(value: int, factors: Iterable[int]) -> int:
+    ret = 1
+
+    for f in factors:
+        if f > value:
+            break
+
+        ret = f
+
+    return ret
+
+
 def bytes_to_unit(value: int, /, *, iec: bool = False) -> tuple[float, str]:
     '''Convert a number of bytes to an appropriate larger unit.
 
@@ -104,9 +118,7 @@ def bytes_to_unit(value: int, /, *, iec: bool = False) -> tuple[float, str]:
     if iec:
         factors = IEC_FACTOR_TO_NAME
 
-    flist = list(factors.keys())
-
-    factor = flist[bisect_left(flist, value)]
+    factor = __get_factor(value, factors.keys())
 
     return (
         value / factor,
