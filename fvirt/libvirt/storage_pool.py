@@ -46,47 +46,47 @@ class StoragePool(ConfigurableEntity, RunnableEntity):
     type: ConfigProperty[str] = ConfigProperty(
         doc='The storage pool type.',
         path='./@type',
-        typ=str,
+        type=str,
     )
     capacity: ConfigProperty[int] = ConfigProperty(
         doc='The total capacity of the storage pool.',
         path='./capacity',
-        typ=int,
+        type=int,
     )
     available: ConfigProperty[int] = ConfigProperty(
         doc='The available space in the storage pool.',
         path='./available',
-        typ=int,
+        type=int,
     )
     allocated: ConfigProperty[int] = ConfigProperty(
         doc='The allocated space within the storage pool.',
         path='./allocation',
-        typ=int,
+        type=int,
     )
     host: ConfigProperty[str] = ConfigProperty(
         doc='The source host of the storage pool.',
         path='./source/host/@name',
-        typ=str,
+        type=str,
     )
     format: ConfigProperty[str] = ConfigProperty(
         doc='The source format of the storage pool.',
         path='./source/format/@name',
-        typ=str,
+        type=str,
     )
     dir: ConfigProperty[str] = ConfigProperty(
         doc='The source directory of the storage pool.',
         path='./source/dir/@path',
-        typ=str,
+        type=str,
     )
     device: ConfigProperty[str] = ConfigProperty(
         doc='The source device of the storage pool.',
         path='./source/device/@path',
-        typ=str,
+        type=str,
     )
     target: ConfigProperty[str] = ConfigProperty(
         doc='The target path of the storage pool.',
         path='./target/path',
-        typ=str,
+        type=str,
     )
 
     def __init__(self: Self, pool: libvirt.virStoragePool | StoragePool, conn: Hypervisor) -> None:
