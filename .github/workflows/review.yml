@@ -155,7 +155,7 @@ jobs:
         uses: snok/install-poetry@v1
       - name: Install system dependencies
         run: |
-          sudo apt-get install -y --no-instaall-recommends libvirt-daemon libvirt-daemon-driver-qemu qemu-kvm qemu-utils
+          sudo apt-get install -y --no-install-recommends libvirt-daemon libvirt-daemon-driver-qemu qemu-kvm qemu-utils
           sudo apt-get install -y libvirt-dev build-essential
       - name: Install python dependencies
         run: poetry install
