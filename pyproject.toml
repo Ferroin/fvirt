@@ -42,14 +42,16 @@ yamllint = "^1.32.0"
 
 [tool.mypy]
 python_version = "3.11"
-warn_unused_configs = true
-disallow_untyped_defs = true
+cache_fine_grained = true
 disallow_incomplete_defs = true
 disallow_untyped_decorators = true
+disallow_untyped_defs = true
+sqlite_cache = true
 warn_redundant_casts = true
-warn_unused_ignores = true
 warn_return_any = true
 warn_unreachable = true
+warn_unused_configs = true
+warn_unused_ignores = true
 
 [[tool.mypy.overrides]]
 module = "libvirt"
