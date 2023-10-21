@@ -19,12 +19,20 @@ from typing import TYPE_CHECKING, BinaryIO, Self
 
 import libvirt
 
-from .exceptions import PlatformNotSupported
+from typing_extensions import Buffer
+
+from .exceptions import FVirtException, InvalidOperation, PlatformNotSupported
 
 if TYPE_CHECKING:
     from pathlib import Path
 
     from .hypervisor import Hypervisor
+
+DEFAULT_BUFFER_SIZE = 256 * 1024  # 256 kiB
+
+
+class StreamError(FVirtException):
+    '''Raised when a stream encounters an error.'''
 
 
 @unique
@@ -175,7 +183,7 @@ def _recv_thread_cb(
                                 f.write(b'\0' * length)
                             else:
                                 try:
-                                    os.ftruncate(f.fileno(), f.tell())
+                                    f.truncate()
                                 except OSError:
                                     pass
                         else:
@@ -188,8 +196,12 @@ def _recv_thread_cb(
                 pass
 
 
-class Stream():
-    '''Base class for libvirt stream wrappers.'''
+class Stream:
+    '''Wrapper class for libvirt streams.
+
+       This provides an API mostly compatible with io.RawIOBase from
+       the Python standard library, though it lacks a handful of methods
+       and includes some extra ones.'''
     __slots__ = (
         '_buf',
         '__done',
@@ -214,7 +226,7 @@ class Stream():
         sparse: bool = False,
         interactive: bool = False,
         qsize: int = 32,
-        bufsz: int = 65536,
+        bufsz: int = DEFAULT_BUFFER_SIZE,
     ) -> None:
         self.__done = Event()
         self.__error = False
@@ -315,7 +327,7 @@ class Stream():
         target = fd.seek(length, os.SEEK_CUR)
 
         try:
-            os.ftruncate(fd.fileno(), fd.tell())
+            fd.truncate()
         except OSError:
             fd.seek(target, os.SEEK_SET)
 
@@ -384,6 +396,21 @@ class Stream():
         fd.seek(current_location, os.SEEK_SET)
         return (in_data, region_length)
 
+    def fileno(self: Self) -> None:
+        raise OSError
+
+    def isatty(self: Self) -> bool:
+        return False
+
+    def seekable(self: Self) -> bool:
+        return False
+
+    def readable(self: Self) -> bool:
+        return True
+
+    def writable(self: Self) -> bool:
+        return True
+
     def close(self: Self) -> None:
         '''Close the stream.'''
         self.__shut_down_threads()
@@ -404,15 +431,91 @@ class Stream():
             self.stream.abort()
             self.__finalized = True
 
-    def recv_into(self: Self, fd: io.BufferedWriter) -> None:
-        '''Read all the data from the stream into fd.
+    def read(self: Self, nbytes: int = DEFAULT_BUFFER_SIZE, /) -> bytes:
+        '''Read up to nbytes bytes of data from the stream.
+
+           If an error is encountered, StreamError will be raised.
+
+           If the stream is neither sparse nor interactive, a short
+           read will only happen at the end of the stream, and this
+           call returning an empty bytes object will signal the end of
+           the stream.
+
+           If the stream is interactive, short reads will happen whenever
+           there is not enough data to return nbytes total. If there is
+           no data available, BlockingIOError will be raised.
+
+           If the stream is sparse, a short read may happen before
+           any hole in the stream, and a read returning an empty bytes
+           object will signal the start of a hole. Holes must be read
+           using read_hole(), and a zero-length hole indicates the end
+           of the stream.'''
+        if nbytes < -1:
+            raise ValueError('Number of bytes to read must be at least 1.')
+
+        if nbytes == -1:
+            if self.__sparse:
+                raise ValueError('Cannot read all data in one call if stream is sparse.')
+
+            ret = b''
+            eof = False
+
+            while not eof:
+                data = self.read()
+                ret += data
+
+                if data == b'':
+                    eof = True
+
+            return ret
+        else:
+            match self.stream.recv(nbytes, libvirt.VIR_STREAM_RECV_STOP_AT_HOLE if self.__sparse else 0):
+                case 0:
+                    return b''
+                case -1:
+                    raise StreamError
+                case -2:
+                    raise BlockingIOError
+                case -3:
+                    return b''
+                case bytes() as b:
+                    return b
+                case _:
+                    raise RuntimeError
+
+    def read_hole(self: Self, /) -> int:
+        '''Read the size of a hole in the stream.
+
+           Only valid if the stream is sparse.
+
+           Raises StreamError if there is no hole in the stream.
+
+           Returns 0 if the end of the stream has been reached.
+
+           Otherwise returns the size of the hole.'''
+        if not self.__sparse:
+            raise InvalidOperation
+
+        match self.stream.recvHole(0):
+            case -1:
+                raise StreamError
+            case int() as i:
+                return i
+            case _:
+                raise RuntimeError
+
+    def read_into_file(self: Self, fd: io.BufferedWriter, /) -> None:
+        '''Read all the data from the stream into the file object fd.
 
            This automatically handles sparse transfers based on whether
            the stream is sparse or not. Also closes the stream when done.'''
         if self.__interactive:
-            raise RuntimeError('recv_into method is not supported for interactive streams.')
+            raise RuntimeError('read_into_file method is not supported for interactive streams.')
 
         if self.__sparse:
+            if not fd.seekable():
+                raise ValueError('File specified for read_into_file must be seekable if using a sparse stream.')
+
             try:
                 self.stream.sparseRecvAll(
                     self._recv_callback,
@@ -436,13 +539,52 @@ class Stream():
             finally:
                 self.close()
 
-    def send_from(self: Self, fd: io.BufferedRandom) -> None:
+    def write(self: Self, data: Buffer, /) -> int:
+        '''Write data to the stream.
+
+           If the stream is interactive and the cannot be written,
+           raises BlockingIOError.
+
+           If another error is encountered, raises StreamError.
+
+           Otherwise returns the number of bytes actually written to
+           the stream, which may be less than the length of the data
+           provided.'''
+        match self.stream.send(bytes(data)):
+            case -1:
+                raise StreamError
+            case -2:
+                raise BlockingIOError
+            case int() as i:
+                return i
+            case _:
+                raise RuntimeError
+
+    def write_hole(self: Self, length: int) -> None:
+        '''Write a hole to the stream.
+
+           Only supported if the stream is sparse.
+
+           If an error is encountered, raises StreamError.
+
+           A sparse stream should send a final, zero-length hole before
+           closing the stream once it has written all other data.'''
+        if length < 0:
+            raise ValueError('Hole length may not be negative.')
+
+        match self.stream.sendHole(length):
+            case -1:
+                raise StreamError
+            case 0:
+                pass
+
+    def write_from_file(self: Self, fd: io.BufferedRandom) -> None:
         '''Read all of the data from fd and send it over the stream.
 
            This automatically handles sparse transfers based on whether
            the stream is sparse or not. Also closes the stream when done.'''
         if self.__interactive:
-            raise RuntimeError('send_from method is not supported for interactive streams.')
+            raise RuntimeError('write_from_file method is not supported for interactive streams.')
 
         if self.__sparse:
             try:
