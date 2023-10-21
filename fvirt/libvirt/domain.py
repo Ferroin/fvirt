@@ -16,6 +16,7 @@ from .descriptors import ConfigAttributeProperty, ConfigElementProperty, MethodP
 from .entity import ConfigurableEntity, LifecycleResult, RunnableEntity
 from .entity_access import BaseEntityAccess, EntityAccess, EntityMap, NameMap, UUIDMap
 from .exceptions import EntityNotRunning, InvalidOperation
+from .stream import Stream
 from ..util.match import MatchAlias
 
 if TYPE_CHECKING:
@@ -378,6 +379,17 @@ class Domain(ConfigurableEntity, RunnableEntity):
             return LifecycleResult.FAILURE
 
         return LifecycleResult.SUCCESS
+
+    def console(self: Self, dev: str) -> Stream:
+        '''Get a Stream connected to the specified console device for the domain.'''
+        self._check_valid()
+
+        if not self.running:
+            raise EntityNotRunning
+
+        stream = Stream(self._hv, sparse=False, interactive=True)
+        self._entity.openConsole(dev, stream, 0)
+        return stream
 
 
 class Domains(BaseEntityAccess):
