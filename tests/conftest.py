@@ -15,6 +15,14 @@ import pytest
 from simple_file_lock import FileLock
 
 from fvirt.libvirt import URI, Domain, Hypervisor, StoragePool, Volume
+from fvirt.libvirt.events import start_libvirt_event_thread
+
+
+@pytest.fixture(scope='session')
+def libvirt_event_loop() -> None:
+    '''Ensure that the libvirt event loop is running.'''
+    start_libvirt_event_thread()
+    return None
 
 
 @pytest.fixture(scope='session')
@@ -24,7 +32,7 @@ def test_uri() -> str:
 
 
 @pytest.fixture(scope='session')
-def live_uri() -> str:
+def live_uri(libvirt_event_loop: None) -> str:
     '''Provide a live libvirt URI to use for testing.'''
     return 'qemu:///session'
 
