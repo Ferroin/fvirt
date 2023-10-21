@@ -16,7 +16,7 @@ from .descriptors import ConfigProperty, MethodProperty
 from .entity import ConfigurableEntity, LifecycleResult
 from .entity_access import BaseEntityAccess, EntityAccess, NameMap
 from .exceptions import SubOperationFailed
-from .stream import BulkStream
+from .stream import Stream
 from ..util.match import MatchAlias
 
 if TYPE_CHECKING:
@@ -165,7 +165,7 @@ class Volume(ConfigurableEntity):
            format the volume itself is in.'''
         assert self._hv._connection is not None
 
-        stream = BulkStream(self._hv, sparse)
+        stream = Stream(self._hv, sparse)
 
         if sparse:
             self._entity.download(stream.stream, 0, self.capacity, libvirt.VIR_STORAGE_VOL_DOWNLOAD_SPARSE_STREAM)
@@ -173,7 +173,6 @@ class Volume(ConfigurableEntity):
             self._entity.download(stream.stream, 0, self.capacity, 0)
 
         stream.recv_into(target)
-        stream.close()
 
         return stream.transferred
 
@@ -209,7 +208,7 @@ class Volume(ConfigurableEntity):
                 case _:
                     raise SubOperationFailed('Failed to resize volume.')
 
-        stream = BulkStream(self._hv, sparse)
+        stream = Stream(self._hv, sparse)
 
         if sparse:
             self._entity.upload(stream.stream, 0, self.capacity, libvirt.VIR_STORAGE_VOL_DOWNLOAD_SPARSE_STREAM)
@@ -217,7 +216,6 @@ class Volume(ConfigurableEntity):
             self._entity.upload(stream.stream, 0, self.capacity, 0)
 
         stream.send_from(source)
-        stream.close()
 
         return stream.transferred
 
