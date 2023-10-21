@@ -172,7 +172,7 @@ class Volume(ConfigurableEntity):
         else:
             self._entity.download(stream.stream, 0, self.capacity, 0)
 
-        stream.recv_into(target)
+        stream.read_into_file(target)
 
         return stream.transferred
 
@@ -215,7 +215,7 @@ class Volume(ConfigurableEntity):
         else:
             self._entity.upload(stream.stream, 0, self.capacity, 0)
 
-        stream.send_from(source)
+        stream.write_from_file(source)
 
         return stream.transferred
 
