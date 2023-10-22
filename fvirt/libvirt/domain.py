@@ -380,15 +380,23 @@ class Domain(ConfigurableEntity, RunnableEntity):
 
         return LifecycleResult.SUCCESS
 
-    def console(self: Self, dev: str) -> Stream:
+    def console(self: Self, dev: str | None, force: bool = False, safe: bool = False) -> Stream:
         '''Get a Stream connected to the specified console device for the domain.'''
         self._check_valid()
 
         if not self.running:
             raise EntityNotRunning
 
+        flags = 0
+
+        if force:
+            flags |= libvirt.VIR_DOMAIN_CONSOLE_FORCE
+
+        if safe:
+            flags |= libvirt.VIR_DOMAIN_CONSOLE_SAFE
+
         stream = Stream(self._hv, sparse=False, interactive=True)
-        self._entity.openConsole(dev, stream, 0)
+        self._entity.openConsole(dev, stream, flags)
         return stream
 
 
