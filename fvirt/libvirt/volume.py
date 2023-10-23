@@ -86,18 +86,20 @@ class Volume(ConfigurableEntity):
 
     def __repr__(self: Self) -> str:
         if self.valid:
-            return f'<fvirt.libvirt.Volume: pool={ cast(StoragePool, self._parent).name } name={ self.name }>'
+            assert self._parent is not None
+            return f'<fvirt.libvirt.Volume: pool={ self._parent.name } name={ self.name }>'
         else:
             return '<fvirt.libvirt.Volume: INVALID>'
 
     @property
     def _format_properties(self: Self) -> set[str]:
         return super()._format_properties | {
+            'allocated',
+            'capacity',
             'key',
             'path',
             'type',
-            'allocation',
-            'capacity',
+            'format',
         }
 
     @property
