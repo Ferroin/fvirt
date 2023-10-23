@@ -24,7 +24,7 @@ INFO_ITEMS: Final = (
     InfoItem(name='Has Current Snapshot', prop='hasCurrentSnapshot', color=COLUMNS['current-snapshot'].color),
     InfoItem(name='Guest OS Type', prop='osType', color=COLUMNS['osType'].color),
     InfoItem(name='Guest CPU Architecture', prop='osArch', color=COLUMNS['osArch'].color),
-    InfoItem(name='Guest Machine Type', prop='osMatchine', color=COLUMNS['osMachine'].color),
+    InfoItem(name='Guest Machine Type', prop='osMachine', color=COLUMNS['osMachine'].color),
     InfoItem(name='Emulator Binary', prop='emulator', color=COLUMNS['emulator'].color),
     InfoItem(name='Current Virtual CPUs', prop='currentCPUs', color=color_optional),
     InfoItem(name='Current Memory', prop='currentMemory', color=color_optional, use_units=True),
