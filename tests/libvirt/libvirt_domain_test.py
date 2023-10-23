@@ -18,8 +18,8 @@ from fvirt.libvirt import EntityNotRunning, Hypervisor, LifecycleResult
 from fvirt.libvirt.domain import MATCH_ALIASES, Domain, DomainState
 from fvirt.util.match import MatchArgument, MatchTarget
 
-from .shared import (check_entity_access_get, check_entity_access_iterable, check_entity_access_mapping,
-                     check_entity_access_match, check_match_aliases, check_runnable_destroy, check_runnable_start, check_undefine)
+from .shared import (check_entity_access_get, check_entity_access_iterable, check_entity_access_mapping, check_entity_access_match,
+                     check_entity_format, check_match_aliases, check_runnable_destroy, check_runnable_start, check_undefine)
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -29,6 +29,12 @@ if TYPE_CHECKING:
 def test_check_match_aliases(test_dom: Domain) -> None:
     '''Check typing for match aliases.'''
     check_match_aliases(MATCH_ALIASES, test_dom)
+
+
+def test_format(test_dom: Domain) -> None:
+    '''Check that formatting a Domain instance can be formatted.'''
+    # TODO: This should use a live domain for better test coverage.
+    check_entity_format(test_dom)
 
 
 def test_name(test_dom: Domain) -> None:
@@ -59,6 +65,7 @@ def test_undefine(test_dom: Domain) -> None:
 
 def test_reset(test_dom: Domain) -> None:
     '''Check that resetting a domain works.'''
+    # TODO: Should be redesigned once we have true live domain testing.
     assert test_dom.running == True  # noqa: E712
 
     result = test_dom.reset()
@@ -80,6 +87,7 @@ def test_start(test_dom: Domain) -> None:
 
 def test_shutdown(test_dom: Domain) -> None:
     '''Check that shutting down a domain works.'''
+    # TODO: Should be redesigned once we have true live domain testing.
     assert test_dom.running == True  # noqa: E712
 
     result = test_dom.shutdown(timeout=0, force=False, idempotent=False)
@@ -115,6 +123,7 @@ def test_shutdown(test_dom: Domain) -> None:
 
 def test_shutdown_timeouts(test_dom: Domain) -> None:
     '''Check that timeout handling for the domain shutdown operation works.'''
+    # TODO: Should be redesigned once we have true live domain testing.
     assert test_dom.running == True  # noqa: E712
 
     result = test_dom.shutdown(timeout=1, force=False, idempotent=False)
@@ -126,6 +135,7 @@ def test_shutdown_timeouts(test_dom: Domain) -> None:
 
 def test_managed_save(test_dom: Domain) -> None:
     '''Check that the managed save functionality works.'''
+    # TODO: Should be redesigned once we have true live domain testing.
     assert test_dom.running == True  # noqa: E712
     assert test_dom.hasManagedSave == False  # noqa: E712
 
@@ -164,6 +174,12 @@ def test_managed_save(test_dom: Domain) -> None:
 
     with pytest.raises(EntityNotRunning):
         test_dom.managedSave()
+
+
+@pytest.mark.xfail(reason='Cannot be tested without live domain testing.')
+def test_domain_console() -> None:
+    '''Test that domain console handling works correctly.'''
+    assert False
 
 
 def test_domain_access_iterable(test_hv: Hypervisor, serial: Callable[[str], _GeneratorContextManager[None]]) -> None:

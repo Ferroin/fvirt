@@ -5,12 +5,13 @@
 
 from __future__ import annotations
 
+from socket import gethostname
 from typing import cast
 
 import pytest
 
 from fvirt.libvirt.entity_access import EntityAccess
-from fvirt.libvirt.hypervisor import Hypervisor
+from fvirt.libvirt.hypervisor import HostInfo, Hypervisor
 from fvirt.libvirt.uri import LIBVIRT_DEFAULT_URI, URI
 from fvirt.version import VersionNumber
 
@@ -95,6 +96,39 @@ def test_version(test_hv: Hypervisor) -> None:
 
     with pytest.raises(AttributeError):
         test_hv.version = VersionNumber(0, 0, 0)  # type: ignore
+
+
+def test_hostname(test_hv: Hypervisor) -> None:
+    '''Test that the hostname property works correctly.'''
+    hostname = test_hv.hostname
+
+    assert isinstance(hostname, str)
+
+    actual_hostname = gethostname()
+
+    assert hostname == actual_hostname
+
+
+def test_host_info(test_hv: Hypervisor) -> None:
+    '''Test that the host_info property works correctly.'''
+    host_info = test_hv.host_info
+
+    assert isinstance(host_info, HostInfo)
+    assert isinstance(host_info.architecture, str)
+    assert isinstance(host_info.memory, int)
+    assert host_info.memory >= 1
+    assert isinstance(host_info.cpus, int)
+    assert host_info.cpus >= 1
+    assert isinstance(host_info.cpu_frequency, int)
+    assert host_info.cpu_frequency >= 0
+    assert isinstance(host_info.nodes, int)
+    assert host_info.nodes >= 1
+    assert isinstance(host_info.sockets, int)
+    assert host_info.sockets >= 1
+    assert isinstance(host_info.cores, int)
+    assert host_info.cores >= 1
+    assert isinstance(host_info.threads, int)
+    assert host_info.threads >= 1
 
 
 @pytest.mark.parametrize('t', (

@@ -19,8 +19,8 @@ from fvirt.libvirt.entity_access import EntityAccess
 from fvirt.libvirt.storage_pool import MATCH_ALIASES, StoragePool
 from fvirt.util.match import MatchArgument, MatchTarget
 
-from .shared import (check_entity_access_get, check_entity_access_iterable, check_entity_access_mapping,
-                     check_entity_access_match, check_match_aliases, check_runnable_destroy, check_runnable_start, check_undefine)
+from .shared import (check_entity_access_get, check_entity_access_iterable, check_entity_access_mapping, check_entity_access_match,
+                     check_entity_format, check_match_aliases, check_runnable_destroy, check_runnable_start, check_undefine)
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -31,6 +31,12 @@ if TYPE_CHECKING:
 def test_check_match_aliases(live_pool: StoragePool) -> None:
     '''Check typing for match aliases.'''
     check_match_aliases(MATCH_ALIASES, live_pool)
+
+
+@pytest.mark.libvirtd
+def test_format(live_pool: StoragePool) -> None:
+    '''Check that formatting a StoragePool instance can be formatted.'''
+    check_entity_format(live_pool)
 
 
 @pytest.mark.libvirtd
