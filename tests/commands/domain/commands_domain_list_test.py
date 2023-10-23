@@ -7,6 +7,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import pytest
+
 from fvirt.commands.domain.list import COLUMNS, DEFAULT_COLS
 
 from ..shared import check_columns, check_default_columns
@@ -23,3 +25,9 @@ def test_column_definitions(test_dom: Domain) -> None:
 def test_default_columns() -> None:
     '''Test that the default column list is valid.'''
     check_default_columns(COLUMNS, DEFAULT_COLS)
+
+
+@pytest.mark.xfail(reason='Not yet implemented.')
+def test_command_run() -> None:
+    '''Test that the command runs correctly.'''
+    assert False

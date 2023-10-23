@@ -19,6 +19,7 @@ if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
 
     from fvirt.commands._base.group import Group
+    from fvirt.commands._base.info import InfoItem
 
 SRC_ROOT = Path(__file__).parents[2]
 
@@ -66,3 +67,13 @@ def check_default_columns(cols: Mapping[str, Column], default: Sequence[str]) ->
     '''Check that a list of default columns is valid.'''
     for k in default:
         assert k in cols
+
+
+def check_info_items(items: tuple[InfoItem, ...], sample: Entity) -> None:
+    '''Check that a list of info items is valid for a given entity.'''
+    assert isinstance(items, tuple)
+
+    for item in items:
+        assert isinstance(item.name, str)
+        assert isinstance(item.prop, str)
+        assert item.prop in dir(sample)

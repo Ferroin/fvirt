@@ -27,6 +27,19 @@ def check_match_aliases(aliases: Mapping[str, MatchAlias], entity: Entity) -> No
         assert v.desc is not None
 
 
+def check_entity_format(entity: Entity) -> None:
+    '''Check that Entity instances properly handle format().'''
+    props = entity._format_properties
+
+    for prop in props:
+        assert isinstance(prop, str)
+        assert prop in dir(entity)
+
+        if hasattr(entity, prop):
+            result = format(entity, '{' + prop + '}')
+            assert result == str(getattr(entity, prop))
+
+
 def check_runnable_start(entity: RunnableEntity) -> None:
     '''Check that the start method for a RunnableEntity works.'''
     assert entity.persistent == True  # noqa: E712

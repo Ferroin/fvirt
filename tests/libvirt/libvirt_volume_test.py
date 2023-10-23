@@ -21,7 +21,7 @@ from fvirt.libvirt.volume import MATCH_ALIASES, Volume
 from fvirt.util.match import MatchTarget
 
 from .shared import (check_entity_access_get, check_entity_access_iterable, check_entity_access_mapping,
-                     check_entity_access_match, check_match_aliases, check_undefine)
+                     check_entity_access_match, check_entity_format, check_match_aliases, check_undefine)
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -31,6 +31,12 @@ if TYPE_CHECKING:
 def test_check_match_aliases(live_volume: Volume) -> None:
     '''Check typing for match aliases.'''
     check_match_aliases(MATCH_ALIASES, live_volume)
+
+
+@pytest.mark.libvirtd
+def test_format(live_volume: Volume) -> None:
+    '''Check that formatting a Volume instance can be formatted.'''
+    check_entity_format(live_volume)
 
 
 @pytest.mark.libvirtd
@@ -81,6 +87,20 @@ def test_delete(live_volume: Volume) -> None:
     assert result == LifecycleResult.SUCCESS
     assert live_volume.valid == (not live_volume._mark_invalid_on_undefine)
     assert pool.volumes.get(name) is None
+
+
+@pytest.mark.libvirtd
+@pytest.mark.xfail(reason='Not yet implemented.')
+def test_wipe() -> None:
+    '''Test that wiping volumes works correctly.'''
+    assert False
+
+
+@pytest.mark.libvirtd
+@pytest.mark.xfail(reason='Not yet implemented.')
+def test_reset() -> None:
+    '''Test that resizing volumes works correctly.'''
+    assert False
 
 
 @pytest.mark.libvirtd
