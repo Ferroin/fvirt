@@ -107,32 +107,40 @@ def test_reset() -> None:
 def test_volume_access_iterable(live_pool: StoragePool, volume_factory: Callable[[StoragePool], Volume]) -> None:
     '''Test volume entity access behavior.'''
     vol = volume_factory(live_pool)
-    check_entity_access_iterable(live_pool.volumes, Volume)
-    vol.undefine()
+    try:
+        check_entity_access_iterable(live_pool.volumes, Volume)
+    finally:
+        vol.undefine()
 
 
 @pytest.mark.libvirtd
 def test_volume_access_get(live_pool: StoragePool, volume_factory: Callable[[StoragePool], Volume]) -> None:
     '''Test volume entity access get method.'''
     vol = volume_factory(live_pool)
-    check_entity_access_get(live_pool.volumes, vol.name, Volume)
-    vol.undefine()
+    try:
+        check_entity_access_get(live_pool.volumes, vol.name, Volume)
+    finally:
+        vol.undefine()
 
 
 @pytest.mark.libvirtd
 def test_volume_access_match(live_pool: StoragePool, volume_factory: Callable[[StoragePool], Volume]) -> None:
     '''Test volume entity access match method.'''
     vol = volume_factory(live_pool)
-    check_entity_access_match(live_pool.volumes, (MatchTarget(property='name'), re.compile(f'^{ vol.name }$')), Volume)
-    vol.undefine()
+    try:
+        check_entity_access_match(live_pool.volumes, (MatchTarget(property='name'), re.compile(f'^{ vol.name }$')), Volume)
+    finally:
+        vol.undefine()
 
 
 @pytest.mark.libvirtd
 def test_volume_access_mapping(live_pool: StoragePool, volume_factory: Callable[[StoragePool], Volume]) -> None:
     '''Test volume entity access mappings.'''
     vol = volume_factory(live_pool)
-    check_entity_access_mapping(live_pool.volumes, 'by_name', (vol.name,), str, Volume)
-    vol.undefine()
+    try:
+        check_entity_access_mapping(live_pool.volumes, 'by_name', (vol.name,), str, Volume)
+    finally:
+        vol.undefine()
 
 
 @pytest.mark.slow
