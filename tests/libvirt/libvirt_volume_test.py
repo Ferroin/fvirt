@@ -137,10 +137,10 @@ def test_volume_access_mapping(live_pool: StoragePool, volume_factory: Callable[
 
 @pytest.mark.slow
 @pytest.mark.libvirtd
-def test_volume_download(live_volume: Volume, unique: Callable[[str], Any]) -> None:
+def test_volume_download(live_volume: Volume, unique: Callable[..., Any]) -> None:
     '''Test volume download functionality.'''
     vol_path = Path(live_volume.path)
-    target_path = vol_path.with_name(unique('text'))
+    target_path = vol_path.with_name(unique('text', prefix='fvirt-test-'))
 
     vol_path.write_bytes(random.randbytes(live_volume.capacity))
 
@@ -155,10 +155,10 @@ def test_volume_download(live_volume: Volume, unique: Callable[[str], Any]) -> N
 @pytest.mark.slow
 @pytest.mark.libvirtd
 @pytest.mark.xfail(condition=sys.platform == 'win32', reason='Sparse data handling not supported on Windows', raises=PlatformNotSupported)
-def test_volume_sparse_download(live_volume: Volume, unique: Callable[[str], Any]) -> None:
+def test_volume_sparse_download(live_volume: Volume, unique: Callable[..., Any]) -> None:
     '''Test volume sparse download functionality.'''
     vol_path = Path(live_volume.path)
-    target_path = vol_path.with_name(unique('text'))
+    target_path = vol_path.with_name(unique('text', prefix='fvirt-test-'))
 
     block_count = 8
     block = live_volume.capacity // block_count
@@ -178,10 +178,10 @@ def test_volume_sparse_download(live_volume: Volume, unique: Callable[[str], Any
 
 @pytest.mark.slow
 @pytest.mark.libvirtd
-def test_volume_upload(live_volume: Volume, unique: Callable[[str], Any]) -> None:
+def test_volume_upload(live_volume: Volume, unique: Callable[..., Any]) -> None:
     '''Test volume upload functionality.'''
     vol_path = Path(live_volume.path)
-    target_path = vol_path.with_name(unique('text'))
+    target_path = vol_path.with_name(unique('text', prefix='fvirt-test-'))
 
     target_path.write_bytes(random.randbytes(live_volume.capacity))
 
@@ -195,10 +195,10 @@ def test_volume_upload(live_volume: Volume, unique: Callable[[str], Any]) -> Non
 
 @pytest.mark.slow
 @pytest.mark.libvirtd
-def test_volume_upload_resize(live_volume: Volume, unique: Callable[[str], Any]) -> None:
+def test_volume_upload_resize(live_volume: Volume, unique: Callable[..., Any]) -> None:
     '''Test volume upload functionality.'''
     vol_path = Path(live_volume.path)
-    target_path = vol_path.with_name(unique('text'))
+    target_path = vol_path.with_name(unique('text', prefix='fvirt-test-'))
 
     target_path.write_bytes(random.randbytes(live_volume.capacity * 2))
 
@@ -213,10 +213,10 @@ def test_volume_upload_resize(live_volume: Volume, unique: Callable[[str], Any])
 @pytest.mark.slow
 @pytest.mark.libvirtd
 @pytest.mark.xfail(condition=sys.platform == 'win32', reason='Sparse data handling not supported on Windows', raises=PlatformNotSupported)
-def test_volume_sparse_upload(live_volume: Volume, unique: Callable[[str], Any]) -> None:
+def test_volume_sparse_upload(live_volume: Volume, unique: Callable[..., Any]) -> None:
     '''Test volume sparse upload functionality.'''
     vol_path = Path(live_volume.path)
-    target_path = vol_path.with_name(unique('text'))
+    target_path = vol_path.with_name(unique('text', prefix='fvirt-test-'))
 
     block_count = 8
     block = live_volume.capacity // block_count
