@@ -38,7 +38,7 @@ pytest-timeout = "^2.2.0"
 pytest-unique = "^0.1.1"
 pytest-xdist = "^3.3.1"
 ruamel-yaml = "^0.17.35"
-simple-file-lock = "^2023.5"
+simple-file-lock = "^2023.6"
 yamllint = "^1.32.0"
 
 [tool.mypy]
