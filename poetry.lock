@@ -1025,13 +1025,13 @@ files = [
 
 [[package]]
 name = "simple-file-lock"
-version = "2023.5"
+version = "2023.6"
 description = "Context manager for simple file locking."
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "simple_file_lock-2023.5-py3-none-any.whl", hash = "sha256:ec11a512d7e5745d78a0663b119e6300654b5dce446f18e7179e37f88d405b7d"},
-    {file = "simple_file_lock-2023.5.tar.gz", hash = "sha256:13dfe954130924946c34de93168f48e3bb569b4b1fd19ba55096267b4cc5c1c8"},
+    {file = "simple_file_lock-2023.6-py3-none-any.whl", hash = "sha256:f584de9753e8a585b187c1a419846abc1787416356a9f4497d85f27d46c2bf50"},
+    {file = "simple_file_lock-2023.6.tar.gz", hash = "sha256:50131b75af97c9f94bddd5499403440c806eaba6180f7e724465071a3afc3b24"},
 ]
 
 [package.dependencies]
@@ -1116,4 +1116,4 @@ dev = ["doc8", "flake8", "flake8-import-order", "rstcheck[sphinx]", "sphinx"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "039a1c1c1e90286417e860e9c4c33b71a2ffa64bcd8d67b198e1d05be847bf3e"
+content-hash = "c662bf322b3e37df891f3c3de8a3e75c1edd7c3a3e7e45d0eb90da9b6bfeb8b1"
