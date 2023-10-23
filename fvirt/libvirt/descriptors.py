@@ -54,13 +54,13 @@ class ReadDescriptor(Generic[T], ABC):
                 fb = getattr(instance, self._fallback, None)
 
                 if fb is None:
-                    raise AttributeError(f'{ instance }:{ repr(self) }')
+                    raise AttributeError(f'{ repr(instance) }:{ repr(self) }')
                 elif hasattr(fb, '__get__'):
                     return self._type(fb.__get__(instance))
                 else:
                     return self._type(fb)
             else:
-                raise AttributeError(f'{ instance }:{ repr(self) }')
+                raise AttributeError(f'{ repr(instance) }:{ repr(self) }')
 
         return self._type(v)
 
@@ -141,11 +141,11 @@ class MethodProperty(ReadDescriptor[T]):
             if c is not None:
                 return c(*self._get_args)
             else:
-                warnings.warn(f'{ instance }:{ repr(self) }: Failed to load target method.', RuntimeWarning, stacklevel=2)
+                warnings.warn(f'{ repr(instance) }:{ repr(self) }: Failed to load target method.', RuntimeWarning, stacklevel=2)
         else:
-            warnings.warn(f'{ instance }:{ repr(self) }: Failed to load target property.', RuntimeWarning, stacklevel=2)
+            warnings.warn(f'{ repr(instance) }:{ repr(self) }: Failed to load target property.', RuntimeWarning, stacklevel=2)
 
-        raise AttributeError(f'{ instance }:{ repr(self) }')
+        raise AttributeError(f'{ repr(instance) }:{ repr(self) }')
 
 
 class SettableMethodProperty(MethodProperty[T], WriteDescriptor[T]):
@@ -190,9 +190,9 @@ class SettableMethodProperty(MethodProperty[T], WriteDescriptor[T]):
             if c is not None:
                 c(t, value, *self._set_args)
             else:
-                raise AttributeError(f'{ instance }:{ repr(self) }')
+                raise AttributeError(f'{ repr(instance) }:{ repr(self) }')
         else:
-            raise AttributeError(f'{ instance }:{ repr(self) }')
+            raise AttributeError(f'{ repr(instance) }:{ repr(self) }')
 
 
 class ConfigProperty(ReadDescriptor[T]):
@@ -224,7 +224,7 @@ class ConfigProperty(ReadDescriptor[T]):
         result = self._xpath(instance.config)
 
         if result is None or result == []:
-            raise AttributeError(f'{ instance }:{ repr(self) }')
+            raise AttributeError(f'{ repr(instance) }:{ repr(self) }')
 
         if isinstance(result, list):
             e: Any = result[0]
