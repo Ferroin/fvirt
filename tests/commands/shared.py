@@ -6,14 +6,17 @@
 from __future__ import annotations
 
 import importlib
+import re
 
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 import click
+import pytest
 
 from fvirt.libvirt.entity import Entity
 from fvirt.util.tables import Column
+from fvirt.util.units import bytes_to_unit
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
@@ -77,3 +80,25 @@ def check_info_items(items: tuple[InfoItem, ...], sample: Entity) -> None:
         assert isinstance(item.name, str)
         assert isinstance(item.prop, str)
         assert item.prop in dir(sample)
+
+
+def check_info_output(output: str, items: tuple[InfoItem, ...], entity: Entity, header: str) -> None:
+    '''Check the output from an info command.'''
+    assert header == output.splitlines()[0]
+
+    for item in items:
+        match = re.search(f'^  { item.name }: (.+?)$', output, re.MULTILINE)
+        prop = getattr(entity, item.prop, None)
+
+        if prop is not None and prop != '':
+            assert match, f'No match found for { item.name }.'
+            if item.use_units:
+                ev, eu = bytes_to_unit(prop)
+                av, au = match[1].split(' ')
+                decimal_places = len(av.split('.')[1])
+                assert eu == au
+                assert ev == pytest.approx(float(av), abs=10 ** -decimal_places)
+            else:
+                assert match[1] == item.color(prop)
+        else:
+            assert match is None, f'Found erroneous entry for { item.name }.'

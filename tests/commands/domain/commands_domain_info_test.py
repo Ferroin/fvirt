@@ -7,14 +7,15 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import pytest
-
+from fvirt.cli import cli
 from fvirt.commands.domain.info import INFO_ITEMS
 
-from ..shared import check_info_items
+from ..shared import check_info_items, check_info_output
 
 if TYPE_CHECKING:
-    from fvirt.libvirt.domain import Domain
+    from click.testing import CliRunner
+
+    from fvirt.libvirt import Domain, Hypervisor
 
 
 def test_info_items(test_dom: Domain) -> None:
@@ -22,7 +23,15 @@ def test_info_items(test_dom: Domain) -> None:
     check_info_items(INFO_ITEMS, test_dom)
 
 
-@pytest.mark.xfail(reason='Not yet implemented.')
-def test_command_run() -> None:
+def test_command_run(cli_runner: CliRunner, test_hv: Hypervisor) -> None:
     '''Test that the command runs correctly.'''
-    assert False
+    uri = str(test_hv.uri)
+
+    result = cli_runner.invoke(cli, ('-c', uri, 'domain', 'info', '1'))
+    assert result.exit_code == 0
+    assert len(result.output) > 0
+
+    dom = test_hv.domains.get(1)
+    assert dom is not None
+
+    check_info_output(result.output, INFO_ITEMS, dom, 'Domain: 1')

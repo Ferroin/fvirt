@@ -50,27 +50,27 @@ class InfoCommand(Command):
             entity: str,
             parent: str | None = None,
         ) -> None:
-            output = f'{ self.NAME.capitalize() }: { name }\n'
+            output = f'{ self.NAME.title() }: { entity }\n'
 
             with state.hypervisor as hv:
                 if self.HAS_PARENT:
                     assert parent is not None
                     assert self.PARENT_NAME is not None
                     obj = self.get_sub_entity(ctx, hv, parent, entity)
-                    output += f'  { self.PARENT_NAME.capitalize() }: { parent }\n'
+                    output += f'  { self.PARENT_NAME.title() }: { parent }\n'
                 else:
                     obj = self.get_entity(ctx, hv, entity)
 
                 for item in info_items:
                     value = getattr(obj, item.prop, None)
 
-                    if value is not None:
+                    if value is not None and value != '':
                         if item.use_units:
                             v = state.convert_units(value)
                         else:
                             v = value
 
-                        output += f'  { item.name }: { v }\n'
+                        output += f'  { item.name }: { item.color(v) }\n'
 
             click.echo(output.rstrip())
 
