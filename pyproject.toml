@@ -81,12 +81,18 @@ use_parentheses = true
 [tool.pytest.ini_options]
 minversion = 7.0
 markers = [
-    "slow: marks tests which take a long time to run",
+    "slow: marks tests which may take a long time to run",
     "libvirtd: marks tests which need a running copy of libvirtd on the local system",
 ]
+required_plugins = [
+    "pytest-click",
+    "pytest-unique",
+]
 testpaths = "tests"
-timeout = 60
+timeout = 30
 timeout_method = "thread"
+tmp_path_retention_count = 2
+tmp_path_retention_policy = "failed"
 xfail_strict = true
 
 [build-system]
