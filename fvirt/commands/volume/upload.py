@@ -7,6 +7,8 @@ from __future__ import annotations
 
 from typing import Final
 
+import click
+
 from .._base.filetransfer import FileTransferCommand
 from .._base.objects import VolumeMixin
 
@@ -42,4 +44,10 @@ upload = _VolumeUpload(
     file_mode='r+b',
     support_sparse=True,
     require_file=True,
+    params=(click.Option(
+        param_decls=('--resize',),
+        is_flag=True,
+        default=False,
+        help='Resize the volume to match the size of the file being uploaded.',
+    ),)
 )
