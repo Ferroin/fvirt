@@ -11,27 +11,24 @@ import pytest
 
 from lxml import etree
 
-from fvirt.cli import cli
-
 from ...shared import compare_xml_trees
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Sequence
 
-    from click.testing import CliRunner
+    from click.testing import Result
 
     from fvirt.libvirt import StoragePool, Volume
 
 
 @pytest.mark.libvirtd
-def test_command_run(cli_runner: CliRunner, live_pool: StoragePool, volume_factory: Callable[[StoragePool], Volume]) -> None:
+def test_command_run(runner: Callable[[Sequence[str], int], Result], live_pool: StoragePool, volume_factory: Callable[[StoragePool], Volume]) -> None:
     '''Test that the command runs correctly.'''
     uri = str(live_pool._hv.uri)
     vol = volume_factory(live_pool)
 
     try:
-        result = cli_runner.invoke(cli, ('-c', uri, 'volume', 'xml', live_pool.name, vol.name))
-        assert result.exit_code == 0
+        result = runner(('-c', uri, 'volume', 'xml', live_pool.name, vol.name), 0)
         assert len(result.output) > 0
 
         output_xml = etree.XML(result.output)

@@ -15,19 +15,17 @@ from typing import TYPE_CHECKING, Any
 
 import pytest
 
-from fvirt.cli import cli
-
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Sequence
 
-    from click.testing import CliRunner
+    from click.testing import Result
 
     from fvirt.libvirt import Volume
 
 
 @pytest.mark.slow
 @pytest.mark.libvirtd
-def test_volume_upload(tmp_path: Path, cli_runner: CliRunner, live_volume: Volume, unique: Callable[..., Any]) -> None:
+def test_volume_upload(tmp_path: Path, runner: Callable[[Sequence[str], int], Result], live_volume: Volume, unique: Callable[..., Any]) -> None:
     '''Test volume upload functionality.'''
     uri = str(live_volume._hv.uri)
     pool = live_volume._parent
@@ -38,15 +36,19 @@ def test_volume_upload(tmp_path: Path, cli_runner: CliRunner, live_volume: Volum
 
     target_path.write_bytes(random.randbytes(live_volume.capacity))
 
-    result = cli_runner.invoke(cli, ('-c', uri, 'volume', 'upload', pool.name, live_volume.name, str(target_path)))
-    assert result.exit_code == 0, result.output
+    runner(('-c', uri, 'volume', 'upload', pool.name, live_volume.name, str(target_path)), 0)
 
     assert filecmp.cmp(vol_path, target_path, shallow=False)
 
 
 @pytest.mark.slow
 @pytest.mark.libvirtd
-def test_volume_upload_resize(tmp_path: Path, cli_runner: CliRunner, live_volume: Volume, unique: Callable[..., Any]) -> None:
+def test_volume_upload_resize(
+    tmp_path: Path,
+    runner: Callable[[Sequence[str], int], Result],
+    live_volume: Volume,
+    unique: Callable[..., Any]
+) -> None:
     '''Test volume upload resize functionality.'''
     uri = str(live_volume._hv.uri)
     pool = live_volume._parent
@@ -57,8 +59,7 @@ def test_volume_upload_resize(tmp_path: Path, cli_runner: CliRunner, live_volume
 
     target_path.write_bytes(random.randbytes(live_volume.capacity * 2))
 
-    result = cli_runner.invoke(cli, ('-c', uri, 'volume', 'upload', '--resize', pool.name, live_volume.name, str(target_path)))
-    assert result.exit_code == 0, result.output
+    runner(('-c', uri, 'volume', 'upload', '--resize', pool.name, live_volume.name, str(target_path)), 0)
 
     assert filecmp.cmp(vol_path, target_path, shallow=False)
 
@@ -66,7 +67,12 @@ def test_volume_upload_resize(tmp_path: Path, cli_runner: CliRunner, live_volume
 @pytest.mark.slow
 @pytest.mark.libvirtd
 @pytest.mark.xfail(condition=sys.platform == 'win32', reason='Sparse data handling not supported on Windows')
-def test_volume_sparse_upload(tmp_path: Path, cli_runner: CliRunner, live_volume: Volume, unique: Callable[..., Any]) -> None:
+def test_volume_sparse_upload(
+    tmp_path: Path,
+    runner: Callable[[Sequence[str], int], Result],
+    live_volume: Volume,
+    unique: Callable[..., Any],
+) -> None:
     '''Test volume sparse upload functionality.'''
     uri = str(live_volume._hv.uri)
     pool = live_volume._parent
@@ -83,7 +89,6 @@ def test_volume_sparse_upload(tmp_path: Path, cli_runner: CliRunner, live_volume
             f.seek(block, os.SEEK_CUR)
             f.write(random.randbytes(block))
 
-    result = cli_runner.invoke(cli, ('-c', uri, 'volume', 'upload', '--sparse', pool.name, live_volume.name, str(target_path)))
-    assert result.exit_code == 0, result.output
+    runner(('-c', uri, 'volume', 'upload', '--sparse', pool.name, live_volume.name, str(target_path)), 0)
 
     assert filecmp.cmp(vol_path, target_path, shallow=False)

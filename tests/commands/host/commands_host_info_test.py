@@ -10,10 +10,10 @@ import re
 from socket import gethostname
 from typing import TYPE_CHECKING
 
-from fvirt.cli import cli
-
 if TYPE_CHECKING:
-    from click.testing import CliRunner
+    from collections.abc import Callable, Sequence
+
+    from click.testing import Result
 
 
 TEST_LINES = {
@@ -21,10 +21,9 @@ TEST_LINES = {
 }
 
 
-def test_info_output(cli_runner: CliRunner, test_uri: str) -> None:
+def test_info_output(runner: Callable[[Sequence[str], int], Result], test_uri: str) -> None:
     '''Test that the command runs correctly.'''
-    result = cli_runner.invoke(cli, ('-c', test_uri, 'host', 'info'))
-    assert result.exit_code == 0
+    result = runner(('-c', test_uri, 'host', 'info'), 0)
     assert len(result.output.splitlines()) == 9
 
     hostname = re.search(r'^Hostname: ([a-zA-Z0-9][a-zA-Z0-9-]*?)$', result.output, re.MULTILINE)

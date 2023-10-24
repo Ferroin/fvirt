@@ -11,15 +11,14 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from fvirt.cli import cli
 from fvirt.commands.volume.info import INFO_ITEMS
 
 from ..shared import check_info_items, check_info_output
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Sequence
 
-    from click.testing import CliRunner
+    from click.testing import Result
 
     from fvirt.libvirt import StoragePool, Volume
 
@@ -31,14 +30,13 @@ def test_info_items(live_volume: Volume) -> None:
 
 
 @pytest.mark.libvirtd
-def test_command_run(cli_runner: CliRunner, live_pool: StoragePool, volume_factory: Callable[[StoragePool], Volume]) -> None:
+def test_command_run(runner: Callable[[Sequence[str], int], Result], live_pool: StoragePool, volume_factory: Callable[[StoragePool], Volume]) -> None:
     '''Test that the command runs correctly.'''
     uri = str(live_pool._hv.uri)
     vol = volume_factory(live_pool)
 
     try:
-        result = cli_runner.invoke(cli, ('-c', uri, 'volume', 'info', live_pool.name, vol.name))
-        assert result.exit_code == 0
+        result = runner(('-c', uri, 'volume', 'info', live_pool.name, vol.name), 0)
         assert len(result.output) > 0
 
         check_info_output(result.output, INFO_ITEMS, vol, f'Volume: { vol.name }')

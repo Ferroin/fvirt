@@ -7,13 +7,14 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from fvirt.cli import cli
 from fvirt.commands.domain.info import INFO_ITEMS
 
 from ..shared import check_info_items, check_info_output
 
 if TYPE_CHECKING:
-    from click.testing import CliRunner
+    from collections.abc import Callable, Sequence
+
+    from click.testing import Result
 
     from fvirt.libvirt import Domain, Hypervisor
 
@@ -23,12 +24,11 @@ def test_info_items(test_dom: Domain) -> None:
     check_info_items(INFO_ITEMS, test_dom)
 
 
-def test_command_run(cli_runner: CliRunner, test_hv: Hypervisor) -> None:
+def test_command_run(runner: Callable[[Sequence[str], int], Result], test_hv: Hypervisor) -> None:
     '''Test that the command runs correctly.'''
     uri = str(test_hv.uri)
 
-    result = cli_runner.invoke(cli, ('-c', uri, 'domain', 'info', '1'))
-    assert result.exit_code == 0
+    result = runner(('-c', uri, 'domain', 'info', '1'), 0)
     assert len(result.output) > 0
 
     dom = test_hv.domains.get(1)

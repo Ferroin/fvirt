@@ -8,14 +8,34 @@ from __future__ import annotations
 from collections.abc import Callable, Generator
 from contextlib import _GeneratorContextManager, contextmanager
 from pathlib import Path
-from typing import Any
+from traceback import format_exception
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
 from simple_file_lock import FileLock
 
+from fvirt.cli import cli
 from fvirt.libvirt import URI, Domain, Hypervisor, StoragePool, Volume
 from fvirt.libvirt.events import start_libvirt_event_thread
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from click.testing import CliRunner, Result
+
+
+@pytest.fixture
+def runner(cli_runner: CliRunner) -> Callable[[Sequence[str], int], Result]:
+    '''Provide a runner for running the fvirt cli with a given set of arguments.'''
+    def runner(args: Sequence[str], exit_code: int) -> Result:
+        result = cli_runner.invoke(cli, args)
+        assert not result.exception, ''.join(format_exception(*result.exc_info))
+        assert result.exit_code == exit_code, result.output
+
+        return result
+
+    return runner
 
 
 @pytest.fixture(scope='session')
