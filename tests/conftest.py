@@ -194,18 +194,19 @@ def test_pool(
 
 
 @pytest.fixture
-def volume_xml(unique: Callable[..., Any]) -> Callable[[StoragePool], str]:
+def volume_xml(unique: Callable[..., Any]) -> Callable[[StoragePool, int], str]:
     '''Provide a function that, given a storage pool, will produce an XML string for a Volume.
 
        The storage pool used should be a directory type pool.'''
-    def inner(pool: StoragePool) -> str:
+    def inner(pool: StoragePool, size: int = 1024 * 1024) -> str:
         name = unique('text', prefix='fvirt-test-')
-        size = 1024 * 1024
+        size = size
         path = Path(pool.target) / name
 
         return f'''
         <volume type='file'>
             <name>{ name }</name>
+            <allocated units='bytes'>0</allocated>
             <capacity units='bytes'>{ size }</capacity>
             <target>
                 <path>{ path }</path>
@@ -218,12 +219,12 @@ def volume_xml(unique: Callable[..., Any]) -> Callable[[StoragePool], str]:
 
 
 @pytest.fixture
-def volume_factory(volume_xml: Callable[[StoragePool], str]) -> Callable[[StoragePool], Volume]:
+def volume_factory(volume_xml: Callable[[StoragePool, int], str]) -> Callable[[StoragePool], Volume]:
     '''Provide a function that defines volumes given a storage pool, name, and size.
 
        The storage pool used should be a directory type pool.'''
-    def inner(pool: StoragePool) -> Volume:
-        return pool.defineVolume(volume_xml(pool))
+    def inner(pool: StoragePool, size: int = 1024 * 1024) -> Volume:
+        return pool.defineVolume(volume_xml(pool, size))
 
     return inner
 

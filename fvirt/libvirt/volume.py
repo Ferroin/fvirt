@@ -226,7 +226,10 @@ class Volume(ConfigurableEntity):
 
            This only ensures that subsequent accesses through libvirt
            will not read back the original data, not that the data is
-           securely erased on physical media.'''
+           securely erased on physical media.
+
+           The exact mechanism used to achieve this is not strictly
+           defined, so this may be a long running operation.'''
         self._check_valid()
 
         try:
