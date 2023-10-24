@@ -72,6 +72,32 @@ def check_default_columns(cols: Mapping[str, Column], default: Sequence[str]) ->
         assert k in cols
 
 
+def check_list_entry(line: str, obj: Entity, cols: Sequence[Column]) -> None:
+    '''Check a single entry in the list command output.'''
+    values = line.split()
+
+    assert len(values) == len(cols)
+
+    for v, c in zip(values, cols):
+        assert v == c.color(getattr(obj, c.prop, None))
+
+
+def check_list_output(output: str, obj: Entity, cols: Sequence[Column]) -> None:
+    '''Check that the list command works correctly.'''
+    lines = output.splitlines()
+
+    headings = lines[0].split()
+
+    assert len(headings) == len(cols)
+
+    for h, c in zip(headings, cols):
+        assert h == c.title
+
+    assert re.match('^-+?$', lines[1])
+
+    check_list_entry(lines[2], obj, cols)
+
+
 def check_info_items(items: tuple[InfoItem, ...], sample: Entity) -> None:
     '''Check that a list of info items is valid for a given entity.'''
     assert isinstance(items, tuple)
