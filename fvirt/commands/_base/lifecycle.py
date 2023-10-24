@@ -101,6 +101,7 @@ class LifecycleCommand(MatchCommand):
                         match=match,
                         entity=entity,
                         ctx=ctx,
+                        parent=parent_obj.name,
                     )]
                 else:
                     futures = [state.pool.submit(
