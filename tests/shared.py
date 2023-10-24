@@ -10,8 +10,14 @@ import pytest
 from lxml import etree
 
 
-def compare_xml_trees(e1: etree._Element, e2: etree._Element) -> None:
+def compare_xml_trees(e1: etree._Element | etree._ElementTree, e2: etree._Element | etree._ElementTree) -> None:
     '''Compare two lxml.etree trees against each other.'''
+    if isinstance(e1, etree._ElementTree):
+        e1 = e1.getroot()
+
+    if isinstance(e2, etree._ElementTree):
+        e2 = e2.getroot()
+
     assert e1.tag == e2.tag
 
     if e1.text is None:

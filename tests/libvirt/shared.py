@@ -8,10 +8,25 @@ from __future__ import annotations
 from collections.abc import Iterable, Mapping, Sequence
 from typing import Any, Type
 
+from lxml import etree
+
 from fvirt.libvirt import Hypervisor, LifecycleResult
 from fvirt.libvirt.entity import ConfigurableEntity, Entity, RunnableEntity
 from fvirt.libvirt.entity_access import EntityAccess, EntityMap
 from fvirt.util.match import MatchAlias, MatchArgument
+
+XSLT_DATA = '''
+<?xml version='1.1'?>
+<xsl:stylesheet xmlns:xsl='http://www.w3.org/1999/XSL/Transform' version='1.0'>
+    <xsl:output method='xml' encoding='utf-8'/>
+    <xsl:template match="node()|@*">
+        <xsl:copy>
+            <xsl:apply-templates select="node()|@*"/>
+        </xsl:copy>
+    </xsl:template>
+    <xsl:template match='{path}/text()'>{value}</xsl:template>
+</xsl:stylesheet>
+'''.lstrip().rstrip()
 
 
 def check_match_aliases(aliases: Mapping[str, MatchAlias], entity: Entity) -> None:
@@ -123,6 +138,18 @@ def check_undefine(parent: Hypervisor | Entity, prop: str, entity: ConfigurableE
     assert result == LifecycleResult.SUCCESS
     assert entity.valid == should_be_valid
     assert getattr(parent, prop).get(name) is None
+
+
+def check_xslt(target: ConfigurableEntity, path: str, value: str, prop: str) -> None:
+    '''Check that applying an XSLT document to an entity works.'''
+    old_value = getattr(target, prop)
+    target.applyXSLT(etree.XSLT(etree.XML(XSLT_DATA.format(path=path, value=value))))
+
+    assert getattr(target, prop) == value, target.configRaw
+
+    target.applyXSLT(etree.XSLT(etree.XML(XSLT_DATA.format(path=path, value=old_value))))
+
+    assert getattr(target, prop) == old_value, target.configRaw
 
 
 def check_entity_access_iterable(ea: EntityAccess, target_cls: Type[Entity]) -> None:

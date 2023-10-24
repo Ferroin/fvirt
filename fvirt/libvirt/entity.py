@@ -34,7 +34,7 @@ class Entity(ABC):
        entity’s context will ensure that the Hypervisor instance it
        is tied to is connected, and that the entity itself is valid.'''
     __slots__ = [
-        '__entity',
+        '_entity',
         '_hv',
         '_parent',
         '_valid',
@@ -50,7 +50,7 @@ class Entity(ABC):
 
         self._hv.open()
 
-        self.__entity = entity
+        self._entity = entity
         self._valid = True
 
     def __del__(self: Self) -> None:
@@ -105,17 +105,6 @@ class Entity(ABC):
     def _mark_invalid_on_undefine(self: Self) -> bool:
         '''Whether or not the Entity should be marked invalid when undefined.'''
         return False
-
-    @final
-    @property
-    def _entity(self: Self) -> Any:
-        '''The underlying libvirt object that this class is wrapping.
-
-           This is provided so that users can work around our bindings
-           not providing some function they need, but it’s usage is
-           generally discouraged as calling certain methods will cause
-           the encapsulating Entity instance to stop working correctly.'''
-        return self.__entity
 
     @final
     @property
@@ -227,22 +216,22 @@ class ConfigurableEntity(Entity):
         if define is None:
             raise RuntimeError(f'Could not find define method { self._define_method } on target instance.')
 
-        self.__entity = define(config).__entity
+        self._entity = define(config)._entity
 
         self._valid = True
 
     @property
-    def config(self: Self) -> etree._Element:
+    def config(self: Self) -> etree._ElementTree:
         '''The XML configuration of the Entity as an lxml.etree.Element instnce.
 
            Writing to this property will attempt to redefine the Entity
            with the specified config.
 
            For the raw XML as a string, use the rawConfig property.'''
-        return etree.fromstring(self.configRaw)
+        return etree.ElementTree(etree.fromstring(self.configRaw))
 
     @config.setter
-    def config(self: Self, config: etree._Element) -> None:
+    def config(self: Self, config: etree._Element | etree._ElementTree) -> None:
         '''Recreate the Entity with the specified XML configuration.'''
         self.configRaw = etree.tostring(config, encoding='unicode')
 
@@ -370,7 +359,7 @@ class ConfigurableEntity(Entity):
 
            This handles reading the config, applying the transformation,
            and then saving the config, all as one operation.'''
-        self.configRaw = str(xslt(self.config))
+        self.config = xslt(self.config)
 
 
 class RunnableEntity(Entity):

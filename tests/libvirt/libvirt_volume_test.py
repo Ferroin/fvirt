@@ -21,7 +21,7 @@ from fvirt.libvirt.volume import MATCH_ALIASES, Volume
 from fvirt.util.match import MatchTarget
 
 from .shared import (check_entity_access_get, check_entity_access_iterable, check_entity_access_mapping,
-                     check_entity_access_match, check_entity_format, check_match_aliases, check_undefine)
+                     check_entity_access_match, check_entity_format, check_match_aliases, check_undefine, check_xslt)
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -222,6 +222,12 @@ def test_resize_shrink_relative(live_volume: Volume) -> None:
 
     assert result is LifecycleResult.SUCCESS
     assert live_volume.capacity == size
+
+
+@pytest.mark.xfail(reason='Not yet implemented.')
+def test_xslt(live_volume: Volume) -> None:
+    '''Check that applying an XSLT document to a volume works correctly.'''
+    assert False
 
 
 @pytest.mark.libvirtd

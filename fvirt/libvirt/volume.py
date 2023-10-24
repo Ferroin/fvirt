@@ -108,7 +108,7 @@ class Volume(ConfigurableEntity):
 
     @property
     def _define_target(self: Self) -> StoragePool:
-        return cast(StoragePool, self._parent)
+        return self._parent  # type: ignore
 
     @property
     def _define_method(self: Self) -> str:
