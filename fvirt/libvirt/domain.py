@@ -470,19 +470,21 @@ class DomainAccess(EntityAccess, Domains):
     def get(self: Self, key: Any) -> Domain | None:
         '''Look up a domain by a general identifier.
 
-           This tries, in order, looking up by name, then by UUID,
-           then by ID. If it can't find a domain based on that key,
+           This tries, in order, looking up by ID, then by name, then
+           by UUID. If it can't find a domain based on that key,
            it returns None.'''
-        ret = cast(Domain | None, super().get(key))
+        ret: Domain | None = None
+
+        if isinstance(key, int):
+            ret = self.by_id.get(key, None)
+        elif isinstance(key, str) or isinstance(key, float):
+            try:
+                ret = self.by_id.get(int(key), None)
+            except ValueError:
+                pass
 
         if ret is None:
-            if isinstance(key, int):
-                ret = self.by_id.get(key, None)
-            elif isinstance(key, str) or isinstance(key, float):
-                try:
-                    ret = self.by_id.get(int(key), None)
-                except ValueError:
-                    pass
+            ret = cast(Domain | None, super().get(key))
 
         return ret
 
