@@ -16,7 +16,7 @@ from .objects import is_object_mixin
 from ...util.match import MatchAlias, MatchTarget
 from ...util.tables import Column, ColumnsParam, column_info, render_table, tabulate_entities
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     import re
 
     from collections.abc import Mapping, Sequence

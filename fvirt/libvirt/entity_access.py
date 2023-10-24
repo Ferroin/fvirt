@@ -14,7 +14,7 @@ import libvirt
 
 from .entity import ConfigurableEntity, Entity
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from .hypervisor import Hypervisor
     from ..util.match import MatchArgument
 

@@ -18,7 +18,7 @@ from .._base.objects import DomainMixin
 from ...libvirt.domain import Domain
 from ...util.terminal import get_terminal
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from .._base.state import State
 
 # The IO loop we use for relaying data between the console and the libvirt

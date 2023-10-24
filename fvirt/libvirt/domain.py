@@ -19,7 +19,7 @@ from .exceptions import EntityNotRunning, InvalidOperation
 from .stream import Stream
 from ..util.match import MatchAlias
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from collections.abc import Iterable
 
     from .hypervisor import Hypervisor

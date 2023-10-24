@@ -13,7 +13,7 @@ import click
 from .exitcode import ExitCode
 from ...libvirt.entity_access import EntityAccess
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from collections.abc import Iterable
 
     from ...libvirt import Hypervisor

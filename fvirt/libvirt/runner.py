@@ -24,7 +24,7 @@ from .events import start_libvirt_event_thread
 from .hypervisor import Hypervisor
 from .uri import URI
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from collections.abc import Callable, Mapping, Sequence
 
 I1 = TypeVar('I1', bound=Union[str, int, UUID])
