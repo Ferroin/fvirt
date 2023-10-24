@@ -27,3 +27,10 @@ def test_lazy_load(cli_runner: CliRunner) -> None:
 def test_check_lazy_command_list() -> None:
     '''Further checks for lazy loading of commands.'''
     check_lazy_commands(domain, SRC_ROOT / 'fvirt' / 'commands' / 'domain')
+
+
+def test_help_aliases(cli_runner: CliRunner) -> None:
+    '''Check that we have an aliases help topic.'''
+    # TODO: Should be extended to cross-check against alias list.
+    result = cli_runner.invoke(cli, ('domain', 'help', 'aliases'))
+    assert result.exit_code == 0
