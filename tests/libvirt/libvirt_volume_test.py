@@ -169,10 +169,15 @@ def test_resize_shrink(live_volume: Volume) -> None:
     assert result is LifecycleResult.SUCCESS
     assert live_volume.capacity == size
 
-    result = live_volume.resize(size - 4096, shrink=True, allocate=True)
+    # We need to enlarge the volume without allocation before actually
+    # testing shrinking, because some storage drivers won’t let you
+    # shrink below allocated size.
+    result = live_volume.resize(size + 4096, allocate=False)
+    assert result is LifecycleResult.SUCCESS
+    result = live_volume.resize(size, shrink=True)
 
-    # Failure is expected in this case because our test volume is a type that libvirt refuses to shrink.
-    assert result is LifecycleResult.FAILURE
+    assert result is LifecycleResult.SUCCESS
+    assert live_volume.capacity == size
 
 
 @pytest.mark.libvirtd
@@ -189,10 +194,15 @@ def test_resize_shrink_relative(live_volume: Volume) -> None:
     assert result is LifecycleResult.SUCCESS
     assert live_volume.capacity == size
 
-    result = live_volume.resize(4096, shrink=True, delta=True, allocate=True)
+    # We need to enlarge the volume without allocation before actually
+    # testing shrinking, because some storage drivers won’t let you
+    # shrink below allocated size.
+    result = live_volume.resize(4096, delta=True, allocate=False)
+    assert result is LifecycleResult.SUCCESS
+    result = live_volume.resize(4096, delta=True, shrink=True)
 
-    # Failure is expected in this case because our test volume is a type that libvirt refuses to shrink.
-    assert result is LifecycleResult.FAILURE
+    assert result is LifecycleResult.SUCCESS
+    assert live_volume.capacity == size
 
 
 @pytest.mark.libvirtd
