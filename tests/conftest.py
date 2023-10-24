@@ -68,7 +68,7 @@ def live_hv(live_uri: str) -> Hypervisor:
 def dom_xml(unique: Callable[..., Any]) -> Callable[[], str]:
     '''Provide a factory that produces domain XML strings.'''
     def inner() -> str:
-        name = unique('text', prefix='fvirt-test-')
+        name = unique('text', prefix='fvirt-test')
         uuid = unique('uuid')
 
         return f'''
@@ -127,7 +127,7 @@ def test_dom(
 def pool_xml(unique: Callable[..., Any], tmp_path: Path) -> Callable[[], str]:
     '''Provide a factory function that produces storage pool XML strings.'''
     def inner() -> str:
-        name = unique('text', prefix='fvirt-test-')
+        name = unique('text', prefix='fvirt-test')
         uuid = unique('uuid')
         path = tmp_path / name
 
@@ -199,7 +199,7 @@ def volume_xml(unique: Callable[..., Any]) -> Callable[[StoragePool, int], str]:
 
        The storage pool used should be a directory type pool.'''
     def inner(pool: StoragePool, size: int = 1024 * 1024) -> str:
-        name = unique('text', prefix='fvirt-test-')
+        name = unique('text', prefix='fvirt-test')
         size = size
         path = Path(pool.target) / name
 
