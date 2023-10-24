@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Concatenate, ParamSpec, Self, TypeVar
 
 import click
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from collections.abc import Callable, Sequence
 
     from .state import State

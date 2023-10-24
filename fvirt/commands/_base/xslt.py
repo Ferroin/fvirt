@@ -19,7 +19,7 @@ from .objects import is_object_mixin
 from ...libvirt.runner import RunnerResult, run_entity_method, run_sub_entity_method
 from ...util.match import MatchAlias, MatchTarget
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     import re
 
     from collections.abc import Mapping

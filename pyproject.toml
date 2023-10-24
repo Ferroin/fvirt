@@ -20,6 +20,7 @@ lxml = "^4.9.3"
 
 [tool.poetry.group.dev.dependencies]
 bandit = "^1.7.5"
+coverage = "^7.3.2"
 flake8-2020 = "^1.8.1"
 flake8 = "^6.0.0"
 flake8-async = "^22.11.14"
@@ -94,6 +95,13 @@ timeout_method = "thread"
 tmp_path_retention_count = 2
 tmp_path_retention_policy = "failed"
 xfail_strict = true
+
+[tool.coverage.run]
+branch = true
+
+[tool.coverage.report]
+precision = 2
+sort = '-cover'
 
 [build-system]
 requires = ["poetry-core"]

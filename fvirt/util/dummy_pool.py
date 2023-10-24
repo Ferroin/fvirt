@@ -12,7 +12,7 @@ from __future__ import annotations
 from concurrent.futures import Executor, Future
 from typing import TYPE_CHECKING, Any, Self
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from collections.abc import Callable
 
 

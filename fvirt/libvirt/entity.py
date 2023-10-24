@@ -18,7 +18,7 @@ from lxml import etree
 from .descriptors import MethodProperty
 from .exceptions import InsufficientPrivileges, InvalidEntity, NotConnected
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from .hypervisor import Hypervisor
 
 T = TypeVar('T')

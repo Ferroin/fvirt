@@ -21,7 +21,7 @@ from .objects import is_object_mixin
 from ...libvirt import InvalidOperation, LifecycleResult
 from ...libvirt.runner import RunnerResult, run_entity_method, run_sub_entity_method
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from .state import State
     from ...util.match import MatchAlias
 

@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Final, Self
 
 from lxml import etree
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from ..libvirt.entity import ConfigurableEntity
 
 MATCH_HELP: Final = '''fvirt object matching is based on two parameters passed to the --match

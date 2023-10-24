@@ -18,7 +18,7 @@ from typing_extensions import Buffer
 
 from .exceptions import FVirtException, InvalidOperation, PlatformNotSupported
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from .hypervisor import Hypervisor
 
 DEFAULT_BUFFER_SIZE = 256 * 1024  # 256 kiB

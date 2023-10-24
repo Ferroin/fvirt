@@ -13,7 +13,7 @@ import click
 from .command import Command
 from .exitcode import ExitCode
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from collections.abc import Iterable, Mapping
 
     from .group import Group
