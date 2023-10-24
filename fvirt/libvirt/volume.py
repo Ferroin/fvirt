@@ -279,7 +279,7 @@ class Volume(ConfigurableEntity):
 
         if shrink:
             flags |= libvirt.VIR_STORAGE_VOL_RESIZE_SHRINK
-        elif capacity < self.capacity:
+        elif not delta and capacity < self.capacity:
             raise ValueError(f'{ capacity } is less than current volume size and shrink is False.')
 
         if delta:

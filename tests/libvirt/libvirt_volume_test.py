@@ -97,10 +97,102 @@ def test_wipe() -> None:
 
 
 @pytest.mark.libvirtd
-@pytest.mark.xfail(reason='Not yet implemented.')
-def test_reset() -> None:
-    '''Test that resizing volumes works correctly.'''
-    assert False
+def test_resize_invalid(live_volume: Volume) -> None:
+    '''Test that resizing volumes fails correctly in invalid cases.'''
+    with pytest.raises(ValueError, match=' is not an integer.'):
+        live_volume.resize('')  # type: ignore
+
+    with pytest.raises(ValueError, match='Capacity must be non-negative.'):
+        live_volume.resize(-1)
+
+    with pytest.raises(ValueError, match='Capacity must be non-negative.'):
+        live_volume.resize(-1, delta=True)
+
+    with pytest.raises(ValueError, match='Capacity must be non-negative.'):
+        live_volume.resize(-1, shrink=True)
+
+    with pytest.raises(ValueError, match='1024 is less than current volume size and shrink is False'):
+        live_volume.resize(1024)
+
+
+@pytest.mark.libvirtd
+def test_resize_absolute(live_volume: Volume) -> None:
+    '''Test that resizing volumes works correctly with absolute sizes.'''
+    size = live_volume.capacity
+    result = live_volume.resize(size, idempotent=False)
+
+    assert result is LifecycleResult.NO_OPERATION
+    assert live_volume.capacity == size
+
+    result = live_volume.resize(size)
+
+    assert result is LifecycleResult.SUCCESS
+    assert live_volume.capacity == size
+
+    result = live_volume.resize(size + 4096)
+
+    assert result is LifecycleResult.SUCCESS
+    assert live_volume.capacity == size + 4096
+
+
+@pytest.mark.libvirtd
+def test_resize_relative(live_volume: Volume) -> None:
+    '''Test that resizing volumes works correctly with relative sizes.'''
+    size = live_volume.capacity
+    result = live_volume.resize(0, delta=True, idempotent=False)
+
+    assert result is LifecycleResult.NO_OPERATION
+    assert live_volume.capacity == size
+
+    result = live_volume.resize(0, delta=True)
+
+    assert result is LifecycleResult.SUCCESS
+    assert live_volume.capacity == size
+
+    result = live_volume.resize(4096, delta=True)
+
+    assert result is LifecycleResult.SUCCESS
+    assert live_volume.capacity == size + 4096
+
+
+@pytest.mark.libvirtd
+def test_resize_shrink(live_volume: Volume) -> None:
+    '''Test that shrinking volumes works correctly with absolute sizes.'''
+    size = live_volume.capacity
+    result = live_volume.resize(size, shrink=True, idempotent=False)
+
+    assert result is LifecycleResult.NO_OPERATION
+    assert live_volume.capacity == size
+
+    result = live_volume.resize(size, shrink=True)
+
+    assert result is LifecycleResult.SUCCESS
+    assert live_volume.capacity == size
+
+    result = live_volume.resize(size - 4096, shrink=True, allocate=True)
+
+    # Failure is expected in this case because our test volume is a type that libvirt refuses to shrink.
+    assert result is LifecycleResult.FAILURE
+
+
+@pytest.mark.libvirtd
+def test_resize_shrink_relative(live_volume: Volume) -> None:
+    '''Test that shrinking volumes works correctly with relative sizes.'''
+    size = live_volume.capacity
+    result = live_volume.resize(0, shrink=True, delta=True, idempotent=False)
+
+    assert result is LifecycleResult.NO_OPERATION
+    assert live_volume.capacity == size
+
+    result = live_volume.resize(0, shrink=True, delta=True)
+
+    assert result is LifecycleResult.SUCCESS
+    assert live_volume.capacity == size
+
+    result = live_volume.resize(4096, shrink=True, delta=True, allocate=True)
+
+    # Failure is expected in this case because our test volume is a type that libvirt refuses to shrink.
+    assert result is LifecycleResult.FAILURE
 
 
 @pytest.mark.libvirtd
