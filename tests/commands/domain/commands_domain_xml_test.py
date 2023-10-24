@@ -9,20 +9,19 @@ from typing import TYPE_CHECKING
 
 from lxml import etree
 
-from fvirt.cli import cli
-
 from ...shared import compare_xml_trees
 
 if TYPE_CHECKING:
-    from click.testing import CliRunner
+    from collections.abc import Callable, Sequence
+
+    from click.testing import Result
 
     from fvirt.libvirt import Hypervisor
 
 
-def test_command_run(cli_runner: CliRunner, test_hv: Hypervisor) -> None:
+def test_command_run(runner: Callable[[Sequence[str], int], Result], test_hv: Hypervisor) -> None:
     '''Test that the command runs correctly.'''
-    result = cli_runner.invoke(cli, ('-c', str(test_hv.uri), 'domain', 'xml', '1'))
-    assert result.exit_code == 0
+    result = runner(('-c', str(test_hv.uri), 'domain', 'xml', '1'), 0)
     assert len(result.output) > 0
 
     output_xml = etree.XML(result.output)

@@ -7,21 +7,21 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from fvirt.cli import cli
 from fvirt.commands.domain import domain
 
 from ..shared import SRC_ROOT, check_lazy_commands
 
 if TYPE_CHECKING:
-    from click.testing import CliRunner
+    from collections.abc import Callable, Sequence
+
+    from click.testing import Result
 
 
-def test_lazy_load(cli_runner: CliRunner) -> None:
+def test_lazy_load(runner: Callable[[Sequence[str], int], Result]) -> None:
     '''Test that lazy loading is working at a basic level.
 
        Also checks the help command.'''
-    result = cli_runner.invoke(cli, ['domain', 'help'])
-    assert result.exit_code == 0
+    runner(('domain', 'help'), 0)
 
 
 def test_check_lazy_command_list() -> None:
@@ -29,8 +29,7 @@ def test_check_lazy_command_list() -> None:
     check_lazy_commands(domain, SRC_ROOT / 'fvirt' / 'commands' / 'domain')
 
 
-def test_help_aliases(cli_runner: CliRunner) -> None:
+def test_help_aliases(runner: Callable[[Sequence[str], int], Result]) -> None:
     '''Check that we have an aliases help topic.'''
     # TODO: Should be extended to cross-check against alias list.
-    result = cli_runner.invoke(cli, ('domain', 'help', 'aliases'))
-    assert result.exit_code == 0
+    runner(('domain', 'help', 'aliases'), 0)

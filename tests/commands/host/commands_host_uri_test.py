@@ -7,14 +7,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from fvirt.cli import cli
-
 if TYPE_CHECKING:
-    from click.testing import CliRunner
+    from collections.abc import Callable, Sequence
+
+    from click.testing import Result
 
 
-def test_uri(cli_runner: CliRunner, test_uri: str) -> None:
+def test_uri(runner: Callable[[Sequence[str], int], Result], test_uri: str) -> None:
     '''Test that the host uri command properly reports the URI.'''
-    result = cli_runner.invoke(cli, ['-c', test_uri, 'host', 'uri'])
-    assert result.exit_code == 0
+    result = runner(('-c', test_uri, 'host', 'uri'), 0)
     assert result.output == f'{ test_uri }\n'

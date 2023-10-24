@@ -9,22 +9,21 @@ from typing import TYPE_CHECKING
 
 from lxml import etree
 
-from fvirt.cli import cli
-
 from ...shared import compare_xml_trees
 
 if TYPE_CHECKING:
-    from click.testing import CliRunner
+    from collections.abc import Callable, Sequence
+
+    from click.testing import Result
 
     from fvirt.libvirt import StoragePool
 
 
-def test_command_run(cli_runner: CliRunner, live_pool: StoragePool) -> None:
+def test_command_run(runner: Callable[[Sequence[str], int], Result], live_pool: StoragePool) -> None:
     '''Test that the command runs correctly.'''
     uri = str(live_pool._hv.uri)
 
-    result = cli_runner.invoke(cli, ('-c', uri, 'pool', 'xml', live_pool.name))
-    assert result.exit_code == 0
+    result = runner(('-c', uri, 'pool', 'xml', live_pool.name), 0)
     assert len(result.output) > 0
 
     output_xml = etree.XML(result.output)

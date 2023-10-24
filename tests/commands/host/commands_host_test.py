@@ -7,21 +7,21 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from fvirt.cli import cli
 from fvirt.commands.host import host
 
 from ..shared import SRC_ROOT, check_lazy_commands
 
 if TYPE_CHECKING:
-    from click.testing import CliRunner
+    from collections.abc import Callable, Sequence
+
+    from click.testing import Result
 
 
-def test_lazy_load(cli_runner: CliRunner) -> None:
+def test_lazy_load(runner: Callable[[Sequence[str], int], Result]) -> None:
     '''Test that lazy loading is working at a basic level.
 
        Also checks the help command.'''
-    result = cli_runner.invoke(cli, ['host', 'help'])
-    assert result.exit_code == 0
+    runner(('host', 'help'), 0)
 
 
 def test_check_lazy_command_list() -> None:
