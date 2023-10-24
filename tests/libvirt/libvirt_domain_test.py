@@ -182,6 +182,12 @@ def test_domain_console() -> None:
     assert False
 
 
+@pytest.mark.xfail(reason='Cannot be tested without live domain testing.')
+def test_domain_xslt(test_domain: Domain) -> None:
+    '''Test that applying an XSLT document to a domain modifies it.'''
+    assert False
+
+
 def test_domain_access_iterable(test_hv: Hypervisor, serial: Callable[[str], _GeneratorContextManager[None]]) -> None:
     '''Test domain entity access behavior.'''
     with serial('domain'):

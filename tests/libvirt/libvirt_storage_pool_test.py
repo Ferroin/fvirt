@@ -20,7 +20,7 @@ from fvirt.libvirt.storage_pool import MATCH_ALIASES, StoragePool
 from fvirt.util.match import MatchArgument, MatchTarget
 
 from .shared import (check_entity_access_get, check_entity_access_iterable, check_entity_access_mapping, check_entity_access_match,
-                     check_entity_format, check_match_aliases, check_runnable_destroy, check_runnable_start, check_undefine)
+                     check_entity_format, check_match_aliases, check_runnable_destroy, check_runnable_start, check_undefine, check_xslt)
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -137,6 +137,12 @@ def test_delete(
 
     assert isinstance(result, LifecycleResult)
     assert result == LifecycleResult.FAILURE
+
+
+@pytest.mark.xfail(reason='Apparent bug in libvirt breaks this.')
+def test_xslt(live_pool: StoragePool) -> None:
+    '''Check that applying an XSLT document to a pool works correctly.'''
+    check_xslt(live_pool, '/target/path', '/test', 'target')
 
 
 def test_pool_access_iterable(test_hv: Hypervisor, serial: Callable[[str], _GeneratorContextManager[None]]) -> None:
