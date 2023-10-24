@@ -90,10 +90,29 @@ def test_delete(live_volume: Volume) -> None:
 
 
 @pytest.mark.libvirtd
-@pytest.mark.xfail(reason='Not yet implemented.')
-def test_wipe() -> None:
+@pytest.mark.slow
+def test_wipe(live_pool: StoragePool, volume_factory: Callable[[StoragePool, int], Volume]) -> None:
     '''Test that wiping volumes works correctly.'''
-    assert False
+    vol = volume_factory(live_pool, 65536)  # Smaller than default intentionally to speed up the test.
+
+    try:
+        path = Path(vol.path)
+        size = vol.capacity
+        data = b'\x00\x55\xAA\xFF' * (size // 4)
+
+        path.write_bytes(data)
+        live_pool.refresh()
+
+        result = vol.wipe()
+
+        assert result == LifecycleResult.SUCCESS
+        assert vol.capacity == size
+
+        wiped_data = path.read_bytes()
+
+        assert wiped_data != data
+    finally:
+        vol.undefine()
 
 
 @pytest.mark.libvirtd
