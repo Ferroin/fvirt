@@ -81,9 +81,6 @@ class MatchTarget:
             if hasattr(entity, self.property):
                 ret = getattr(entity, self.property, '')
 
-                if hasattr(ret, '__get__'):
-                    ret = ret.__get__(entity)
-
                 return str(ret)
             else:
                 return ''

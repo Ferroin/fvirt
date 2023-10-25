@@ -55,8 +55,6 @@ class ReadDescriptor(Generic[T], ABC):
 
                 if fb is None:
                     raise AttributeError(f'{ repr(instance) }:{ repr(self) }')
-                elif hasattr(fb, '__get__'):
-                    return self._type(fb.__get__(instance))
                 else:
                     return self._type(fb)
             else:

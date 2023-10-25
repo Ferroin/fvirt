@@ -64,8 +64,6 @@ class Entity(ABC):
 
             if prop_value is None:
                 continue
-            elif hasattr(prop_value, '__get__'):
-                fmt_args[prop] = prop_value.__get__(self)
             else:
                 fmt_args[prop] = prop_value
 
