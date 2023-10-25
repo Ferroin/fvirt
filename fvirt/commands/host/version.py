@@ -29,7 +29,7 @@ be reported, in which case this command will show a version of UNKNOWN.
 
 def cb(ctx: click.Context, state: State) -> None:
     with state.hypervisor as hv:
-        click.echo(f'libvirt: v{ str(hv.libVersion) }')
+        click.echo(f'libvirt: v{ str(hv.lib_version) }')
 
         if hv.uri.driver is not None:
             driver = hv.uri.driver.value

@@ -147,11 +147,11 @@ class Hypervisor:
        Hypervisor instances are considered to be equal if their read_only
        attributes are the same and they were instantiated with equal URIs.
 
-       Domains can be accessed via the `domains`, `domains_by_name`,
-       `domains_by_id`, or `domains_by_uuid` properties.
+       Domains can be accessed via the `domains` property using the
+       EntityAccess protocol.
 
-       Storage pools can be accessed via the `pools`, `pools_by_name`,
-       or `pools_by_uuid` properties.
+       Storage pools can be accessed via the `storage_pools` property
+       using the EntityAccess protocol.
 
        Internal state is protected from concurrent access using a
        threading.RLock instance. This means that Hypervisor instances are
@@ -173,7 +173,7 @@ class Hypervisor:
 
         self.__domains = DomainAccess(self)
 
-        self.__pools = StoragePoolAccess(self)
+        self.__storage_pools = StoragePoolAccess(self)
 
     def __del__(self: Self) -> None:
         with self.__lock:
@@ -235,7 +235,7 @@ class Hypervisor:
             return URI.from_string(self._connection.getURI())
 
     @property
-    def libVersion(self: Self) -> VersionNumber:
+    def lib_version(self: Self) -> VersionNumber:
         '''The version information of the remote libvirt instance.'''
         with self:
             assert self._connection is not None
@@ -273,11 +273,11 @@ class Hypervisor:
         return self.__domains
 
     @property
-    def pools(self: Self) -> StoragePoolAccess:
+    def storage_pools(self: Self) -> StoragePoolAccess:
         '''Entity access to all pools defined by the Hypervisor.
 
            Automatically manages a connection when accessed.'''
-        return self.__pools
+        return self.__storage_pools
 
     @property
     def host_info(self: Self) -> HostInfo:
@@ -368,7 +368,7 @@ class Hypervisor:
             if self.__conn_count < 0:
                 self.__conn_count = 0
 
-    def defineDomain(self: Self, config: str) -> Domain:
+    def define_domain(self: Self, config: str) -> Domain:
         '''Define a domain from an XML config string.
 
            Raises fvirt.libvirt.NotConnected if called on a Hypervisor
@@ -382,7 +382,7 @@ class Hypervisor:
 
         return cast(Domain, self.__define_entity(Domain, 'defineXMLFlags', config, 0))
 
-    def createDomain(self: Self, config: str, paused: bool = False, reset_nvram: bool = False, auto_destroy: bool = False) -> Domain:
+    def create_domain(self: Self, config: str, paused: bool = False, reset_nvram: bool = False, auto_destroy: bool = False) -> Domain:
         '''Create a domain from an XML config string.
 
            If `paused` is True, the domain will be started in the paused state.
@@ -417,7 +417,7 @@ class Hypervisor:
 
         return cast(Domain, self.__define_entity(Domain, 'createXML', config, flags))
 
-    def defineStoragePool(self: Self, config: str) -> StoragePool:
+    def define_storage_pool(self: Self, config: str) -> StoragePool:
         '''Define a storage pool from an XML config string.
 
            Raises fvirt.libvirt.NotConnected if called on a Hypervisor
@@ -432,7 +432,7 @@ class Hypervisor:
 
         return cast(StoragePool, self.__define_entity(StoragePool, 'storagePoolDefineXML', config, 0))
 
-    def createStoragePool(self: Self, config: str, build: bool = True, overwrite: bool | None = None) -> StoragePool:
+    def create_storage_pool(self: Self, config: str, build: bool = True, overwrite: bool | None = None) -> StoragePool:
         '''Create a storage pool from an XML config string.
 
            If `build` is True, then the pool will also be built during creation.

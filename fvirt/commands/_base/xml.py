@@ -37,7 +37,7 @@ class XMLCommand(Command):
                 else:
                     e = self.get_entity(ctx, hv, entity)
 
-                xml = e.configRaw.rstrip().lstrip()
+                xml = e.config_raw.rstrip().lstrip()
 
             click.echo(xml)
 

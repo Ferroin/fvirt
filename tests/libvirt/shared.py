@@ -143,13 +143,13 @@ def check_undefine(parent: Hypervisor | Entity, prop: str, entity: Entity) -> No
 def check_xslt(target: Entity, path: str, value: str, prop: str) -> None:
     '''Check that applying an XSLT document to an entity works.'''
     old_value = getattr(target, prop)
-    target.applyXSLT(etree.XSLT(etree.XML(XSLT_DATA.format(path=path, value=value))))
+    target.apply_xslt(etree.XSLT(etree.XML(XSLT_DATA.format(path=path, value=value))))
 
-    assert getattr(target, prop) == value, target.configRaw
+    assert getattr(target, prop) == value, target.config_raw
 
-    target.applyXSLT(etree.XSLT(etree.XML(XSLT_DATA.format(path=path, value=old_value))))
+    target.apply_xslt(etree.XSLT(etree.XML(XSLT_DATA.format(path=path, value=old_value))))
 
-    assert getattr(target, prop) == old_value, target.configRaw
+    assert getattr(target, prop) == old_value, target.config_raw
 
 
 def check_entity_access_iterable(ea: EntityAccess, target_cls: Type[Entity]) -> None:

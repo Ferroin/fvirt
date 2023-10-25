@@ -91,7 +91,7 @@ def test_read_only(test_uri: str) -> None:
 
     with pytest.raises(InsufficientPrivileges):
         with test_hv:
-            test_hv.defineDomain('')
+            test_hv.define_domain('')
 
 
 def test_uri(test_hv: Hypervisor, test_uri: str) -> None:
@@ -103,12 +103,12 @@ def test_uri(test_hv: Hypervisor, test_uri: str) -> None:
         test_hv.uri = LIBVIRT_DEFAULT_URI  # type: ignore
 
 
-def test_libVersion(test_hv: Hypervisor) -> None:
-    '''Test that the libVersion property is a VersionNumber.'''
-    assert isinstance(test_hv.libVersion, VersionNumber)
+def test_lib_version(test_hv: Hypervisor) -> None:
+    '''Test that the lib_version property is a VersionNumber.'''
+    assert isinstance(test_hv.lib_version, VersionNumber)
 
     with pytest.raises(AttributeError):
-        test_hv.libVersion = VersionNumber(0, 0, 0)  # type: ignore
+        test_hv.lib_version = VersionNumber(0, 0, 0)  # type: ignore
 
 
 def test_version(test_hv: Hypervisor) -> None:
@@ -152,7 +152,7 @@ def test_host_info(test_hv: Hypervisor) -> None:
 
 @pytest.mark.parametrize('t', (
     'domains',
-    'pools',
+    'storage_pools',
 ))
 def test_entities(test_hv: Hypervisor, t: str) -> None:
     '''Check that entity access attributes exist.'''

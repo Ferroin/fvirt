@@ -135,7 +135,7 @@ def test_dom(
 
        Also ensures it's persistent.'''
     with serial('domain'):
-        dom = test_hv.defineDomain(dom_xml())
+        dom = test_hv.define_domain(dom_xml())
 
     dom.start()
 
@@ -179,7 +179,7 @@ def live_pool(
 
        Also ensures it's persistent.'''
     with serial('pool'):
-        pool = live_hv.defineStoragePool(pool_xml())
+        pool = live_hv.define_storage_pool(pool_xml())
 
     pool.build()
     pool.start()
@@ -203,7 +203,7 @@ def test_pool(
 
        Also ensures it's persistent.'''
     with serial('pool'):
-        pool = test_hv.defineStoragePool(pool_xml())
+        pool = test_hv.define_storage_pool(pool_xml())
 
     pool.build()
     pool.start()
@@ -248,7 +248,7 @@ def volume_factory(volume_xml: Callable[[StoragePool, int], str]) -> Callable[[S
 
        The storage pool used should be a directory type pool.'''
     def inner(pool: StoragePool, size: int = 1024 * 1024) -> Volume:
-        return pool.defineVolume(volume_xml(pool, size))
+        return pool.define_volume(volume_xml(pool, size))
 
     return inner
 

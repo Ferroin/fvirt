@@ -26,13 +26,13 @@ if TYPE_CHECKING:
 
 
 MATCH_ALIASES: Final = {
-    'arch': MatchAlias(property='osArch', desc='Match on the architecture of the domain.'),
+    'arch': MatchAlias(property='os_arch', desc='Match on the architecture of the domain.'),
     'autostart': MatchAlias(property='autostart', desc='Match on whether the domain is set to autostart or not.'),
-    'currentSnapshot': MatchAlias(property='hasCurrentSnapshot', desc='Match on whether the domain has a current snapshot or not.'),
-    'machine': MatchAlias(property='osMachine', desc='Match on the machine type of the domain.'),
-    'managedSave': MatchAlias(property='hasManagedSave', desc='Match on whether the domain has a managed save state or not.'),
+    'current-snapshot': MatchAlias(property='has_current_snapshot', desc='Match on whether the domain has a current snapshot or not.'),
+    'machine': MatchAlias(property='os_machine', desc='Match on the machine type of the domain.'),
+    'managed-save': MatchAlias(property='has_managed_save', desc='Match on whether the domain has a managed save state or not.'),
     'name': MatchAlias(property='name', desc='Match on the name of the domain.'),
-    'osType': MatchAlias(property='osType', desc='Match on the OS type of the domain.'),
+    'os-type': MatchAlias(property='os_type', desc='Match on the OS type of the domain.'),
     'persistent': MatchAlias(property='persistent', desc='Match on whether the domain is persistent or not.'),
     'state': MatchAlias(property='state', desc='Match on the current state of the domain.'),
 }
@@ -49,14 +49,14 @@ def _non_negative_integer(value: int, _instance: Any) -> None:
 def _currentCPUs_validator(value: int, instance: Domain) -> None:
     _non_negative_integer(value, instance)
 
-    if value > instance.maxCPUs:
+    if value > instance.max_cpus:
         raise ValueError('Current CPU count may not exceed max CPU count.')
 
 
 def _memory_validator(value: int, instance: Domain) -> None:
     _non_negative_integer(value, instance)
 
-    if value > instance.maxMemory:
+    if value > instance.max_memory:
         raise ValueError('Memory cannot exceed maxMemory value.')
 
 
@@ -104,18 +104,18 @@ class Domain(RunnableEntity):
         path='./genid',
         type=UUID,
     )
-    osType: ConfigElementProperty[str] = ConfigElementProperty(
+    os_type: ConfigElementProperty[str] = ConfigElementProperty(
         doc='THe OS type of the domain.',
         path='./os/type',
         typ=str,
     )
-    osArch: ConfigAttributeProperty[str] = ConfigAttributeProperty(
+    os_arch: ConfigAttributeProperty[str] = ConfigAttributeProperty(
         doc='The CPU architecture of the domain.',
         path='./os',
         attr='arch',
         typ=str,
     )
-    osMachine: ConfigAttributeProperty[str] = ConfigAttributeProperty(
+    os_machine: ConfigAttributeProperty[str] = ConfigAttributeProperty(
         doc='The machine type of the domain.',
         path='./os',
         attr='machine',
@@ -126,13 +126,13 @@ class Domain(RunnableEntity):
         path='./devices/emulator',
         typ=str,
     )
-    maxCPUs: ConfigElementProperty[int] = ConfigElementProperty(
+    max_cpus: ConfigElementProperty[int] = ConfigElementProperty(
         doc='The maximum number of virtuual CPUs for the domain.',
         path='./vcpu',
         typ=int,
         validator=_non_negative_integer,
     )
-    currentCPUs: ConfigAttributeProperty[int] = ConfigAttributeProperty(
+    current_cpus: ConfigAttributeProperty[int] = ConfigAttributeProperty(
         doc='The current number of virtual CPUs attached to the domain.',
         path='./vcpu',
         attr='current',
@@ -140,14 +140,14 @@ class Domain(RunnableEntity):
         fallback='maxCPUs',
         validator=_currentCPUs_validator,
     )
-    maxMemory: ConfigElementProperty[int] = ConfigElementProperty(
+    max_memory: ConfigElementProperty[int] = ConfigElementProperty(
         doc='The maximum amount of memory that can be allocated to the domain.',
         path='./maxMemory',
         typ=int,
         units_to_bytes=True,
         validator=_non_negative_integer,
     )
-    maxMemorySlots: ConfigAttributeProperty[int] = ConfigAttributeProperty(
+    max_memory_slots: ConfigAttributeProperty[int] = ConfigAttributeProperty(
         doc='The number of memory slots in the domain.',
         path='./maxMemory',
         attr='slots',
@@ -162,7 +162,7 @@ class Domain(RunnableEntity):
         units_to_bytes=True,
         validator=_memory_validator,
     )
-    currentMemory: ConfigElementProperty[int] = ConfigElementProperty(
+    current_memory: ConfigElementProperty[int] = ConfigElementProperty(
         doc='The current memory in use by the domain, not including any reclaimed by a memory balloon.',
         path='./currentMemory',
         typ=int,
@@ -171,16 +171,16 @@ class Domain(RunnableEntity):
         validator=_currentMemory_validator,
     )
     id: MethodProperty[int] = MethodProperty(
-        doc='THe libvirt ID of the domain. Only valid for running domains.',
+        doc='The libvirt ID of the domain. Only valid for running domains.',
         get='ID',
         type=int,
     )
-    hasCurrentSnapshot: MethodProperty[bool] = MethodProperty(
+    has_current_snapshot: MethodProperty[bool] = MethodProperty(
         doc='Whether or not the domain has a current snapshot.',
         get='hasCurrentSnapshot',
         type=bool,
     )
-    hasManagedSave: MethodProperty[bool] = MethodProperty(
+    has_managed_save: MethodProperty[bool] = MethodProperty(
         doc='Whether or not the domain has a managed save state.',
         get='hasManagedSaveImage',
         type=bool,
@@ -217,7 +217,7 @@ class Domain(RunnableEntity):
 
     @property
     def _config_flags(self: Self) -> int:
-        flags: int = libvirt.VIR_DOMAIN_XML_INACTIVE
+        flags = 0
 
         if not self._hv.read_only:
             flags |= libvirt.VIR_DOMAIN_XML_SECURE
@@ -357,7 +357,7 @@ class Domain(RunnableEntity):
         else:
             return LifecycleResult.SUCCESS
 
-    def managedSave(self: Self, idempotent: bool = True) -> LifecycleResult:
+    def managed_save(self: Self, idempotent: bool = True) -> LifecycleResult:
         '''Suspend the domain and save it's state to disk.
 
            On the next start, this saved state will be used to restore
@@ -365,7 +365,7 @@ class Domain(RunnableEntity):
         self._check_valid()
 
         if not self.running:
-            if self.hasManagedSave:
+            if self.has_managed_save:
                 if idempotent:
                     return LifecycleResult.SUCCESS
                 else:

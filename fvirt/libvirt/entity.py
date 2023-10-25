@@ -230,7 +230,7 @@ class Entity(ABC):
         return UUID(get_uuid())
 
     @property
-    def configRaw(self: Self) -> str:
+    def config_raw(self: Self) -> str:
         '''The raw XML configuration of the entity.
 
            Writing to this property will attempt to redefine the Entity
@@ -242,8 +242,8 @@ class Entity(ABC):
 
         return cast(str, self._entity.XMLDesc(self._config_flags))
 
-    @configRaw.setter
-    def configRaw(self: Self, config: str) -> None:
+    @config_raw.setter
+    def config_raw(self: Self, config: str) -> None:
         '''Recreate the entity with the specified raw XML configuration.'''
         if not self._define_method:
             raise ValueError('No method specified to redefine entity.')
@@ -268,14 +268,14 @@ class Entity(ABC):
            with the specified config.
 
            For the raw XML as a string, use the rawConfig property.'''
-        return etree.ElementTree(etree.fromstring(self.configRaw))
+        return etree.ElementTree(etree.fromstring(self.config_raw))
 
     @config.setter
     def config(self: Self, config: etree._Element | etree._ElementTree) -> None:
         '''Recreate the Entity with the specified XML configuration.'''
-        self.configRaw = etree.tostring(config, encoding='unicode')
+        self.config_raw = etree.tostring(config, encoding='unicode')
 
-    def updateConfigElement(self: Self, path: str, text: str, *, reset_units: bool = False) -> bool:
+    def update_config_element(self: Self, path: str, text: str, *, reset_units: bool = False) -> bool:
         '''Update the element at path in config to have a value of text.
 
            `path` should be a valid XPath expression that evaluates to
@@ -310,7 +310,7 @@ class Entity(ABC):
         self.config = config
         return True
 
-    def updateConfigAttribute(self: Self, path: str, attrib: str, value: str) -> bool:
+    def update_config_attribute(self: Self, path: str, attrib: str, value: str) -> bool:
         '''Update the attribute attrib of element at path in config to have a value of value.
 
            `path` should be a valid XPath expression that evaluates to
@@ -374,7 +374,7 @@ class Entity(ABC):
 
         return LifecycleResult.SUCCESS
 
-    def applyXSLT(self: Self, xslt: etree.XSLT) -> None:
+    def apply_xslt(self: Self, xslt: etree.XSLT) -> None:
         '''Apply the given etree.XSLT object to the domain's configuration.
 
            The XSLT document must specify an xsl:output element, and it

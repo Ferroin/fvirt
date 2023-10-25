@@ -27,7 +27,7 @@ Only persistent domains may be saved.
 class _SaveCommand(SimpleLifecycleCommand, DomainMixin):
     '''Class for saving domains.'''
     @property
-    def METHOD(self: Self) -> str: return 'managedSave'
+    def METHOD(self: Self) -> str: return 'managed_save'
 
     @property
     def OP_HELP(self: Self) -> OperationHelpInfo:
