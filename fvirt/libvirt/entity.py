@@ -399,6 +399,14 @@ class RunnableEntity(Entity):
     )
 
     @property
+    @abstractmethod
+    def _config_flags_inactive(self: Self) -> int:
+        '''Configuration flags to use when fetching persistent configuration.
+
+           Must be overridden by child classes.'''
+        return NotImplemented
+
+    @property
     def _format_properties(self: Self) -> set[str]:
         return super()._format_properties | {
             'running',
@@ -408,6 +416,62 @@ class RunnableEntity(Entity):
     @property
     def _mark_invalid_on_undefine(self: Self) -> bool:
         return not self.running
+
+    @property
+    def config_raw(self: Self) -> str:
+        '''The raw persistent XML configuration of the entity.
+
+           If the entity is not persistent, this will return the current
+           live configuration instead.
+
+           If you just want the live configuration regardless, use the
+           config_raw_live or config_live properties.
+
+           Writing to this property will attempt to redefine the Entity
+           with the specified config.
+
+           For pre-parsed XML configuration, use the config property
+           instead.'''
+        self._check_valid()
+
+        if self.persistent:
+            return cast(str, self._entity.XMLDesc(self._config_flags_inactive))
+        else:
+            return self.config_raw_live
+
+    @config_raw.setter
+    def config_raw(self: Self, config: str) -> None:
+        '''Recreate the entity with the specified raw XML configuration.'''
+        if not self._define_method:
+            raise ValueError('No method specified to redefine entity.')
+
+        if self._hv.read_only:
+            raise InsufficientPrivileges
+
+        define = getattr(self._define_target, self._define_method, None)
+
+        if define is None:
+            raise RuntimeError(f'Could not find define method { self._define_method } on target instance.')
+
+        self._entity = define(config)._entity
+
+        self._valid = True
+
+    @property
+    def config_raw_live(self: Self) -> str:
+        '''The raw live XML configuration of the entity.
+
+           For pre-parsed configuration, use the config_live property instead.'''
+        self._check_valid()
+
+        return cast(str, self._entity.XMLDesc(self._config_flags))
+
+    @property
+    def config_live(self: Self) -> etree._ElementTree:
+        '''The live XML configuration of the Entity as an lxml.etree.Element instnce.
+
+           For the raw XML as a string, use the config_raw_live property.'''
+        return etree.ElementTree(etree.fromstring(self.config_raw_live))
 
     @property
     def autostart(self: Self) -> bool | None:

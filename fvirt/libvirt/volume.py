@@ -123,7 +123,7 @@ class Volume(Entity):
 
     @property
     def _define_method(self: Self) -> str:
-        return 'defineVolume'
+        return 'define_volume'
 
     @property
     def _config_flags(self: Self) -> int:

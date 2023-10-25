@@ -119,11 +119,15 @@ class StoragePool(RunnableEntity):
 
     @property
     def _define_method(self: Self) -> str:
-        return 'defineStoragePool'
+        return 'define_storage_pool'
 
     @property
     def _config_flags(self: Self) -> int:
         return 0
+
+    @property
+    def _config_flags_inactive(self: Self) -> int:
+        return cast(int, self._config_flags | libvirt.VIR_STORAGE_POOL_INACTIVE)
 
     @property
     def volumes(self: Self) -> VolumeAccess:
