@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import re
 
-from socket import gethostname
+from socket import getfqdn, gethostname
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -26,9 +26,9 @@ def test_info_output(runner: Callable[[Sequence[str], int], Result], test_uri: s
     result = runner(('-c', test_uri, 'host', 'info'), 0)
     assert len(result.output.splitlines()) == 9
 
-    hostname = re.search(r'^Hostname: ([a-zA-Z0-9][a-zA-Z0-9-]*?)$', result.output, re.MULTILINE)
+    hostname = re.search(r'^Hostname: ([a-zA-Z0-9][a-zA-Z0-9-.]*?)$', result.output, re.MULTILINE)
     assert hostname, 'hostname information not found in output'
-    assert hostname[1] == gethostname()
+    assert hostname[1] in {gethostname(), getfqdn()}
 
     architecture = re.search(r'^CPU Architecture: \w+?$', result.output, re.MULTILINE)
     assert architecture, 'CPU architecture information not found in output'

@@ -173,7 +173,7 @@ def test_render_table_with_titles() -> None:
 def test_columns_param_list(cli_runner: CliRunner, column_test_cmd: click.Command) -> None:
     '''Test list functionality of ColumnsParam.'''
     result = cli_runner.invoke(column_test_cmd, ['--columns', 'list'])
-    assert not result.exception, ''.join(format_exception(*result.exc_info))
+    assert not result.exception, ''.join(format_exception(*result.exc_info))  # type: ignore
     assert result.exit_code == 0, result.output
 
     output_lines = result.output.splitlines()
@@ -185,7 +185,7 @@ def test_columns_param_list(cli_runner: CliRunner, column_test_cmd: click.Comman
 def test_columns_param_all(cli_runner: CliRunner, column_test_cmd: click.Command) -> None:
     '''Test all columns functionality of ColumnsParam.'''
     result = cli_runner.invoke(column_test_cmd, ['--columns', 'all'])
-    assert not result.exception, ''.join(format_exception(*result.exc_info))
+    assert not result.exception, ''.join(format_exception(*result.exc_info))  # type: ignore
     assert result.exit_code == 0, result.output
 
     output_lines = result.output.splitlines()
@@ -202,7 +202,7 @@ def test_columns_param_all(cli_runner: CliRunner, column_test_cmd: click.Command
 def test_columns_param(cli_runner: CliRunner, column_test_cmd: click.Command, cols: Sequence[str]) -> None:
     '''Test column selection functionality of ColumnsParam.'''
     result = cli_runner.invoke(column_test_cmd, ['--columns', ', '.join(cols)])
-    assert not result.exception, ''.join(format_exception(*result.exc_info))
+    assert not result.exception, ''.join(format_exception(*result.exc_info))  # type: ignore
     assert result.exit_code == 0, result.output
 
     output_lines = result.output.splitlines()

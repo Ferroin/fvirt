@@ -5,7 +5,7 @@
 
 from __future__ import annotations
 
-from socket import gethostname
+from socket import getfqdn, gethostname
 from typing import cast
 
 import pytest
@@ -118,9 +118,7 @@ def test_hostname(test_hv: Hypervisor) -> None:
 
     assert isinstance(hostname, str)
 
-    actual_hostname = gethostname()
-
-    assert hostname == actual_hostname
+    assert hostname in {gethostname(), getfqdn()}
 
 
 def test_host_info(test_hv: Hypervisor) -> None:

@@ -21,7 +21,7 @@ from fvirt.libvirt.volume import MATCH_ALIASES, Volume
 from fvirt.util.match import MatchTarget
 
 from .shared import (check_entity_access_get, check_entity_access_iterable, check_entity_access_mapping,
-                     check_entity_access_match, check_entity_format, check_match_aliases, check_undefine, check_xslt)
+                     check_entity_access_match, check_entity_format, check_match_aliases, check_undefine)
 
 if TYPE_CHECKING:
     from collections.abc import Callable
