@@ -14,7 +14,7 @@ import click
 
 from .help import AliasHelpTopic, HelpCommand, HelpTopic
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Mapping, Sequence
 
     from ...util.match import MatchAlias

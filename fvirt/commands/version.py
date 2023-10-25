@@ -13,7 +13,7 @@ from ._base.command import Command
 from ..libvirt import API_VERSION
 from ..version import VERSION
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from ._base.state import State
 
 HELP: Final = '''

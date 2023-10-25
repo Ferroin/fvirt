@@ -19,7 +19,7 @@ from .objects import ObjectMixin, is_object_mixin
 from ...libvirt.exceptions import InvalidConfig
 from ...libvirt.runner import RunnerResult, run_entity_method, run_hv_method
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from collections.abc import Sequence
 
     from .state import State

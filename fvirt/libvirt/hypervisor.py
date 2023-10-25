@@ -290,6 +290,7 @@ class Hypervisor:
            In most cases, it is preferred to use either the context
            manager interface, or property access, both of which will
            handle connections correctly for you.'''
+        # TODO: Figure out some way to test reconnect handling
         def cb(*args: Any, **kwargs: Any) -> None:
             with self.__lock:
                 try:

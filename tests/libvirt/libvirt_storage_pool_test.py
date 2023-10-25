@@ -45,6 +45,24 @@ def test_name(live_pool: StoragePool) -> None:
     assert isinstance(live_pool.name, str)
 
 
+@pytest.mark.xfail(reason='Not yet implemented')
+def test_define() -> None:
+    '''Check that defining a pool works.'''
+    assert False
+
+
+@pytest.mark.xfail(reason='Not yet implemented')
+def test_create() -> None:
+    '''Check that creating a domain works.'''
+    assert False
+
+
+@pytest.mark.libvirtd
+def test_undefine(live_pool: StoragePool) -> None:
+    '''Check that undefining a pool works.'''
+    check_undefine(live_pool._hv, 'pools', live_pool)
+
+
 @pytest.mark.libvirtd
 def test_defineVolume(
         live_pool: StoragePool,
@@ -87,12 +105,6 @@ def test_stop(live_pool: StoragePool) -> None:
 def test_start(live_pool: StoragePool) -> None:
     '''Check that starting a pool works.'''
     check_runnable_start(live_pool)
-
-
-@pytest.mark.libvirtd
-def test_undefine(live_pool: StoragePool) -> None:
-    '''Check that undefining a pool works.'''
-    check_undefine(live_pool._hv, 'pools', live_pool)
 
 
 @pytest.mark.libvirtd

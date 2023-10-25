@@ -14,7 +14,7 @@ import click
 from .command import Command
 from .objects import is_object_mixin
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
     from .state import State

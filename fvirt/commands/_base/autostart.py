@@ -17,7 +17,7 @@ from .objects import is_object_mixin
 from ...libvirt import InsufficientPrivileges
 from ...libvirt.entity import RunnableEntity
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from .state import State
     from ...util.match import MatchAlias
 

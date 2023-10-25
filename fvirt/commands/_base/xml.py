@@ -14,7 +14,7 @@ from .command import Command
 from .objects import is_object_mixin
 from ...libvirt.entity import ConfigurableEntity
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from .state import State
 
 
