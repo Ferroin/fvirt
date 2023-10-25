@@ -13,7 +13,7 @@ from uuid import UUID
 import libvirt
 
 from .descriptors import ConfigAttributeProperty, ConfigElementProperty, MethodProperty
-from .entity import ConfigurableEntity, LifecycleResult, RunnableEntity
+from .entity import LifecycleResult, RunnableEntity
 from .entity_access import BaseEntityAccess, EntityAccess, EntityMap, NameMap, UUIDMap
 from .exceptions import EntityNotRunning, InvalidOperation
 from .stream import Stream
@@ -93,7 +93,7 @@ class DomainState(Enum):
         return self.name.lower()
 
 
-class Domain(ConfigurableEntity, RunnableEntity):
+class Domain(RunnableEntity):
     '''Basic class encapsulating a libvirt domain.
 
        This is a wrapper around a libvirt.virDomain instance. It lacks

@@ -12,7 +12,7 @@ from uuid import UUID
 
 import libvirt
 
-from .entity import ConfigurableEntity, Entity
+from .entity import Entity
 
 if TYPE_CHECKING:
     from .hypervisor import Hypervisor
@@ -203,9 +203,9 @@ class EntityAccess(BaseEntityAccess, Iterable):
 
         return ret
 
-    def match(self: Self, match: MatchArgument) -> Iterable[ConfigurableEntity]:
+    def match(self: Self, match: MatchArgument) -> Iterable[Entity]:
         '''Return an iterable of entities that match given match parameters.'''
-        def f(entity: ConfigurableEntity) -> bool:
+        def f(entity: Entity) -> bool:
             value = match[0].get_value(entity)
             return match[1].match(value) is not None
 

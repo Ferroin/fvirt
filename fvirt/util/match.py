@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Final, Self
 from lxml import etree
 
 if TYPE_CHECKING:
-    from ..libvirt.entity import ConfigurableEntity
+    from ..libvirt.entity import Entity
 
 MATCH_HELP: Final = '''fvirt object matching is based on two parameters passed to the --match
 option of a fvirt command. The first is the match target, and the second
@@ -66,7 +66,7 @@ class MatchTarget:
     xpath: etree.XPath | None = None
     property: str | None = None
 
-    def get_value(self: Self, entity: ConfigurableEntity) -> str:
+    def get_value(self: Self, entity: Entity) -> str:
         '''Get the match target value for the specified entity.'''
         if self.xpath is not None:
             result = self.xpath(entity.config)
