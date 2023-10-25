@@ -65,7 +65,7 @@ class XSLTCommand(MatchCommand):
                         uri=uri,
                         hvprop=self.PARENT_ATTR,
                         parentprop=self.LOOKUP_ATTR,
-                        method='applyXSLT',
+                        method='apply_xslt',
                         ident=(parent_obj.name, e.name),
                         arguments=[xform],
                     ) for e in get_match_or_entity(
@@ -80,7 +80,7 @@ class XSLTCommand(MatchCommand):
                         run_entity_method,  # type: ignore
                         uri=uri,
                         hvprop=self.LOOKUP_ATTR,
-                        method='applyXSLT',
+                        method='apply_xslt',
                         ident=e.name,
                         arguments=[xform],
                     ) for e in get_match_or_entity(

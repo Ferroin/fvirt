@@ -114,7 +114,7 @@ class StoragePool(RunnableEntity):
     def _format_properties(self: Self) -> set[str]:
         return super()._format_properties | {
             'autostart',
-            'numVolumes',
+            'num_volumes',
         }
 
     @property
@@ -131,7 +131,7 @@ class StoragePool(RunnableEntity):
         return self.__volumes
 
     @property
-    def numVolumes(self: Self) -> int | None:
+    def num_volumes(self: Self) -> int | None:
         '''The number of volumes in the pool, or None if the value cannot be determined.'''
         if self.running:
             return len(self.volumes)
@@ -187,7 +187,7 @@ class StoragePool(RunnableEntity):
 
         return LifecycleResult.SUCCESS
 
-    def defineVolume(self: Self, config: str) -> Volume:
+    def define_volume(self: Self, config: str) -> Volume:
         '''Define a volume within the storage pool.
 
            Raises fvirt.libvirt.InvalidConfig if config is not a valid

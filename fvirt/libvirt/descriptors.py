@@ -40,7 +40,7 @@ class ReadDescriptor(Generic[T], ABC):
         self.__doc__ = doc
 
     @final
-    def __get__(self: Self, instance: Any, _owner: Any) -> T:
+    def __get__(self: Self, instance: Entity, _owner: Any) -> T:
         if instance is None:
             return self  # type: ignore
 
@@ -63,7 +63,7 @@ class ReadDescriptor(Generic[T], ABC):
         return self._type(v)
 
     @abstractmethod
-    def _get_value(self: Self, instance: Any) -> Any:
+    def _get_value(self: Self, instance: Entity) -> Any:
         '''Used to retrieve the value for the descriptor.
 
            If the value cannot be found, this should raise an
@@ -93,7 +93,7 @@ class WriteDescriptor(Generic[T]):
         self._validator = validator
 
     @final
-    def __set__(self: Self, instance: Any, value: T) -> None:
+    def __set__(self: Self, instance: Entity, value: T) -> None:
         if hasattr(instance, '_check_valid'):
             instance._check_valid()
 
@@ -101,7 +101,7 @@ class WriteDescriptor(Generic[T]):
         self._set_value(value, instance)
 
     @abstractmethod
-    def _set_value(self: Self, value: T, instance: Any) -> None:
+    def _set_value(self: Self, value: T, instance: Entity) -> None:
         '''Used to set the value for the descriptor.
 
            If the value cannot be set,t his should raise an appropriate
@@ -130,7 +130,7 @@ class MethodProperty(ReadDescriptor[T]):
     def __repr__(self: Self) -> str:
         return f'<MethodProperty: target={ self._target }, get={ self._get }, fallback={ self._fallback }>'
 
-    def _get_value(self: Self, instance: Any) -> Any:
+    def _get_value(self: Self, instance: Entity) -> Any:
         t = getattr(instance, self._target, None)
 
         if t is not None:
@@ -179,7 +179,7 @@ class SettableMethodProperty(MethodProperty[T], WriteDescriptor[T]):
     def __repr__(self: Self) -> str:
         return f'<SettableMethodProperty: target={ self._target }, get={ self._get }, set={ self._set }, fallback={ self._fallback }>'
 
-    def __set_value(self: Self, value: T, instance: Any) -> None:
+    def __set_value(self: Self, value: T, instance: Entity) -> None:
         t = getattr(instance, self._target, None)
 
         if t is not None:
@@ -268,8 +268,8 @@ class ConfigElementProperty(ConfigProperty[T], WriteDescriptor[T]):
     def __repr__(self: Self) -> str:
         return f'<ConfigElementProperty: path={ self._path }, fallback={ self._fallback }>'
 
-    def _set_value(self: Self, value: T, instance: Any) -> None:
-        instance.updateConfigElement(self._path, str(value), reset_units=self._units_to_bytes)
+    def _set_value(self: Self, value: T, instance: Entity) -> None:
+        instance.update_config_element(self._path, str(value), reset_units=self._units_to_bytes)
 
 
 class ConfigAttributeProperty(ReadDescriptor[T], WriteDescriptor[T]):
@@ -299,7 +299,7 @@ class ConfigAttributeProperty(ReadDescriptor[T], WriteDescriptor[T]):
     def __repr__(self: Self) -> str:
         return f'<ConfigAttributeProperty: path={ self._path }, attr={ self._attr }, fallback={ self._fallback }>'
 
-    def _get_value(self: Self, instance: Any) -> Any:
+    def _get_value(self: Self, instance: Entity) -> Any:
         e = instance.config.find(self._path)
 
         if e is None:
@@ -307,5 +307,5 @@ class ConfigAttributeProperty(ReadDescriptor[T], WriteDescriptor[T]):
 
         return e.get(self._attr, default=None)
 
-    def _set_value(self: Self, value: T, instance: Any) -> None:
-        instance.updateConfigAttribute(self._path, self._attr, str(value))
+    def _set_value(self: Self, value: T, instance: Entity) -> None:
+        instance.update_config_attribute(self._path, self._attr, str(value))

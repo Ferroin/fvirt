@@ -22,7 +22,7 @@ INFO_ITEMS: Final = (
     InfoItem(name='Pool Directory', prop='dir', color=COLUMNS['dir'].color),
     InfoItem(name='Pool Device', prop='device', color=COLUMNS['device'].color),
     InfoItem(name='Pool Target', prop='target', color=COLUMNS['target'].color),
-    InfoItem(name='Volumes', prop='numVolumes', color=COLUMNS['volumes'].color),
+    InfoItem(name='Volumes', prop='num_volumes', color=COLUMNS['volumes'].color),
     InfoItem(name='Total Capacity', prop='capacity', color=COLUMNS['capacity'].color, use_units=True),
     InfoItem(name='Allocated Space', prop='allocated', color=COLUMNS['allocated'].color, use_units=True),
     InfoItem(name='Available Space', prop='available', color=COLUMNS['available'].color, use_units=True),

@@ -175,43 +175,43 @@ def test_managed_save(test_dom: Domain) -> None:
     '''Check that the managed save functionality works.'''
     # TODO: Should be redesigned once we have true live domain testing.
     assert test_dom.running == True  # noqa: E712
-    assert test_dom.hasManagedSave == False  # noqa: E712
+    assert test_dom.has_managed_save == False  # noqa: E712
 
-    result = test_dom.managedSave(idempotent=False)
+    result = test_dom.managed_save(idempotent=False)
 
     assert isinstance(result, LifecycleResult)
     assert result == LifecycleResult.SUCCESS
     assert test_dom.running == False  # noqa: E712
-    assert test_dom.hasManagedSave == True  # noqa: E712
+    assert test_dom.has_managed_save == True  # noqa: E712
 
-    result = test_dom.managedSave(idempotent=False)
+    result = test_dom.managed_save(idempotent=False)
 
     assert isinstance(result, LifecycleResult)
     assert result == LifecycleResult.NO_OPERATION
     assert test_dom.running == False  # noqa: E712
-    assert test_dom.hasManagedSave == True  # noqa: E712
+    assert test_dom.has_managed_save == True  # noqa: E712
 
-    result = test_dom.managedSave(idempotent=True)
+    result = test_dom.managed_save(idempotent=True)
 
     assert isinstance(result, LifecycleResult)
     assert result == LifecycleResult.SUCCESS
     assert test_dom.running == False  # noqa: E712
-    assert test_dom.hasManagedSave == True  # noqa: E712
+    assert test_dom.has_managed_save == True  # noqa: E712
 
     result = test_dom.start()
 
     assert isinstance(result, LifecycleResult)
     assert result == LifecycleResult.SUCCESS
     assert test_dom.running == True  # noqa: E712
-    assert test_dom.hasManagedSave == False  # noqa: E712
+    assert test_dom.has_managed_save == False  # noqa: E712
 
     test_dom.destroy()
 
     assert test_dom.running == False  # noqa: E712
-    assert test_dom.hasManagedSave == False  # noqa: E712
+    assert test_dom.has_managed_save == False  # noqa: E712
 
     with pytest.raises(EntityNotRunning):
-        test_dom.managedSave()
+        test_dom.managed_save()
 
 
 @pytest.mark.xfail(reason='Cannot be tested without live domain testing.')

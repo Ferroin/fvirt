@@ -172,7 +172,7 @@ class DomainMixin(ObjectMixin):
     def LOOKUP_ATTR(self: Self) -> str: return 'domains'
 
     @property
-    def DEFINE_METHOD(self: Self) -> str: return 'defineDomain'
+    def DEFINE_METHOD(self: Self) -> str: return 'define_domain'
 
     @property
     def CREATE_METHOD(self: Self) -> str: return 'createDomain'
@@ -187,13 +187,13 @@ class StoragePoolMixin(ObjectMixin):
     def METAVAR(self: Self) -> str: return 'POOL'
 
     @property
-    def LOOKUP_ATTR(self: Self) -> str: return 'pools'
+    def LOOKUP_ATTR(self: Self) -> str: return 'storage_pools'
 
     @property
-    def DEFINE_METHOD(self: Self) -> str: return 'defineStoragePool'
+    def DEFINE_METHOD(self: Self) -> str: return 'define_storage_pool'
 
     @property
-    def CREATE_METHOD(self: Self) -> str: return 'createStoragePool'
+    def CREATE_METHOD(self: Self) -> str: return 'create_storage_pool'
 
 
 class VolumeMixin(ObjectMixin):
@@ -207,7 +207,7 @@ class VolumeMixin(ObjectMixin):
     def LOOKUP_ATTR(self: Self) -> str: return 'volumes'
 
     @property
-    def DEFINE_METHOD(self: Self) -> str: return 'defineVolume'
+    def DEFINE_METHOD(self: Self) -> str: return 'define_volume'
 
     @property
     def PARENT_NAME(self: Self) -> str: return 'storage pool'
@@ -216,4 +216,4 @@ class VolumeMixin(ObjectMixin):
     def PARENT_METAVAR(self: Self) -> str: return 'POOL'
 
     @property
-    def PARENT_ATTR(self: Self) -> str: return 'pools'
+    def PARENT_ATTR(self: Self) -> str: return 'storage_pools'
