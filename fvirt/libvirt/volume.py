@@ -8,7 +8,7 @@ from __future__ import annotations
 import io
 import os
 
-from typing import TYPE_CHECKING, Final, Self
+from typing import TYPE_CHECKING, Any, Final, Self, overload
 
 import libvirt
 
@@ -78,11 +78,14 @@ class Volume(ConfigurableEntity):
         type=str,
     )
 
-    def __init__(self: Self, vol: libvirt.virStorageVol | Volume, pool: StoragePool) -> None:
-        if isinstance(vol, Volume):
-            vol = vol._entity
+    @overload
+    def __init__(self: Self, entity: Volume, parent: None = None, /) -> None: ...
 
-        super().__init__(vol, pool)
+    @overload
+    def __init__(self: Self, entity: libvirt.virStorageVol, parent: StoragePool, /) -> None: ...
+
+    def __init__(self: Self, entity: libvirt.virStorageVol | Volume, parent: StoragePool | None = None, /) -> None:
+        super().__init__(entity, parent)
 
     def __repr__(self: Self) -> str:
         if self.valid:
@@ -90,6 +93,14 @@ class Volume(ConfigurableEntity):
             return f'<fvirt.libvirt.Volume: pool={ self._parent.name } name={ self.name }>'
         else:
             return '<fvirt.libvirt.Volume: INVALID>'
+
+    @property
+    def _wrapped_class(self: Self) -> Any:
+        return libvirt.virStorageVol
+
+    @property
+    def _eq_properties(self: Self) -> set[str]:
+        return {'name', 'key'}
 
     @property
     def _format_properties(self: Self) -> set[str]:

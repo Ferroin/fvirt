@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
-from typing import TYPE_CHECKING, Any, Final, Self, cast
+from typing import TYPE_CHECKING, Any, Final, Self, cast, overload
 
 import libvirt
 
@@ -89,11 +89,14 @@ class StoragePool(ConfigurableEntity, RunnableEntity):
         type=str,
     )
 
-    def __init__(self: Self, pool: libvirt.virStoragePool | StoragePool, conn: Hypervisor) -> None:
-        if isinstance(pool, StoragePool):
-            pool = pool._entity
+    @overload
+    def __init__(self: Self, entity: StoragePool, parent: None = None, /) -> None: ...
 
-        super().__init__(pool, conn)
+    @overload
+    def __init__(self: Self, entity: libvirt.virStoragePool, parent: Hypervisor, /) -> None: ...
+
+    def __init__(self: Self, entity: libvirt.virStoragePool | StoragePool, parent: Hypervisor | None = None, /) -> None:
+        super().__init__(entity, parent)
 
         self.__volumes = VolumeAccess(self)
 
@@ -102,6 +105,10 @@ class StoragePool(ConfigurableEntity, RunnableEntity):
             return f'<fvirt.libvirt.StoragePool: name={ self.name }>'
         else:
             return '<fvirt.libvirt.StoragePool: INVALID>'
+
+    @property
+    def _wrapped_class(self: Self) -> Any:
+        return libvirt.virStoragePool
 
     @property
     def _format_properties(self: Self) -> set[str]:

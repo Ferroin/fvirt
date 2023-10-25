@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from enum import CONTINUOUS, UNIQUE, Enum, verify
 from time import sleep
-from typing import TYPE_CHECKING, Any, Final, Literal, Self, cast
+from typing import TYPE_CHECKING, Any, Final, Literal, Self, cast, overload
 from uuid import UUID
 
 import libvirt
@@ -186,17 +186,24 @@ class Domain(ConfigurableEntity, RunnableEntity):
         type=bool,
     )
 
-    def __init__(self: Self, dom: libvirt.virDomain | Domain, conn: Hypervisor) -> None:
-        if isinstance(dom, Domain):
-            dom = dom._entity
+    @overload
+    def __init__(self: Self, entity: Domain, parent: None = None, /) -> None: ...
 
-        super().__init__(dom, conn)
+    @overload
+    def __init__(self: Self, entity: libvirt.virDomain, parent: Hypervisor, /) -> None: ...
+
+    def __init__(self: Self, entity: libvirt.virDomain | Domain, parent: Hypervisor | None = None, /) -> None:
+        super().__init__(entity, parent)
 
     def __repr__(self: Self) -> str:
         if self.valid:
             return f'<fvirt.libvirt.Domain: name={ self.name }>'
         else:
             return '<fvirt.libvirt.Domain: INVALID>'
+
+    @property
+    def _wrapped_class(self: Self) -> Any:
+        return libvirt.virDomain
 
     @property
     def _format_properties(self: Self) -> set[str]:

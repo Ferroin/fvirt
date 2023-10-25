@@ -8,7 +8,7 @@ from __future__ import annotations
 import enum
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Literal, Self, TypeVar, cast, final
+from typing import Any, Literal, Self, TypeVar, cast, final
 from uuid import UUID
 
 import libvirt
@@ -17,22 +17,20 @@ from lxml import etree
 
 from .descriptors import MethodProperty
 from .exceptions import InsufficientPrivileges, InvalidEntity, NotConnected
-
-if TYPE_CHECKING:
-    from .hypervisor import Hypervisor
+from .hypervisor import Hypervisor
 
 T = TypeVar('T')
 
 
 class Entity(ABC):
-    '''ABC used by all fvirt libvirt object wrappers.
+    '''Abstract base class used by all fvirt libvirt object wrappers.
 
        This provides a handful of common functions, as well as some
        abstract properties that need to be defined by subclasses.
 
-       Entities support the context manager protocol. Entering an
-       entity’s context will ensure that the Hypervisor instance it
-       is tied to is connected, and that the entity itself is valid.'''
+       Entity instances support the context manager protocol. Entering
+       an entity’s context will ensure that the Hypervisor instance
+       it is tied to is connected, and that the entity itself is valid.'''
     __slots__ = [
         '_entity',
         '_hv',
@@ -40,17 +38,33 @@ class Entity(ABC):
         '_valid',
     ]
 
-    def __init__(self: Self, entity: Any, parent: Hypervisor | Entity) -> None:
-        if isinstance(parent, Entity):
-            self._hv: Hypervisor = parent._hv
-            self._parent: Entity | None = parent
-        else:
-            self._hv = parent
-            self._parent = None
+    def __init__(self: Self, entity: Any, parent: Hypervisor | Entity | None = None, /) -> None:
+        match parent:
+            case None:
+                if not isinstance(entity, type(self)):
+                    raise ValueError('Parent object or hypervisor must be specified when not passing an Entity.')
+                else:
+                    self._hv: Hypervisor = entity._hv
+                    self._parent: Entity | None = entity._parent
+                    self._entity: Any = entity._entity
+            case Hypervisor():
+                if not isinstance(entity, self._wrapped_class):
+                    raise TypeError(f'Entity wrapped by {repr(type(self))} must be a {repr(self._wrapped_class)}.')
+
+                self._hv = parent
+                self._parent = None
+                self._entity = entity
+            case Entity():
+                if not isinstance(entity, self._wrapped_class):
+                    raise TypeError(f'Entity wrapped by {repr(type(self))} must be a {repr(self._wrapped_class)}.')
+
+                self._hv = parent._hv
+                self._parent = parent
+                self._entity = entity
+            case _:
+                raise TypeError('Parent must be Hypervisor or Entity instance.')
 
         self._hv.open()
-
-        self._entity = entity
         self._valid = True
 
     def __del__(self: Self) -> None:
@@ -68,6 +82,18 @@ class Entity(ABC):
                 fmt_args[prop] = prop_value
 
         return format_spec.format(**fmt_args)
+
+    def __eq__(self: Self, other: Any) -> bool:
+        if not isinstance(other, type(self)):
+            return False
+
+        if self._hv == other._hv and self._parent == other._parent:
+            if self._entity == other._entity:
+                return True
+
+            return all({getattr(self, x) == getattr(other, x) for x in self._eq_properties})
+
+        return False
 
     def __enter__(self: Self) -> Self:
         self._check_valid()
@@ -90,12 +116,32 @@ class Entity(ABC):
             raise NotConnected
 
     @property
-    def _format_properties(self: Self) -> set[str]:
-        '''A list of properties usable with format().
+    @abstractmethod
+    def _wrapped_class(self: Self) -> type:
+        '''Specifies what class the wrapped libvirt object is.
 
-           Any properties listed here can be used in a format
-           specifier as named arguments when calling format() on an
-           Entity instance. Child classes should override this to any
+           This is used by the default __init__ method to do runtime
+           type checking.
+
+           Subclasses must override this method.'''
+        return NotImplemented
+
+    @property
+    def _eq_properties(self: Self) -> set[str]:
+        '''A set of properties that must be equal for two Entity instances to be considered equal.
+
+           The default will work for most wrapped classes, but
+           Entity types that lack a UUID or name should override this
+           appropriately.'''
+        return {'name', 'uuid'}
+
+    @property
+    def _format_properties(self: Self) -> set[str]:
+        '''A set of properties usable with format().
+
+           Any properties listed here can be used in a format specifier
+           as named arguments when calling format() on an Entity
+           instance. Child classes should override this to include any
            additional properties they want to be supported.'''
         return {'name', 'uuid'}
 

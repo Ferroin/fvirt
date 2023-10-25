@@ -34,6 +34,29 @@ def test_check_match_aliases(live_pool: StoragePool) -> None:
 
 
 @pytest.mark.libvirtd
+def test_equality(live_hv: Hypervisor, pool_xml: Callable[[], str]) -> None:
+    '''Test that pool equality checks work correctly.'''
+    pool1 = live_hv.defineStoragePool(pool_xml())
+    pool2 = live_hv.defineStoragePool(pool_xml())
+
+    assert pool1 == pool1
+    assert pool2 == pool2
+    assert pool1 != pool2
+
+    pool3 = live_hv.pools.get(pool1.name)
+
+    assert pool1 == pool3
+
+    assert pool1 != ''
+
+
+@pytest.mark.libvirtd
+def test_self_wrap(live_pool: StoragePool) -> None:
+    '''Check that instantiating a StoragePool with another StoragePool instance produces an equal StoragePool.'''
+    assert StoragePool(live_pool) == live_pool
+
+
+@pytest.mark.libvirtd
 def test_format(live_pool: StoragePool) -> None:
     '''Check that formatting a StoragePool instance can be formatted.'''
     check_entity_format(live_pool)
