@@ -213,7 +213,7 @@ class Domain(RunnableEntity):
 
     @property
     def _define_method(self: Self) -> str:
-        return 'defineDomain'
+        return 'define_domain'
 
     @property
     def _config_flags(self: Self) -> int:
@@ -223,6 +223,10 @@ class Domain(RunnableEntity):
             flags |= libvirt.VIR_DOMAIN_XML_SECURE
 
         return flags
+
+    @property
+    def _config_flags_inactive(self: Self) -> int:
+        return cast(int, self._config_flags | libvirt.VIR_DOMAIN_XML_INACTIVE)
 
     @property
     def state(self: Self) -> DomainState:
