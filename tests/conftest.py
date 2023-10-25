@@ -30,8 +30,12 @@ def runner(cli_runner: CliRunner) -> Callable[[Sequence[str], int], Result]:
     '''Provide a runner for running the fvirt cli with a given set of arguments.'''
     def runner(args: Sequence[str], exit_code: int) -> Result:
         result = cli_runner.invoke(cli, args)
-        assert not result.exception, ''.join(format_exception(*result.exc_info))
-        assert result.exit_code == exit_code, result.output
+
+        if isinstance(result.exception, SystemExit) and exit_code != 0:
+            assert result.exit_code == exit_code, result.output
+        else:
+            assert not result.exception, ''.join(format_exception(*result.exc_info))  # type: ignore
+            assert result.exit_code == exit_code, result.output
 
         return result
 

@@ -12,7 +12,7 @@ import click
 
 from .terminal import get_terminal
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Mapping, Sequence
 
     from ..libvirt.entity import Entity

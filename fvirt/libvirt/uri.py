@@ -11,7 +11,7 @@ from urllib.parse import parse_qs, quote, urlparse
 
 from frozendict import frozendict
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from collections.abc import Mapping
 
 

@@ -17,7 +17,7 @@ from .exceptions import EntityRunning, InsufficientPrivileges, InvalidConfig, No
 from .volume import Volume, VolumeAccess
 from ..util.match import MatchAlias
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from .hypervisor import Hypervisor
 
 MATCH_ALIASES: Final = {

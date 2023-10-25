@@ -27,3 +27,9 @@ def test_lazy_load(runner: Callable[[Sequence[str], int], Result]) -> None:
 def test_check_lazy_command_list() -> None:
     '''Further checks for lazy loading of commands.'''
     check_lazy_commands(host, SRC_ROOT / 'fvirt' / 'commands' / 'host')
+
+
+def test_help_topics(runner: Callable[[Sequence[str], int], Result]) -> None:
+    '''Test that help for the help command works.'''
+    result = runner(('host', 'help', 'help'), 0)
+    assert len(result.output) != 0

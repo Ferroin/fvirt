@@ -20,15 +20,15 @@ from .util.match import MATCH_HELP
 
 DEFAULT_MAX_JOBS: Final = 8
 
+ncpus = os.cpu_count()
+
+if ncpus is not None:
+    DEFAULT_JOB_COUNT = min(DEFAULT_MAX_JOBS, ncpus + 4)
+else:
+    DEFAULT_JOB_COUNT = DEFAULT_MAX_JOBS
+
 if hasattr(os, 'sched_getaffinity') and os.sched_getaffinity(0):
     DEFAULT_JOB_COUNT = min(DEFAULT_MAX_JOBS, len(os.sched_getaffinity(0)) + 4)
-else:
-    ncpus = os.cpu_count()
-
-    if ncpus is not None:
-        DEFAULT_JOB_COUNT = min(DEFAULT_MAX_JOBS, ncpus + 4)
-    else:
-        DEFAULT_JOB_COUNT = DEFAULT_MAX_JOBS
 
 RECOGNIZED_DRIVERS: Final = sorted(list({e.value for e in Driver}))
 RECOGNIZED_TRANSPORTS: Final = sorted(list({e.value for e in Transport if e.value}))

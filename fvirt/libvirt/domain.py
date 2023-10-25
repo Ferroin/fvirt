@@ -19,7 +19,7 @@ from .exceptions import EntityNotRunning, InvalidOperation
 from .stream import Stream
 from ..util.match import MatchAlias
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from collections.abc import Iterable
 
     from .hypervisor import Hypervisor
@@ -70,20 +70,16 @@ def _currentMemory_validator(value: int, instance: Domain) -> None:
 @verify(UNIQUE)
 @verify(CONTINUOUS)
 class DomainState(Enum):
-    '''Enumerable for domain states.
-
-       This is manually copied from virDomainState in the libvirt C API
-       because the libvirt Python modules neglect to expose it for some
-       reason despite returning raw values for domain states.'''
-    NONE = 0x0
-    RUNNING = 0x1
-    BLOCKED = 0x2
-    PAUSED = 0x3
-    SHUTDOWN = 0x4
-    SHUTOFF = 0x5
-    CRASHED = 0x6
-    PMSUSPEND = 0x7
-    UNKNOWN = 0x8
+    '''Enumerable for domain states.'''
+    UNKNOWN = -1
+    NONE = libvirt.VIR_DOMAIN_NOSTATE
+    RUNNING = libvirt.VIR_DOMAIN_RUNNING
+    BLOCKED = libvirt.VIR_DOMAIN_BLOCKED
+    PAUSED = libvirt.VIR_DOMAIN_PAUSED
+    SHUTDOWN = libvirt.VIR_DOMAIN_SHUTDOWN
+    SHUTOFF = libvirt.VIR_DOMAIN_SHUTOFF
+    CRASHED = libvirt.VIR_DOMAIN_CRASHED
+    PMSUSPEND = libvirt.VIR_DOMAIN_PMSUSPENDED
 
     def __str__(self: Self) -> str:
         match self:

@@ -11,7 +11,7 @@ from typing import cast
 import pytest
 
 from fvirt.libvirt.entity_access import EntityAccess
-from fvirt.libvirt.hypervisor import HostInfo, Hypervisor
+from fvirt.libvirt.hypervisor import HostInfo, Hypervisor, InsufficientPrivileges
 from fvirt.libvirt.uri import LIBVIRT_DEFAULT_URI, URI
 from fvirt.version import VersionNumber
 
@@ -63,6 +63,16 @@ def test_context_manager(test_hv: Hypervisor) -> None:
     assert not cast(bool, test_hv.connected)
 
 
+def test_bool(test_hv: Hypervisor) -> None:
+    '''Test that conversion to a boolean works as expected.'''
+    assert not bool(test_hv)
+
+    with test_hv:
+        assert bool(test_hv)
+
+    assert not bool(test_hv)
+
+
 def test_read_only(test_uri: str) -> None:
     '''Test the read-only property.'''
     test_hv = Hypervisor(hvuri=URI.from_string(test_uri), read_only=True)
@@ -71,6 +81,10 @@ def test_read_only(test_uri: str) -> None:
 
     with pytest.raises(AttributeError):
         test_hv.read_only = False  # type: ignore
+
+    with pytest.raises(InsufficientPrivileges):
+        with test_hv:
+            test_hv.defineDomain('')
 
 
 def test_uri(test_hv: Hypervisor, test_uri: str) -> None:

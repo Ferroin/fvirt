@@ -32,4 +32,11 @@ def test_check_lazy_command_list() -> None:
 def test_help_aliases(runner: Callable[[Sequence[str], int], Result]) -> None:
     '''Check that we have an aliases help topic.'''
     # TODO: Should be extended to cross-check against alias list.
-    runner(('pool', 'help', 'aliases'), 0)
+    result = runner(('pool', 'help', 'aliases'), 0)
+    assert len(result.output) != 0
+
+
+def test_help_topics(runner: Callable[[Sequence[str], int], Result]) -> None:
+    '''Test that help for the help command works.'''
+    result = runner(('pool', 'help', 'help'), 0)
+    assert len(result.output) != 0

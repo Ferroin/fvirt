@@ -19,7 +19,7 @@ from .objects import ObjectMixin, is_object_mixin
 from ...libvirt.entity import Entity
 from ...util.match import MatchAlias, MatchArgument, MatchTarget
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from collections.abc import Callable, Mapping, Sequence
 
     from .state import State

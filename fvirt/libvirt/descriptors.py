@@ -14,7 +14,7 @@ from lxml import etree
 
 from ..util.units import unit_to_bytes
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
     from .entity import ConfigurableEntity

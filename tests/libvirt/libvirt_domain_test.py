@@ -50,12 +50,33 @@ def test_id(test_dom: Domain) -> None:
     assert test_dom.id == -1
 
 
+def test_domain_state() -> None:
+    '''Check the DomainState enumerable.'''
+    for s in DomainState:
+        assert isinstance(s.value, int)
+
+    assert len({s.value for s in DomainState}) == len(DomainState), 'duplicate values in DomainState'
+    assert len({str(s) for s in DomainState}) == len(DomainState), 'duplicate string representations in DomainState'
+
+
 def test_state(test_dom: Domain) -> None:
     '''Check the state attribute.'''
     assert isinstance(test_dom.state, DomainState)
     assert test_dom.state == DomainState.RUNNING
     assert test_dom.destroy() == LifecycleResult.SUCCESS
     assert test_dom.state != DomainState.RUNNING
+
+
+@pytest.mark.xfail(reason='Not yet implemented')
+def test_define() -> None:
+    '''Check that defining a domain works.'''
+    assert False
+
+
+@pytest.mark.xfail(reason='Requires live domain testing')
+def test_create() -> None:
+    '''Check that creating a domain works.'''
+    assert False
 
 
 def test_undefine(test_dom: Domain) -> None:

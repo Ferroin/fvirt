@@ -15,7 +15,7 @@ from .command import Command
 from .exitcode import ExitCode
 from .objects import is_object_mixin
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from collections.abc import Sequence
 
     from .state import State

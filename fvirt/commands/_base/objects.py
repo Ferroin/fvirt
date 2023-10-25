@@ -13,7 +13,7 @@ import click
 from .exitcode import ExitCode
 from ...libvirt.entity_access import EntityAccess
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from collections.abc import Iterable
 
     from ...libvirt import Hypervisor
@@ -80,22 +80,22 @@ class ObjectMixin(ABC):
     @property
     def CREATE_METHOD(self: Self) -> str | None:
         '''Sepcifies the name of the method used to create the entity.'''
-        return None
+        return None  # pragma: no cover
 
     @property
     def PARENT_ATTR(self: Self) -> str | None:
         '''Specifies the name of the EntityAccess attribute needed to look up a parent.'''
-        return None
+        return None  # pragma: no cover
 
     @property
     def PARENT_NAME(self: Self) -> str | None:
         '''The name of the parent entity, used in documentation.'''
-        return None
+        return None  # pragma: no cover
 
     @property
     def PARENT_METAVAR(self: Self) -> str | None:
         '''The metavar to use in help output for arguments that specify the parent entity.'''
-        return None
+        return None  # pragma: no cover
 
     def mixin_params(self: Self, required: bool = False) -> tuple[click.Argument, ...]:
         '''Return a tuple of arguments for specifying the entity and possibly the parent.'''

@@ -13,7 +13,7 @@ import click
 from .command import Command
 from .exitcode import ExitCode
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping
 
     from .group import Group
@@ -64,13 +64,15 @@ def _print_topics(ctx: click.Context, group: Group, topics: Iterable[HelpTopic])
         click.echo(click.wrap_text(output, initial_indent='  ', subsequent_indent=(' ' * (cmds_width + 2))))
 
     topics = list(topics)
-    topics_width = max([len(x.name) for x in topics]) + 2
 
-    click.echo('')
-    click.echo('Additional help topics:')
-    for topic in topics:
-        output = f'{ topic.name }{ " " * (topics_width - len(topic.name) - 2) }  { topic.description }'
-        click.echo(click.wrap_text(output, initial_indent='  ', subsequent_indent=(' ' * (topics_width + 2))))
+    if topics:
+        topics_width = max([len(x.name) for x in topics]) + 2
+
+        click.echo('')
+        click.echo('Additional help topics:')
+        for topic in topics:
+            output = f'{ topic.name }{ " " * (topics_width - len(topic.name) - 2) }  { topic.description }'
+            click.echo(click.wrap_text(output, initial_indent='  ', subsequent_indent=(' ' * (topics_width + 2))))
 
 
 class HelpCommand(Command):

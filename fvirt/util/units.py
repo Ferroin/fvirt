@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Final
 
 from frozendict import frozendict
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from collections.abc import Iterable
 
 NAME_TO_FACTOR: Final = frozendict({

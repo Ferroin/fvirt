@@ -19,7 +19,7 @@ from .exceptions import SubOperationFailed
 from .stream import Stream
 from ..util.match import MatchAlias
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from collections.abc import Iterable
 
     from .storage_pool import StoragePool
