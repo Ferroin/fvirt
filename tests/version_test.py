@@ -24,6 +24,7 @@ def test_version_type() -> None:
 def test_equality() -> None:
     '''Confirm that VersionNumber equality testing works.'''
     assert VersionNumber(0, 1, 0) == VersionNumber(0, 1, 0)
+    assert '0.1.0' != VersionNumber(0, 1, 0)
 
 
 def test_version_props() -> None:
@@ -40,8 +41,17 @@ def test_version_index() -> None:
     v = VersionNumber(1, 2, 3)
 
     assert v[0] == 1
+    assert v[-3] == 1
     assert v[1] == 2
+    assert v[-2] == 2
     assert v[2] == 3
+    assert v[-1] == 3
+
+    with pytest.raises(IndexError):
+        v[3]
+
+    with pytest.raises(IndexError):
+        v[-4]
 
 
 def test_invalid_args() -> None:
@@ -59,6 +69,11 @@ def test_invalid_args() -> None:
 def test_version_str() -> None:
     '''Test that conversion to a string works correctly.'''
     assert str(VERSION) == f'{ VERSION.major }.{ VERSION.minor }.{ VERSION.release }'
+
+
+def test_version_hash() -> None:
+    '''Confirm that VersionNumber instances are hashable.'''
+    assert isinstance(hash(VersionNumber(1, 2, 3)), int)
 
 
 @pytest.mark.parametrize('v, t', (

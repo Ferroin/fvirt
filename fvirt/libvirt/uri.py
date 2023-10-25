@@ -141,16 +141,18 @@ class URI:
                 raise ValueError('Parameter "path" must be specified for /embed URIs.')
             elif path not in {'/session', '/system', '/embed', '/'} and DriverFlag.PATH not in DRIVER_INFO[driver]:
                 raise ValueError('Driver does not support arbitrary paths.')
-            elif transport is not None and DriverFlag.CLIENT_ONLY in DRIVER_INFO[driver]:
-                raise ValueError('Transport must be None for client only drivers.')
             elif host is None and DriverFlag.CLIENT_ONLY in DRIVER_INFO[driver]:
                 raise ValueError('Host name must be specified with client-only drivers.')
-            elif host is not None and DriverFlag.REMOTE not in DRIVER_INFO[driver]:
+            elif transport is not None and DriverFlag.CLIENT_ONLY in DRIVER_INFO[driver]:
+                raise ValueError('Transport must be None for client only drivers.')
+            elif host is not None and DriverFlag.REMOTE not in DRIVER_INFO[driver] and DriverFlag.CLIENT_ONLY not in DRIVER_INFO[driver]:
                 raise ValueError('Driver does not support remote operation.')
             elif transport is Transport.EXTERNAL and 'command' not in parameters:
                 raise ValueError('External transport requires a command to be specified in the URI parameters.')
             elif transport not in REMOTE_TRANSPORTS and user is not None:
                 raise ValueError('User name is only supported for remote transports.')
+            elif transport not in REMOTE_TRANSPORTS and DriverFlag.CLIENT_ONLY not in DRIVER_INFO[driver] and host is not None:
+                raise ValueError('Host name is only supported for remote transports.')
             elif port is not None and port not in range(1, 65536):
                 raise ValueError('Invalid port number.')
 
@@ -200,7 +202,7 @@ class URI:
                 uri = f'{ uri }?{ key }={ quote(value, safe="/") }'
                 first = False
             else:
-                uri = f'{ uri }&{ key }={ quote(value, safe="/") } '
+                uri = f'{ uri }&{ key }={ quote(value, safe="/") }'
 
         return uri
 

@@ -108,9 +108,6 @@ def tabulate_entities(
         for column in selected_cols:
             try:
                 prop = getattr(entity, columns[column].prop)
-
-                if hasattr(prop, '__get__'):
-                    prop = prop.__get__(entity)
             except AttributeError:
                 prop = '-'
             else:

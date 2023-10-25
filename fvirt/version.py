@@ -43,11 +43,11 @@ class VersionNumber:
 
     def __getitem__(self: Self, idx: int) -> int:
         match idx:
-            case 0:
+            case 0 | -3:
                 return self.major
-            case 1:
+            case 1 | -2:
                 return self.minor
-            case 2:
+            case 2 | -1:
                 return self.release
             case _:
                 raise IndexError
