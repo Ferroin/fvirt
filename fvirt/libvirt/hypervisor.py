@@ -8,16 +8,18 @@ from __future__ import annotations
 import threading
 
 from types import TracebackType
-from typing import Any, Self, cast
+from typing import TYPE_CHECKING, Any, Self, cast
 
 import libvirt
 
-from .domain import Domain, DomainAccess
-from .entity import Entity
 from .exceptions import InsufficientPrivileges, InvalidConfig
-from .storage_pool import StoragePool, StoragePoolAccess
 from .uri import URI
 from ..version import VersionNumber
+
+if TYPE_CHECKING:
+    from .domain import Domain, DomainAccess
+    from .entity import Entity
+    from .storage_pool import StoragePool, StoragePoolAccess
 
 
 class HostInfo:
@@ -142,6 +144,9 @@ class Hypervisor:
        false if they are not connected, and true if they have at least
        one active connection.
 
+       Hypervisor instances are considered to be equal if their read_only
+       attributes are the same and they were instantiated with equal URIs.
+
        Domains can be accessed via the `domains`, `domains_by_name`,
        `domains_by_id`, or `domains_by_uuid` properties.
 
@@ -156,6 +161,9 @@ class Hypervisor:
        The underlying libvirt APIs are all concurrent-access safe
        irrespective of the concurrency model in use.'''
     def __init__(self: Self, hvuri: URI, read_only: bool = False) -> None:
+        from .domain import DomainAccess
+        from .storage_pool import StoragePoolAccess
+
         self._uri = hvuri
 
         self._connection: libvirt.virConnect | None = None
@@ -166,13 +174,6 @@ class Hypervisor:
         self.__domains = DomainAccess(self)
 
         self.__pools = StoragePoolAccess(self)
-
-    def __repr__(self: Self) -> str:
-        return f'<fvirt.libvirt.Hypervisor: uri={ str(self.uri) }, ro={ self.read_only }, conns={ self.__conn_count }>'
-
-    def __bool__(self: Self) -> bool:
-        with self.__lock:
-            return self.__conn_count > 0
 
     def __del__(self: Self) -> None:
         with self.__lock:
@@ -185,6 +186,24 @@ class Hypervisor:
                     self._connection.close()
 
                 self._connection = None
+
+    def __repr__(self: Self) -> str:
+        return f'<fvirt.libvirt.Hypervisor: uri={ str(self.uri) }, ro={ self.read_only }, conns={ self.__conn_count }>'
+
+    def __bool__(self: Self) -> bool:
+        with self.__lock:
+            return self.__conn_count > 0
+
+    def __eq__(self: Self, other: Any) -> bool:
+        if not isinstance(other, type(self)):
+            return False
+
+        # This intentionally checks the local URI instead of the remote one.
+        # This avoids connecting to a remote system potentially twice
+        # just to check object equality, but introduces an edge case where
+        # two functionally equivalent Hypervisor instances do not compare
+        # equal if their local URIs differ.
+        return self._uri == other._uri and self.read_only == other.read_only
 
     def __enter__(self: Self) -> Self:
         return self.open()
@@ -359,6 +378,8 @@ class Hypervisor:
            libvirt domain configuration.
 
            Returns a Domain instance for the defined domain on success.'''
+        from .domain import Domain
+
         return cast(Domain, self.__define_entity(Domain, 'defineXMLFlags', config, 0))
 
     def createDomain(self: Self, config: str, paused: bool = False, reset_nvram: bool = False, auto_destroy: bool = False) -> Domain:
@@ -381,6 +402,8 @@ class Hypervisor:
            libvirt domain configuration.
 
            Returns a Domain instance for the defined domain on success.'''
+        from .domain import Domain
+
         flags = 0
 
         if paused:
@@ -405,6 +428,8 @@ class Hypervisor:
 
            Returns a StoragePool instance for the defined storage pool
            on success.'''
+        from .storage_pool import StoragePool
+
         return cast(StoragePool, self.__define_entity(StoragePool, 'storagePoolDefineXML', config, 0))
 
     def createStoragePool(self: Self, config: str, build: bool = True, overwrite: bool | None = None) -> StoragePool:
@@ -425,6 +450,8 @@ class Hypervisor:
 
            Returns a StoragePool instance for the defined storage pool
            on success.'''
+        from .storage_pool import StoragePool
+
         flags = 0
 
         if build:

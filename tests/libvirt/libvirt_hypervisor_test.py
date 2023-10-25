@@ -63,6 +63,13 @@ def test_context_manager(test_hv: Hypervisor) -> None:
     assert not cast(bool, test_hv.connected)
 
 
+def test_equality(test_hv: Hypervisor) -> None:
+    '''Check that equality testing works correctly.'''
+    assert test_hv == Hypervisor(hvuri=test_hv.uri)
+    assert test_hv != Hypervisor(hvuri=test_hv.uri, read_only=True)
+    assert test_hv != Hypervisor(hvuri=URI.from_string(''))
+
+
 def test_bool(test_hv: Hypervisor) -> None:
     '''Test that conversion to a boolean works as expected.'''
     assert not bool(test_hv)

@@ -31,6 +31,23 @@ def test_check_match_aliases(test_dom: Domain) -> None:
     check_match_aliases(MATCH_ALIASES, test_dom)
 
 
+def test_equality(test_dom: Domain) -> None:
+    '''Test that domain equality checks work correctly.'''
+    # TODO: Needs to be expanded to use a live domain for better test coverage.
+    assert test_dom == test_dom
+
+    dom = test_dom._hv.domains.get(test_dom.name)
+
+    assert dom == test_dom
+
+    assert test_dom != ''
+
+
+def test_self_wrap(test_dom: Domain) -> None:
+    '''Check that instantiating a Domain with another Domain instance produces an equal Domain.'''
+    assert Domain(test_dom) == test_dom
+
+
 def test_format(test_dom: Domain) -> None:
     '''Check that formatting a Domain instance can be formatted.'''
     # TODO: This should use a live domain for better test coverage.

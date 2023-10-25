@@ -34,6 +34,29 @@ def test_check_match_aliases(live_volume: Volume) -> None:
 
 
 @pytest.mark.libvirtd
+def test_equality(live_pool: StoragePool, volume_factory: Callable[[StoragePool], Volume]) -> None:
+    '''Test that pool equality checks work correctly.'''
+    vol1 = volume_factory(live_pool)
+    vol2 = volume_factory(live_pool)
+
+    assert vol1 == vol1
+    assert vol2 == vol2
+    assert vol1 != vol2
+
+    vol3 = live_pool.volumes.get(vol1.name)
+
+    assert vol1 == vol3
+
+    assert vol1 != ''
+
+
+@pytest.mark.libvirtd
+def test_self_wrap(live_volume: Volume) -> None:
+    '''Check that instantiating a Volume with another Volume instance produces an equal Volume.'''
+    assert Volume(live_volume) == live_volume
+
+
+@pytest.mark.libvirtd
 def test_format(live_volume: Volume) -> None:
     '''Check that formatting a Volume instance can be formatted.'''
     check_entity_format(live_volume)
