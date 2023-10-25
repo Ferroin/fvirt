@@ -6,13 +6,12 @@
 from __future__ import annotations
 
 from textwrap import dedent
-from typing import TYPE_CHECKING, Self, cast
+from typing import TYPE_CHECKING, Self
 
 import click
 
 from .command import Command
 from .objects import is_object_mixin
-from ...libvirt.entity import ConfigurableEntity
 
 if TYPE_CHECKING:
     from .state import State
@@ -34,9 +33,9 @@ class XMLCommand(Command):
         def cb(ctx: click.Context, state: State, entity: str, parent: str | None = None) -> None:
             with state.hypervisor as hv:
                 if self.HAS_PARENT:
-                    e = cast(ConfigurableEntity, self.get_sub_entity(ctx, hv, parent, entity))
+                    e = self.get_sub_entity(ctx, hv, parent, entity)
                 else:
-                    e = cast(ConfigurableEntity, self.get_entity(ctx, hv, entity))
+                    e = self.get_entity(ctx, hv, entity)
 
                 xml = e.configRaw.rstrip().lstrip()
 

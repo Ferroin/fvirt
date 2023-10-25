@@ -22,6 +22,27 @@ from .hypervisor import Hypervisor
 T = TypeVar('T')
 
 
+class LifecycleResult(enum.Enum):
+    '''An enumeration indicating the result of an entity lifecycle operation.
+
+       SUCCESS indicates a successful operation.
+
+       FAILURE indicates a failed operation.
+
+       NO_OPERATION indicates that nothing was done because the Entity
+       is already in the requested state.
+
+       TIMED_OUT indicates that a timeout on the operation was exceeded.
+
+       FORCED indicates that the state transition was forced due to
+       initially failing.'''
+    SUCCESS = enum.auto()
+    FAILURE = enum.auto()
+    NO_OPERATION = enum.auto()
+    TIMED_OUT = enum.auto()
+    FORCED = enum.auto()
+
+
 class Entity(ABC):
     '''Abstract base class used by all fvirt libvirt object wrappers.
 
@@ -116,6 +137,30 @@ class Entity(ABC):
             raise NotConnected
 
     @property
+    def _define_target(self: Self) -> Any:
+        '''The object that will be used to define new instances of this entity.'''
+        return self._hv
+
+    @property
+    @abstractmethod
+    def _define_method(self: Self) -> str:
+        '''Specify the name of the method to invoke to define a new
+           instance of the Entity type.
+
+           Children should override this appropriately.'''
+        return ''
+
+    @property
+    def _config_flags(self: Self) -> int:
+        '''Specify the flags that should be used when fetching configuration.
+
+           Default implementation just returns 0.
+
+           Children should override this if they need specific flags to
+           be used when accessing config.'''
+        return 0
+
+    @property
     @abstractmethod
     def _wrapped_class(self: Self) -> type:
         '''Specifies what class the wrapped libvirt object is.
@@ -184,55 +229,6 @@ class Entity(ABC):
 
         return UUID(get_uuid())
 
-
-class LifecycleResult(enum.Enum):
-    '''An enumeration indicating the result of an entity lifecycle operation.
-
-       SUCCESS indicates a successful operation.
-
-       FAILURE indicates a failed operation.
-
-       NO_OPERATION indicates that nothing was done because the Entity
-       is already in the requested state.
-
-       TIMED_OUT indicates that a timeout on the operation was exceeded.
-
-       FORCED indicates that the state transition was forced due to
-       initially failing.'''
-    SUCCESS = enum.auto()
-    FAILURE = enum.auto()
-    NO_OPERATION = enum.auto()
-    TIMED_OUT = enum.auto()
-    FORCED = enum.auto()
-
-
-class ConfigurableEntity(Entity):
-    '''ABC used for configurable Entities.'''
-    @property
-    def _define_target(self: Self) -> Any:
-        '''The object that will be used to define new instances of this entity.'''
-        return self._hv
-
-    @property
-    @abstractmethod
-    def _define_method(self: Self) -> str:
-        '''Specify the name of the method to invoke to define a new
-           instance of the Entity type.
-
-           Children should override this appropriately.'''
-        return ''
-
-    @property
-    @abstractmethod
-    def _config_flags(self: Self) -> int:
-        '''Specify the flags that should be used when fetching configuration.
-
-           Default implementation just returns 0.
-
-           Children should override this if they need specific flags to
-           be used when accessing config.'''
-        return 0
-
     @property
     def configRaw(self: Self) -> str:
         '''The raw XML configuration of the entity.
@@ -278,23 +274,6 @@ class ConfigurableEntity(Entity):
     def config(self: Self, config: etree._Element | etree._ElementTree) -> None:
         '''Recreate the Entity with the specified XML configuration.'''
         self.configRaw = etree.tostring(config, encoding='unicode')
-
-    @property
-    def name(self: Self) -> str:
-        '''The name of the entity.'''
-        return super().name
-
-    @name.setter
-    def name(self: Self, name: str) -> None:
-        if not isinstance(name, str):
-            raise ValueError('Name must be a string.')
-
-        self._check_valid()
-
-        if self._hv.read_only:
-            raise InsufficientPrivileges
-
-        self.updateConfigElement('./name', name)
 
     def updateConfigElement(self: Self, path: str, text: str, *, reset_units: bool = False) -> bool:
         '''Update the element at path in config to have a value of text.
@@ -407,7 +386,7 @@ class ConfigurableEntity(Entity):
 
 
 class RunnableEntity(Entity):
-    '''ABC for entities that may be activated and inactivated.'''
+    '''Base for entities that may be activated and inactivated.'''
     running: MethodProperty[bool] = MethodProperty(
         doc='Whether the entity is running or not.',
         type=bool,
@@ -519,6 +498,5 @@ class RunnableEntity(Entity):
 __all__ = [
     'Entity',
     'LifecycleResult',
-    'ConfigurableEntity',
     'RunnableEntity',
 ]

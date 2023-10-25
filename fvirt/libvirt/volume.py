@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Any, Final, Self, overload
 import libvirt
 
 from .descriptors import ConfigProperty, MethodProperty
-from .entity import ConfigurableEntity, LifecycleResult
+from .entity import Entity, LifecycleResult
 from .entity_access import BaseEntityAccess, EntityAccess, NameMap
 from .exceptions import SubOperationFailed
 from .stream import Stream
@@ -33,7 +33,7 @@ MATCH_ALIASES: Final = {
 }
 
 
-class Volume(ConfigurableEntity):
+class Volume(Entity):
     '''A basic wrapper for libvirt storage volumes.
 
        This is a wrapper around a libvirt.virStorageVol instance. It lacks

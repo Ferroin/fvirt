@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Any, Final, Self, cast, overload
 import libvirt
 
 from .descriptors import ConfigProperty
-from .entity import ConfigurableEntity, LifecycleResult, RunnableEntity
+from .entity import LifecycleResult, RunnableEntity
 from .entity_access import BaseEntityAccess, EntityAccess, NameMap, UUIDMap
 from .exceptions import EntityRunning, InsufficientPrivileges, InvalidConfig, NotConnected
 from .volume import Volume, VolumeAccess
@@ -33,7 +33,7 @@ MATCH_ALIASES: Final = {
 }
 
 
-class StoragePool(ConfigurableEntity, RunnableEntity):
+class StoragePool(RunnableEntity):
     '''A basic class encapsulating a libvirt storage pool.
 
        This is a wrapper around a libvirt.virStoragePool instance. It lacks

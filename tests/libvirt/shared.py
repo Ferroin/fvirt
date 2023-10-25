@@ -11,7 +11,7 @@ from typing import Any, Type
 from lxml import etree
 
 from fvirt.libvirt import Hypervisor, LifecycleResult
-from fvirt.libvirt.entity import ConfigurableEntity, Entity, RunnableEntity
+from fvirt.libvirt.entity import Entity, RunnableEntity
 from fvirt.libvirt.entity_access import EntityAccess, EntityMap
 from fvirt.util.match import MatchAlias, MatchArgument
 
@@ -106,8 +106,8 @@ def check_runnable_destroy(entity: RunnableEntity) -> None:
     assert entity.running == False  # noqa: E712
 
 
-def check_undefine(parent: Hypervisor | Entity, prop: str, entity: ConfigurableEntity) -> None:
-    '''Check that a ConfigurableEntity can be undefined propery.'''
+def check_undefine(parent: Hypervisor | Entity, prop: str, entity: Entity) -> None:
+    '''Check that a Entity can be undefined propery.'''
     assert entity.valid == True  # noqa: E712
 
     name = entity.name
@@ -140,7 +140,7 @@ def check_undefine(parent: Hypervisor | Entity, prop: str, entity: ConfigurableE
     assert getattr(parent, prop).get(name) is None
 
 
-def check_xslt(target: ConfigurableEntity, path: str, value: str, prop: str) -> None:
+def check_xslt(target: Entity, path: str, value: str, prop: str) -> None:
     '''Check that applying an XSLT document to an entity works.'''
     old_value = getattr(target, prop)
     target.applyXSLT(etree.XSLT(etree.XML(XSLT_DATA.format(path=path, value=value))))

@@ -17,7 +17,7 @@ from ..util.units import unit_to_bytes
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
-    from .entity import ConfigurableEntity
+    from .entity import Entity
 
 T = TypeVar('T')
 
@@ -194,7 +194,7 @@ class SettableMethodProperty(MethodProperty[T], WriteDescriptor[T]):
 
 
 class ConfigProperty(ReadDescriptor[T]):
-    '''A descriptor that maps a config value in a ConfigurableEntity to a property.
+    '''A descriptor that maps a config value in a Entity to a property.
 
        For writable configuration properties, use ConfigElementProperty
        or ConfigAttributeProperty instead.'''
@@ -217,7 +217,7 @@ class ConfigProperty(ReadDescriptor[T]):
     def __repr__(self: Self) -> str:
         return f'<ConfigProperty: path={ self._path }, fallback={ self._fallback }>'
 
-    def _get_value(self: Self, instance: ConfigurableEntity) -> Any:
+    def _get_value(self: Self, instance: Entity) -> Any:
         ret: Any = None
         result = self._xpath(instance.config)
 
