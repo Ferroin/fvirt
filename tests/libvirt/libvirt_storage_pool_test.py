@@ -290,10 +290,9 @@ def test_delete(
     assert result == LifecycleResult.FAILURE
 
 
-@pytest.mark.xfail(reason='Not working due to apparent libvirt bug')
 def test_xslt(live_pool: StoragePool) -> None:
     '''Check that applying an XSLT document to a pool works correctly.'''
-    check_xslt(live_pool, '/target/path', '/test', 'target')
+    check_xslt(live_pool, 'target/path', '/test')
 
 
 def test_pool_access_iterable(test_hv: Hypervisor, serial: Callable[[str], _GeneratorContextManager[None]]) -> None:
