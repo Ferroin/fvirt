@@ -22,7 +22,7 @@ from fvirt.libvirt import InvalidOperation, LifecycleResult, PlatformNotSupporte
 from fvirt.libvirt.volume import MATCH_ALIASES, Volume
 from fvirt.util.match import MatchTarget
 
-from .shared import (XSLT_DATA, check_entity_access_get, check_entity_access_iterable, check_entity_access_mapping,
+from .shared import (check_entity_access_get, check_entity_access_iterable, check_entity_access_mapping,
                      check_entity_access_match, check_entity_format, check_match_aliases, check_undefine)
 
 if TYPE_CHECKING:
@@ -101,9 +101,9 @@ def test_config(live_volume: Volume) -> None:
 
 
 @pytest.mark.libvirtd
-def test_xslt(live_volume: Volume) -> None:
+def test_xslt(live_volume: Volume, xslt_doc_factory: Callable[[str, str], str]) -> None:
     '''Check that the apply_xslt() method properly throws an InvalidOperation error.'''
-    xslt = etree.XSLT(etree.fromstring(XSLT_DATA.format(path='target/path', value='/test')))
+    xslt = etree.XSLT(etree.fromstring(xslt_doc_factory('target/path', '/test')))
 
     with pytest.raises(InvalidOperation):
         live_volume.apply_xslt(xslt)

@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping, Sequence
-from typing import Any, Type
+from typing import TYPE_CHECKING, Any, Type
 
 from lxml import etree
 
@@ -15,20 +15,8 @@ from fvirt.libvirt.entity import Entity, RunnableEntity
 from fvirt.libvirt.entity_access import EntityAccess, EntityMap
 from fvirt.util.match import MatchAlias, MatchArgument
 
-XSLT_DATA = '''
-<?xml version='1.1'?>
-<xsl:stylesheet xmlns:xsl='http://www.w3.org/1999/XSL/Transform' version='1.0'>
-    <xsl:output method='xml' encoding='utf-8'/>
-    <xsl:template match="node()|@*">
-        <xsl:copy>
-            <xsl:apply-templates select="node()|@*"/>
-        </xsl:copy>
-    </xsl:template>
-    <xsl:template match='{path}/text()'>
-        <xsl:text>{value}</xsl:text>
-    </xsl:template>
-</xsl:stylesheet>
-'''.lstrip().rstrip()
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 def check_match_aliases(aliases: Mapping[str, MatchAlias], entity: Entity) -> None:
@@ -142,21 +130,22 @@ def check_undefine(parent: Hypervisor | Entity, prop: str, entity: Entity) -> No
     assert getattr(parent, prop).get(name) is None
 
 
-def check_xslt(target: Entity, path: str, value: str) -> None:
+def check_xslt(target: Entity, path: str, value: str, xslt_doc_factory: Callable[[str, str], str]) -> None:
     '''Check that applying an XSLT document to an entity works.'''
     assert not path.startswith('/')
 
     e = target.config.find(f'/{path}')
     assert e is not None
     old_value = e.text
+    assert old_value is not None
 
-    target.apply_xslt(etree.XSLT(etree.XML(XSLT_DATA.format(path=path, value=value))))
+    target.apply_xslt(etree.XSLT(etree.XML(xslt_doc_factory(path, value))))
     e = target.config.find(f'/{path}')
 
     assert e is not None
     assert e.text == value
 
-    target.apply_xslt(etree.XSLT(etree.XML(XSLT_DATA.format(path=path, value=old_value))))
+    target.apply_xslt(etree.XSLT(etree.XML(xslt_doc_factory(path, old_value))))
     e = target.config.find(f'/{path}')
 
     assert e is not None
