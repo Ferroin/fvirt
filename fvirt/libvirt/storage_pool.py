@@ -127,7 +127,7 @@ class StoragePool(RunnableEntity):
 
     @property
     def _config_flags_inactive(self: Self) -> int:
-        return cast(int, self._config_flags | libvirt.VIR_STORAGE_POOL_INACTIVE)
+        return cast(int, self._config_flags | libvirt.VIR_STORAGE_XML_INACTIVE)
 
     @property
     def volumes(self: Self) -> VolumeAccess:

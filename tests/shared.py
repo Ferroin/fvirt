@@ -25,9 +25,14 @@ def compare_xml_trees(e1: etree._Element | etree._ElementTree, e2: etree._Elemen
     elif e2.text is None:
         assert e1.text is None
     else:
+        checked = False
         try:
             assert float(e1.text) == pytest.approx(float(e2.text))
+            checked = True
         except ValueError:
+            pass
+
+        if not checked:
             assert e1.text == e2.text
 
     assert e1.tail == e2.tail

@@ -16,6 +16,8 @@ from typing import TYPE_CHECKING, Any
 
 import pytest
 
+from lxml import etree
+
 from fvirt.libvirt import LifecycleResult, PlatformNotSupported, StoragePool
 from fvirt.libvirt.volume import MATCH_ALIASES, Volume
 from fvirt.util.match import MatchTarget
@@ -72,6 +74,23 @@ def test_name(live_volume: Volume) -> None:
 def test_key(live_volume: Volume) -> None:
     '''Check the key attribute.'''
     assert isinstance(live_volume.key, str)
+
+
+@pytest.mark.libvirtd
+def test_config_raw(live_volume: Volume) -> None:
+    '''Check that the config_raw property works correctly.'''
+    conf = live_volume.config_raw
+
+    assert isinstance(conf, str)
+
+    etree.fromstring(conf)
+
+
+@pytest.mark.libvirtd
+def test_config(live_volume: Volume) -> None:
+    conf = live_volume.config
+
+    assert isinstance(conf, etree._ElementTree)
 
 
 @pytest.mark.libvirtd

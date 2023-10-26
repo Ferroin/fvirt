@@ -7,24 +7,26 @@ from __future__ import annotations
 
 import re
 
-from typing import TYPE_CHECKING, Any, Type
+from typing import TYPE_CHECKING, Any, Type, cast
 from uuid import UUID
 
 import pytest
 
 from lxml import etree
 
-from fvirt.libvirt import EntityRunning, Hypervisor, LifecycleResult, Volume
+from fvirt.libvirt import EntityRunning, Hypervisor, InvalidConfig, LifecycleResult, Volume
 from fvirt.libvirt.entity_access import EntityAccess
 from fvirt.libvirt.storage_pool import MATCH_ALIASES, StoragePool
 from fvirt.util.match import MatchArgument, MatchTarget
 
 from .shared import (check_entity_access_get, check_entity_access_iterable, check_entity_access_mapping, check_entity_access_match,
                      check_entity_format, check_match_aliases, check_runnable_destroy, check_runnable_start, check_undefine, check_xslt)
+from ..shared import compare_xml_trees
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
     from contextlib import _GeneratorContextManager
+    from pathlib import Path
 
 
 @pytest.mark.libvirtd
@@ -72,6 +74,120 @@ def test_name(live_pool: StoragePool) -> None:
 def test_define() -> None:
     '''Check that defining a pool works.'''
     assert False
+
+
+@pytest.mark.libvirtd
+def test_config_raw(live_pool: StoragePool, tmp_path: Path) -> None:
+    '''Test the config_raw property.'''
+    conf = live_pool.config_raw
+
+    assert isinstance(conf, str)
+
+    new_conf = conf.replace(f'<path>{ live_pool.target }</path>', f'<path>{ str(tmp_path) }</path>')
+
+    assert conf != new_conf
+
+    live_pool.config_raw = new_conf
+
+    e = etree.fromstring(live_pool.config_raw).find('./target/path')
+    assert e is not None
+
+    assert e.text == str(tmp_path)
+
+
+@pytest.mark.libvirtd
+def test_invalid_config_raw(live_pool: StoragePool, capfd: pytest.CaptureFixture) -> None:
+    '''Test trying to use a bogus config with the config_raw property.'''
+    conf = live_pool.config_raw
+
+    assert isinstance(conf, str)
+
+    bad_conf = conf.replace(f'<path>{ live_pool.target }</path>', '')
+
+    with pytest.raises(InvalidConfig):
+        live_pool.config_raw = bad_conf
+
+
+@pytest.mark.libvirtd
+def test_config(live_pool: StoragePool, tmp_path: Path) -> None:
+    '''Test the config property.'''
+    conf = live_pool.config
+
+    assert isinstance(conf, etree._ElementTree)
+
+    e = conf.find('/target/path')
+    assert e is not None
+
+    e.text = str(tmp_path)
+
+    live_pool.config = conf
+    live_pool.refresh()
+
+    assert cast(etree._Element, live_pool.config.find('/target/path')).text == str(tmp_path)
+
+
+@pytest.mark.libvirtd
+def test_invalid_config(live_pool: StoragePool, capfd: pytest.CaptureFixture) -> None:
+    '''Test trying to use a bogus config with the config property.'''
+    conf = live_pool.config
+
+    assert isinstance(conf, etree._ElementTree)
+
+    e = conf.find('/target/path')
+    assert e is not None
+
+    e.text = ''
+
+    with pytest.raises(InvalidConfig):
+        live_pool.config = conf
+
+
+@pytest.mark.libvirtd
+def test_config_raw_live(live_pool: StoragePool, tmp_path: Path) -> None:
+    '''Test that the config_raw_live property works as expected.'''
+    conf = live_pool.config_raw
+    live_conf = live_pool.config_raw_live
+    target = live_pool.target
+
+    assert isinstance(conf, str)
+    assert isinstance(live_conf, str)
+
+    new_conf = conf.replace(f'<path>{ live_pool.target }</path>', f'<path>{ str(tmp_path) }</path>')
+
+    assert conf != new_conf
+
+    live_pool.config_raw = new_conf
+    live_pool.refresh()
+
+    e1 = etree.fromstring(live_pool.config_raw).find('./target/path')
+    assert e1 is not None
+
+    assert e1.text == str(tmp_path)
+
+    e2 = etree.fromstring(live_pool.config_raw_live).find('./target/path')
+    assert e2 is not None
+
+    assert e2.text == target
+
+
+@pytest.mark.libvirtd
+def test_config_live(live_pool: StoragePool, tmp_path: Path) -> None:
+    '''Test that the config_raw_live property works as expected.'''
+    conf = live_pool.config
+    live_conf = live_pool.config_live
+
+    assert isinstance(conf, etree._ElementTree)
+    assert isinstance(live_conf, etree._ElementTree)
+
+    e = conf.find('/target/path')
+    assert e is not None
+
+    e.text = str(tmp_path)
+
+    live_pool.config = conf
+
+    assert cast(etree._Element, live_pool.config.find('/target/path')).text == str(tmp_path)
+    assert cast(etree._Element, live_pool.config_live.find('/target/path')).text != str(tmp_path)
 
 
 @pytest.mark.xfail(reason='Not yet implemented')
@@ -174,7 +290,7 @@ def test_delete(
     assert result == LifecycleResult.FAILURE
 
 
-@pytest.mark.xfail(reason='Apparent bug in libvirt breaks this.')
+@pytest.mark.xfail(reason='Not working due to apparent libvirt bug')
 def test_xslt(live_pool: StoragePool) -> None:
     '''Check that applying an XSLT document to a pool works correctly.'''
     check_xslt(live_pool, '/target/path', '/test', 'target')
