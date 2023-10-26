@@ -18,11 +18,11 @@ import pytest
 
 from lxml import etree
 
-from fvirt.libvirt import LifecycleResult, PlatformNotSupported, StoragePool
+from fvirt.libvirt import InvalidOperation, LifecycleResult, PlatformNotSupported, StoragePool
 from fvirt.libvirt.volume import MATCH_ALIASES, Volume
 from fvirt.util.match import MatchTarget
 
-from .shared import (check_entity_access_get, check_entity_access_iterable, check_entity_access_mapping,
+from .shared import (XSLT_DATA, check_entity_access_get, check_entity_access_iterable, check_entity_access_mapping,
                      check_entity_access_match, check_entity_format, check_match_aliases, check_undefine)
 
 if TYPE_CHECKING:
@@ -85,12 +85,28 @@ def test_config_raw(live_volume: Volume) -> None:
 
     etree.fromstring(conf)
 
+    with pytest.raises(InvalidOperation):
+        live_volume.config_raw = conf
+
 
 @pytest.mark.libvirtd
 def test_config(live_volume: Volume) -> None:
+    '''Check that the config property works correctly.'''
     conf = live_volume.config
 
     assert isinstance(conf, etree._ElementTree)
+
+    with pytest.raises(InvalidOperation):
+        live_volume.config = conf
+
+
+@pytest.mark.libvirtd
+def test_xslt(live_volume: Volume) -> None:
+    '''Check that the apply_xslt() method properly throws an InvalidOperation error.'''
+    xslt = etree.XSLT(etree.fromstring(XSLT_DATA.format(path='target/path', value='/test')))
+
+    with pytest.raises(InvalidOperation):
+        live_volume.apply_xslt(xslt)
 
 
 @pytest.mark.libvirtd
@@ -264,12 +280,6 @@ def test_resize_shrink_relative(live_volume: Volume) -> None:
 
     assert result is LifecycleResult.SUCCESS
     assert live_volume.capacity == size
-
-
-@pytest.mark.xfail(reason='Not yet implemented.')
-def test_xslt(live_volume: Volume) -> None:
-    '''Check that applying an XSLT document to a volume works correctly.'''
-    assert False
 
 
 @pytest.mark.libvirtd

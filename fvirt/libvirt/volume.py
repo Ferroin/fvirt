@@ -15,7 +15,7 @@ import libvirt
 from .descriptors import ConfigProperty, MethodProperty
 from .entity import Entity, LifecycleResult
 from .entity_access import BaseEntityAccess, EntityAccess, NameMap
-from .exceptions import SubOperationFailed
+from .exceptions import InvalidOperation, SubOperationFailed
 from .stream import Stream
 from ..util.match import MatchAlias
 
@@ -128,6 +128,22 @@ class Volume(Entity):
     @property
     def _config_flags(self: Self) -> int:
         return 0
+
+    @property
+    def config_raw(self: Self) -> str:
+        '''The raw XML configuration of the entity.
+
+           libvirt does not sanely support reconfiguring volumes,
+           so unlike most other Entity types, trying to write to this
+           property will raise an InvalidOperation error.
+
+           For pre-parsed XML configuration, use the config property
+           instead.'''
+        return super().config_raw
+
+    @config_raw.setter
+    def config_raw(self: Self, value: Any) -> None:
+        raise InvalidOperation
 
     def delete(self: Self, idempotent: bool = True) -> LifecycleResult:
         '''Remove the volume from the storage pool.
