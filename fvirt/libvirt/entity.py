@@ -435,7 +435,10 @@ class RunnableEntity(Entity):
         self._check_valid()
 
         if self.persistent:
-            return cast(str, self._entity.XMLDesc(self._config_flags_inactive))
+            try:
+                return cast(str, self._entity.XMLDesc(self._config_flags_inactive))
+            except Exception:
+                return self.config_raw_live
         else:
             return self.config_raw_live
 

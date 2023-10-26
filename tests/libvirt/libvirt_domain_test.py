@@ -14,12 +14,13 @@ import pytest
 
 from lxml import etree
 
-from fvirt.libvirt import EntityNotRunning, Hypervisor, LifecycleResult
+from fvirt.libvirt import EntityNotRunning, Hypervisor, InvalidConfig, LifecycleResult
 from fvirt.libvirt.domain import MATCH_ALIASES, Domain, DomainState
 from fvirt.util.match import MatchArgument, MatchTarget
 
 from .shared import (check_entity_access_get, check_entity_access_iterable, check_entity_access_mapping, check_entity_access_match,
                      check_entity_format, check_match_aliases, check_runnable_destroy, check_runnable_start, check_undefine)
+from ..shared import compare_xml_trees
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -84,10 +85,109 @@ def test_state(test_dom: Domain) -> None:
     assert test_dom.state != DomainState.RUNNING
 
 
-@pytest.mark.xfail(reason='Not yet implemented')
-def test_define() -> None:
+def test_define(test_hv: Hypervisor, dom_xml: Callable[[], str]) -> None:
     '''Check that defining a domain works.'''
-    assert False
+    xml = dom_xml()
+
+    result = test_hv.define_domain(xml)
+
+    assert isinstance(result, Domain)
+
+
+def test_config_raw(test_dom: Domain) -> None:
+    '''Test the config_raw property.'''
+    conf = test_dom.config_raw
+
+    assert isinstance(conf, str)
+
+    new_conf = conf.replace("clock offset='utc'", "clock offset='localtime'")
+
+    assert conf != new_conf
+
+    test_dom.config_raw = new_conf
+
+    assert test_dom.config_raw != conf
+    assert test_dom.config_raw == new_conf
+
+
+def test_invalid_config_raw(test_dom: Domain, capfd: pytest.CaptureFixture) -> None:
+    '''Test trying to use a bogus config with the config_raw property.'''
+    conf = test_dom.config_raw
+
+    assert isinstance(conf, str)
+
+    bad_conf = conf.replace("clock offset='utc'", "clock offset='foo'")
+
+    with pytest.raises(InvalidConfig):
+        test_dom.config_raw = bad_conf
+
+
+def test_config(test_dom: Domain) -> None:
+    '''Test the config property.'''
+    conf = test_dom.config
+
+    assert isinstance(conf, etree._ElementTree)
+
+    e = conf.find('/clock')
+    assert e is not None
+
+    e.attrib['offset'] = 'localtime'
+
+    test_dom.config = conf
+
+    compare_xml_trees(test_dom.config, conf)
+
+
+def test_invalid_config(test_dom: Domain, capfd: pytest.CaptureFixture) -> None:
+    '''Test trying to use a bogus config with the config property.'''
+    conf = test_dom.config
+
+    assert isinstance(conf, etree._ElementTree)
+
+    e = conf.find('/clock')
+    assert e is not None
+
+    e.attrib['offset'] = 'foo'
+
+    with pytest.raises(InvalidConfig):
+        test_dom.config = conf
+
+
+def test_config_raw_live(test_dom: Domain) -> None:
+    '''Test that the config_raw_live property works as expected.'''
+    conf = test_dom.config_raw
+    live_conf = test_dom.config_raw_live
+
+    assert isinstance(conf, str)
+    assert isinstance(live_conf, str)
+
+    new_conf = conf.replace("clock offset='utc'", "clock offset='localtime'")
+
+    assert conf != new_conf
+
+    test_dom.config_raw = new_conf
+
+    assert test_dom.config_raw == new_conf
+    assert test_dom.config_raw_live == live_conf
+
+
+def test_config_live(test_dom: Domain) -> None:
+    '''Test that the config_raw_live property works as expected.'''
+    conf = test_dom.config
+    live_conf = test_dom.config_live
+
+    assert isinstance(conf, etree._ElementTree)
+    assert isinstance(live_conf, etree._ElementTree)
+
+    e = conf.find('/clock')
+    assert e is not None
+
+    e.attrib['offset'] = 'localtime'
+
+    test_dom.config = conf
+
+    compare_xml_trees(test_dom.config, conf)
+    compare_xml_trees(test_dom.config_live, live_conf)
 
 
 @pytest.mark.xfail(reason='Requires live domain testing')
