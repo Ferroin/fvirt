@@ -7,6 +7,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import pytest
+
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
     from pathlib import Path
@@ -39,3 +41,9 @@ def test_command_run(
     assert e is not None
 
     assert e.text == str(tmp_path)
+
+
+@pytest.mark.xfail(reason='Test not yet implemented')
+def test_command_bulk_run() -> None:
+    '''Test running the command on multiple objects.'''
+    assert False
