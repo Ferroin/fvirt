@@ -24,6 +24,21 @@ if TYPE_CHECKING:
 
     from click.testing import CliRunner, Result
 
+XSLT_DATA = '''
+<?xml version='1.0'?>
+<xsl:stylesheet xmlns:xsl='http://www.w3.org/1999/XSL/Transform' version='1.0'>
+    <xsl:output method='xml' encoding='utf-8'/>
+    <xsl:template match="node()|@*">
+        <xsl:copy>
+            <xsl:apply-templates select="node()|@*"/>
+        </xsl:copy>
+    </xsl:template>
+    <xsl:template match='{path}/text()'>
+        <xsl:text>{value}</xsl:text>
+    </xsl:template>
+</xsl:stylesheet>
+'''.lstrip().rstrip()
+
 
 @pytest.fixture
 def runner(cli_runner: CliRunner) -> Callable[[Sequence[str], int], Result]:
@@ -40,6 +55,19 @@ def runner(cli_runner: CliRunner) -> Callable[[Sequence[str], int], Result]:
         return result
 
     return runner
+
+
+@pytest.fixture(scope='session')
+def xslt_doc_factory() -> Callable[[str, str], str]:
+    '''Provide a callable that produces an XSLT document.
+
+       The produced document will, when run through an XSLT processor,
+       modify the path specified as the first argument to have the text
+       specified as the second argument.'''
+    def inner(path: str, value: str) -> str:
+        return XSLT_DATA.format(path=path, value=value)
+
+    return inner
 
 
 @pytest.fixture(scope='session')

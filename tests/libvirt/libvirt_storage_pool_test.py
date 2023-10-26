@@ -290,9 +290,9 @@ def test_delete(
     assert result == LifecycleResult.FAILURE
 
 
-def test_xslt(live_pool: StoragePool) -> None:
+def test_xslt(live_pool: StoragePool, xslt_doc_factory: Callable[[str, str], str]) -> None:
     '''Check that applying an XSLT document to a pool works correctly.'''
-    check_xslt(live_pool, 'target/path', '/test')
+    check_xslt(live_pool, 'target/path', '/test', xslt_doc_factory)
 
 
 def test_pool_access_iterable(test_hv: Hypervisor, serial: Callable[[str], _GeneratorContextManager[None]]) -> None:

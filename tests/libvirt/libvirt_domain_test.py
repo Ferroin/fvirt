@@ -320,9 +320,9 @@ def test_domain_console() -> None:
     assert False
 
 
-def test_domain_xslt(test_dom: Domain) -> None:
+def test_domain_xslt(test_dom: Domain, xslt_doc_factory: Callable[[str, str], str]) -> None:
     '''Test that applying an XSLT document to a domain modifies it.'''
-    check_xslt(test_dom, 'on_crash', 'restart')
+    check_xslt(test_dom, 'on_crash', 'restart', xslt_doc_factory)
 
 
 def test_domain_access_iterable(test_hv: Hypervisor, serial: Callable[[str], _GeneratorContextManager[None]]) -> None:
