@@ -29,7 +29,7 @@ def test_command_run(
     e = live_pool.config.find('/target/path')
     assert e is not None
 
-    xslt_path.write_text(xslt_doc_factory('target/path', '/test'))
+    xslt_path.write_text(xslt_doc_factory('target/path', str(tmp_path)))
 
     result = runner(('-c', uri, 'pool', 'xslt', live_pool.name, str(xslt_path)), 0)
 
@@ -38,4 +38,4 @@ def test_command_run(
     e = live_pool.config.find('/target/path')
     assert e is not None
 
-    assert e.text == '/test'
+    assert e.text == str(tmp_path)
