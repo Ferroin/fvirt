@@ -5,13 +5,28 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import pytest
 
+if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
 
-@pytest.mark.xfail(reason='Test not yet implemented.')
-def test_command_run() -> None:
+    from click.testing import Result
+
+    from fvirt.libvirt import StoragePool
+
+
+def test_command_run(runner: Callable[[Sequence[str], int], Result], live_pool: StoragePool) -> None:
     '''Test that the command runs correctly.'''
-    assert False
+    assert live_pool.running
+
+    uri = str(live_pool._hv.uri)
+
+    result = runner(('-c', uri, 'pool', 'stop', live_pool.name), 0)
+    assert len(result.output) > 0
+
+    assert not live_pool.running
 
 
 @pytest.mark.xfail(reason='Test not yet implemented')
