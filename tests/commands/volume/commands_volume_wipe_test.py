@@ -41,3 +41,9 @@ def test_volume_wipe(runner: Callable[..., Result], live_pool: StoragePool, volu
         assert wiped_data != data
     finally:
         vol.undefine()
+
+
+@pytest.mark.xfail(reason='Test not yet implemented')
+def test_command_bulk_run() -> None:
+    '''Test running the command on multiple objects.'''
+    assert False
