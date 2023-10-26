@@ -19,7 +19,7 @@ from fvirt.libvirt.domain import MATCH_ALIASES, Domain, DomainState
 from fvirt.util.match import MatchArgument, MatchTarget
 
 from .shared import (check_entity_access_get, check_entity_access_iterable, check_entity_access_mapping, check_entity_access_match,
-                     check_entity_format, check_match_aliases, check_runnable_destroy, check_runnable_start, check_undefine)
+                     check_entity_format, check_match_aliases, check_runnable_destroy, check_runnable_start, check_undefine, check_xslt)
 from ..shared import compare_xml_trees
 
 if TYPE_CHECKING:
@@ -320,10 +320,9 @@ def test_domain_console() -> None:
     assert False
 
 
-@pytest.mark.xfail(reason='Cannot be tested without live domain testing.')
-def test_domain_xslt(test_domain: Domain) -> None:
+def test_domain_xslt(test_dom: Domain) -> None:
     '''Test that applying an XSLT document to a domain modifies it.'''
-    assert False
+    check_xslt(test_dom, 'on_crash', 'restart')
 
 
 def test_domain_access_iterable(test_hv: Hypervisor, serial: Callable[[str], _GeneratorContextManager[None]]) -> None:

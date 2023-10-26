@@ -24,7 +24,9 @@ XSLT_DATA = '''
             <xsl:apply-templates select="node()|@*"/>
         </xsl:copy>
     </xsl:template>
-    <xsl:template match='{path}/text()'>{value}</xsl:template>
+    <xsl:template match='{path}/text()'>
+        <xsl:text>{value}</xsl:text>
+    </xsl:template>
 </xsl:stylesheet>
 '''.lstrip().rstrip()
 
@@ -140,16 +142,25 @@ def check_undefine(parent: Hypervisor | Entity, prop: str, entity: Entity) -> No
     assert getattr(parent, prop).get(name) is None
 
 
-def check_xslt(target: Entity, path: str, value: str, prop: str) -> None:
+def check_xslt(target: Entity, path: str, value: str) -> None:
     '''Check that applying an XSLT document to an entity works.'''
-    old_value = getattr(target, prop)
-    target.apply_xslt(etree.XSLT(etree.XML(XSLT_DATA.format(path=path, value=value))))
+    assert not path.startswith('/')
 
-    assert getattr(target, prop) == value, target.config_raw
+    e = target.config.find(f'/{path}')
+    assert e is not None
+    old_value = e.text
+
+    target.apply_xslt(etree.XSLT(etree.XML(XSLT_DATA.format(path=path, value=value))))
+    e = target.config.find(f'/{path}')
+
+    assert e is not None
+    assert e.text == value
 
     target.apply_xslt(etree.XSLT(etree.XML(XSLT_DATA.format(path=path, value=old_value))))
+    e = target.config.find(f'/{path}')
 
-    assert getattr(target, prop) == old_value, target.config_raw
+    assert e is not None
+    assert e.text == old_value
 
 
 def check_entity_access_iterable(ea: EntityAccess, target_cls: Type[Entity]) -> None:
