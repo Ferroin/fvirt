@@ -166,11 +166,12 @@ def test_dom(
         dom = test_hv.define_domain(dom_xml())
 
     dom.start()
+    uuid = dom.uuid
 
     yield dom
 
     with serial('domain'):
-        if dom.valid:
+        if test_hv.domains.get(uuid) is not None:
             dom.destroy(idempotent=True)
             dom.undefine()
 
@@ -212,10 +213,12 @@ def live_pool(
     pool.build()
     pool.start()
 
+    uuid = pool.uuid
+
     yield pool
 
     with serial('pool'):
-        if pool.valid:
+        if live_hv.storage_pools.get(uuid) is not None:
             pool.destroy(idempotent=True)
             pool.delete()
             pool.undefine()
@@ -236,10 +239,12 @@ def test_pool(
     pool.build()
     pool.start()
 
+    uuid = pool.uuid
+
     yield pool
 
     with serial('pool'):
-        if pool.valid:
+        if test_hv.storage_pools.get(uuid) is not None:
             pool.destroy(idempotent=True)
             pool.delete()
             pool.undefine()
@@ -288,11 +293,13 @@ def test_volume(test_pool: StoragePool, volume_factory: Callable[[StoragePool], 
 
     assert '_hv' in dir(vol)
 
+    key = vol.key
+
     yield vol
 
     assert '_hv' in dir(vol)
 
-    if vol.valid:
+    if test_pool.volumes.get(key) is not None:
         vol.undefine()
 
 
@@ -303,9 +310,11 @@ def live_volume(live_pool: StoragePool, volume_factory: Callable[[StoragePool], 
 
     assert '_hv' in dir(vol)
 
+    key = vol.key
+
     yield vol
 
     assert '_hv' in dir(vol)
 
-    if vol.valid:
+    if live_pool.volumes.get(key) is not None:
         vol.undefine()

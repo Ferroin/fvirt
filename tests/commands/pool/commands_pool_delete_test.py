@@ -5,13 +5,39 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+from typing import TYPE_CHECKING
+
 import pytest
 
+from fvirt.commands._base.exitcode import ExitCode
 
-@pytest.mark.xfail(reason='Test not yet implemented.')
-def test_command_run() -> None:
+if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
+
+    from click.testing import Result
+
+    from fvirt.libvirt import StoragePool
+
+
+def test_command_run(runner: Callable[[Sequence[str], int], Result], live_pool: StoragePool) -> None:
     '''Test that the command runs correctly.'''
-    assert False
+    uri = str(live_pool._hv.uri)
+    path = Path(live_pool.target)
+
+    assert path.exists()
+    assert path.is_dir()
+
+    runner(('-c', uri, 'pool', 'delete', live_pool.name), int(ExitCode.FAILURE))
+
+    assert path.exists()
+    assert path.is_dir()
+
+    live_pool.destroy(idempotent=True)
+
+    runner(('-c', uri, 'pool', 'delete', live_pool.name), 0)
+
+    assert not path.exists()
 
 
 @pytest.mark.xfail(reason='Test not yet implemented')
