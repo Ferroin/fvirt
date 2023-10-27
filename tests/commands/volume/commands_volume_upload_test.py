@@ -67,7 +67,7 @@ def test_volume_upload_resize(
 
 @pytest.mark.slow
 @pytest.mark.libvirtd
-@pytest.mark.xfail(condition=sys.platform == 'win32', reason='Sparse data handling not supported on Windows')
+@pytest.mark.skipif(sys.platform == 'win32', reason='Sparse data handling not supported on Windows')
 def test_volume_sparse_upload(
     runner: Callable[[Sequence[str], int], Result],
     live_volume: tuple[Volume, StoragePool, Hypervisor],

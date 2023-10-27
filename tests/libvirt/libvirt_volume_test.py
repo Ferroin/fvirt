@@ -362,7 +362,7 @@ def test_volume_download(live_volume: tuple[Volume, StoragePool, Hypervisor], un
 
 @pytest.mark.slow
 @pytest.mark.libvirtd
-@pytest.mark.xfail(condition=sys.platform == 'win32', reason='Sparse data handling not supported on Windows', raises=PlatformNotSupported)
+@pytest.mark.skipif(sys.platform == 'win32', reason='Sparse data handling not supported on Windows')
 def test_volume_sparse_download(live_volume: tuple[Volume, StoragePool, Hypervisor], unique: Callable[..., Any]) -> None:
     '''Test volume sparse download functionality.'''
     vol, _, _ = live_volume
@@ -423,7 +423,7 @@ def test_volume_upload_resize(live_volume: tuple[Volume, StoragePool, Hypervisor
 
 @pytest.mark.slow
 @pytest.mark.libvirtd
-@pytest.mark.xfail(condition=sys.platform == 'win32', reason='Sparse data handling not supported on Windows', raises=PlatformNotSupported)
+@pytest.mark.skipif(sys.platform == 'win32', reason='Sparse data handling not supported on Windows')
 def test_volume_sparse_upload(live_volume: tuple[Volume, StoragePool, Hypervisor], unique: Callable[..., Any]) -> None:
     '''Test volume sparse upload functionality.'''
     vol, _, _ = live_volume
