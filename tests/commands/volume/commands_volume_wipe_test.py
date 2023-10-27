@@ -15,15 +15,20 @@ if TYPE_CHECKING:
 
     from click.testing import Result
 
-    from fvirt.libvirt import StoragePool, Volume
+    from fvirt.libvirt import Hypervisor, StoragePool, Volume
 
 
 @pytest.mark.libvirtd
 @pytest.mark.slow
-def test_volume_wipe(runner: Callable[..., Result], live_pool: StoragePool, volume_factory: Callable[[StoragePool, int], Volume]) -> None:
+def test_volume_wipe(
+    runner: Callable[..., Result],
+    live_pool: tuple[StoragePool, Hypervisor],
+    volume_factory: Callable[[StoragePool, int], Volume],
+) -> None:
     '''Test that the volume wipe command works correctly.'''
-    uri = str(live_pool._hv.uri)
-    vol = volume_factory(live_pool, 65536)  # Smaller than default intentionally to speed up the test.
+    pool, hv = live_pool
+    uri = str(hv.uri)
+    vol = volume_factory(pool, 65536)  # Smaller than default intentionally to speed up the test.
 
     try:
         path = Path(vol.path)
@@ -32,7 +37,7 @@ def test_volume_wipe(runner: Callable[..., Result], live_pool: StoragePool, volu
 
         path.write_bytes(data)
 
-        runner(('-c', uri, 'volume', 'wipe', live_pool.name, vol.name), 0)
+        runner(('-c', uri, 'volume', 'wipe', pool.name, vol.name), 0)
 
         assert vol.capacity == size
 

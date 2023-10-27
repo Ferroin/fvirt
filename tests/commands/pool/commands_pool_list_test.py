@@ -18,12 +18,13 @@ if TYPE_CHECKING:
 
     from click.testing import Result
 
-    from fvirt.libvirt import StoragePool
+    from fvirt.libvirt import Hypervisor, StoragePool
 
 
-def test_column_definitions(test_pool: StoragePool) -> None:
+def test_column_definitions(test_pool: tuple[StoragePool, Hypervisor]) -> None:
     '''Test that column definitions are valid.'''
-    check_columns(COLUMNS, test_pool)
+    pool, _ = test_pool
+    check_columns(COLUMNS, pool)
 
 
 def test_default_columns() -> None:
@@ -32,40 +33,44 @@ def test_default_columns() -> None:
 
 
 @pytest.mark.libvirtd
-def test_list(runner: Callable[[Sequence[str], int], Result], test_pool: StoragePool) -> None:
+def test_list(runner: Callable[[Sequence[str], int], Result], test_pool: tuple[StoragePool, Hypervisor]) -> None:
     '''Test the list command.'''
-    uri = str(test_pool._hv.uri)
+    pool, hv = test_pool
+    uri = str(hv.uri)
 
-    result = runner(('-c', uri, '--units', 'bytes', 'pool', 'list', '--match', 'name', test_pool.name), 0)
+    result = runner(('-c', uri, '--units', 'bytes', 'pool', 'list', '--match', 'name', pool.name), 0)
 
-    check_list_output(result.output, test_pool, tuple(COLUMNS[x] for x in DEFAULT_COLS))
+    check_list_output(result.output, pool, tuple(COLUMNS[x] for x in DEFAULT_COLS))
 
 
 @pytest.mark.libvirtd
-def test_no_headings(runner: Callable[[Sequence[str], int], Result], test_pool: StoragePool) -> None:
+def test_no_headings(runner: Callable[[Sequence[str], int], Result], test_pool: tuple[StoragePool, Hypervisor]) -> None:
     '''Test the --no-headings option.'''
-    uri = str(test_pool._hv.uri)
+    pool, hv = test_pool
+    uri = str(hv.uri)
 
-    result = runner(('-c', uri, '--units', 'bytes', 'pool', 'list', '--no-headings', '--match', 'name', test_pool.name), 0)
+    result = runner(('-c', uri, '--units', 'bytes', 'pool', 'list', '--no-headings', '--match', 'name', pool.name), 0)
 
-    check_list_entry(result.output, test_pool, tuple(COLUMNS[x] for x in DEFAULT_COLS))
+    check_list_entry(result.output, pool, tuple(COLUMNS[x] for x in DEFAULT_COLS))
 
 
 @pytest.mark.libvirtd
-def test_list_only_name(runner: Callable[[Sequence[str], int], Result], test_pool: StoragePool) -> None:
+def test_list_only_name(runner: Callable[[Sequence[str], int], Result], test_pool: tuple[StoragePool, Hypervisor]) -> None:
     '''Test listing only names.'''
-    uri = str(test_pool._hv.uri)
+    pool, hv = test_pool
+    uri = str(hv.uri)
 
-    result = runner(('-c', uri, 'pool', 'list', '--only', 'name', '--match', 'name', test_pool.name), 0)
+    result = runner(('-c', uri, 'pool', 'list', '--only', 'name', '--match', 'name', pool.name), 0)
 
-    assert result.output.rstrip() == str(test_pool.name)
+    assert result.output.rstrip() == str(pool.name)
 
 
 @pytest.mark.libvirtd
-def test_list_only_uuid(runner: Callable[[Sequence[str], int], Result], test_pool: StoragePool) -> None:
+def test_list_only_uuid(runner: Callable[[Sequence[str], int], Result], test_pool: tuple[StoragePool, Hypervisor]) -> None:
     '''Test listing only UUIDs.'''
-    uri = str(test_pool._hv.uri)
+    pool, hv = test_pool
+    uri = str(hv.uri)
 
-    result = runner(('-c', uri, 'pool', 'list', '--only', 'uuid', '--match', 'name', test_pool.name), 0)
+    result = runner(('-c', uri, 'pool', 'list', '--only', 'uuid', '--match', 'name', pool.name), 0)
 
-    assert result.output.rstrip() == str(test_pool.uuid)
+    assert result.output.rstrip() == str(pool.uuid)

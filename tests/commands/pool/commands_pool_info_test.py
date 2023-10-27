@@ -16,19 +16,21 @@ if TYPE_CHECKING:
 
     from click.testing import Result
 
-    from fvirt.libvirt.storage_pool import StoragePool
+    from fvirt.libvirt import Hypervisor, StoragePool
 
 
-def test_info_items(test_pool: StoragePool) -> None:
+def test_info_items(test_pool: tuple[StoragePool, Hypervisor]) -> None:
     '''Test that the defined info items are valid.'''
-    check_info_items(INFO_ITEMS, test_pool)
+    pool, _ = test_pool
+    check_info_items(INFO_ITEMS, pool)
 
 
-def test_command_run(runner: Callable[[Sequence[str], int], Result], live_pool: StoragePool) -> None:
+def test_command_run(runner: Callable[[Sequence[str], int], Result], live_pool: tuple[StoragePool, Hypervisor]) -> None:
     '''Test that the command runs correctly.'''
-    uri = str(live_pool._hv.uri)
+    pool, hv = live_pool
+    uri = str(hv.uri)
 
-    result = runner(('-c', uri, 'pool', 'info', live_pool.name), 0)
+    result = runner(('-c', uri, 'pool', 'info', pool.name), 0)
     assert len(result.output) > 0
 
-    check_info_output(result.output, INFO_ITEMS, live_pool, f'Storage Pool: { live_pool.name }')
+    check_info_output(result.output, INFO_ITEMS, pool, f'Storage Pool: { pool.name }')

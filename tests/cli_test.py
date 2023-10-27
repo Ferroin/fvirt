@@ -26,5 +26,5 @@ def test_load_check(runner: Callable[[Sequence[str], int], Result]) -> None:
 
 def test_help_topics(runner: Callable[[Sequence[str], int], Result]) -> None:
     '''Test that help for the help command works.'''
-    result = runner(('domain', 'help', 'help'), 0)
+    result = runner(('help', 'help'), 0)
     assert len(result.output) != 0

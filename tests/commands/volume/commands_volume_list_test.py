@@ -18,12 +18,13 @@ if TYPE_CHECKING:
 
     from click.testing import Result
 
-    from fvirt.libvirt import Volume
+    from fvirt.libvirt import Hypervisor, StoragePool, Volume
 
 
-def test_column_definitions(test_volume: Volume) -> None:
+def test_column_definitions(test_volume: tuple[Volume, StoragePool, Hypervisor]) -> None:
     '''Test that column definitions are valid.'''
-    check_columns(COLUMNS, test_volume)
+    vol, _, _ = test_volume
+    check_columns(COLUMNS, vol)
 
 
 def test_default_columns() -> None:
@@ -32,50 +33,46 @@ def test_default_columns() -> None:
 
 
 @pytest.mark.libvirtd
-def test_list(runner: Callable[[Sequence[str], int], Result], live_volume: Volume) -> None:
+def test_list(runner: Callable[[Sequence[str], int], Result], live_volume: tuple[Volume, StoragePool, Hypervisor]) -> None:
     '''Test the list command.'''
-    uri = str(live_volume._hv.uri)
-    pool = live_volume._parent
-    assert pool is not None
+    vol, pool, hv = live_volume
+    uri = str(hv.uri)
 
     result = runner(('-c', uri, '--units', 'bytes', 'volume', 'list', pool.name), 0)
     assert result.exit_code == 0
 
-    check_list_output(result.output, live_volume, tuple(COLUMNS[x] for x in DEFAULT_COLS))
+    check_list_output(result.output, vol, tuple(COLUMNS[x] for x in DEFAULT_COLS))
 
 
 @pytest.mark.libvirtd
-def test_no_headings(runner: Callable[[Sequence[str], int], Result], live_volume: Volume) -> None:
+def test_no_headings(runner: Callable[[Sequence[str], int], Result], live_volume: tuple[Volume, StoragePool, Hypervisor]) -> None:
     '''Test the --no-headings option.'''
-    uri = str(live_volume._hv.uri)
-    pool = live_volume._parent
-    assert pool is not None
+    vol, pool, hv = live_volume
+    uri = str(hv.uri)
 
     result = runner(('-c', uri, '--units', 'bytes', 'volume', 'list', '--no-headings', pool.name), 0)
     assert result.exit_code == 0
 
-    check_list_entry(result.output, live_volume, tuple(COLUMNS[x] for x in DEFAULT_COLS))
+    check_list_entry(result.output, vol, tuple(COLUMNS[x] for x in DEFAULT_COLS))
 
 
 @pytest.mark.libvirtd
-def test_list_only_name(runner: Callable[[Sequence[str], int], Result], live_volume: Volume) -> None:
+def test_list_only_name(runner: Callable[[Sequence[str], int], Result], live_volume: tuple[Volume, StoragePool, Hypervisor]) -> None:
     '''Test listing only names.'''
-    uri = str(live_volume._hv.uri)
-    pool = live_volume._parent
-    assert pool is not None
+    vol, pool, hv = live_volume
+    uri = str(hv.uri)
 
     result = runner(('-c', uri, 'volume', 'list', '--only', 'name', pool.name), 0)
 
-    assert result.output.rstrip() == str(live_volume.name)
+    assert result.output.rstrip() == str(vol.name)
 
 
 @pytest.mark.libvirtd
-def test_list_only_key(runner: Callable[[Sequence[str], int], Result], live_volume: Volume) -> None:
+def test_list_only_key(runner: Callable[[Sequence[str], int], Result], live_volume: tuple[Volume, StoragePool, Hypervisor]) -> None:
     '''Test listing only keys.'''
-    uri = str(live_volume._hv.uri)
-    pool = live_volume._parent
-    assert pool is not None
+    vol, pool, hv = live_volume
+    uri = str(hv.uri)
 
     result = runner(('-c', uri, 'volume', 'list', '--only', 'key', pool.name), 0)
 
-    assert result.output.rstrip() == str(live_volume.key)
+    assert result.output.rstrip() == str(vol.key)

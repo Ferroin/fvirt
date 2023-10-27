@@ -19,9 +19,10 @@ if TYPE_CHECKING:
     from fvirt.libvirt import Domain, Hypervisor
 
 
-def test_info_items(test_dom: Domain) -> None:
+def test_info_items(test_dom: tuple[Domain, Hypervisor]) -> None:
     '''Test that the defined info items are valid.'''
-    check_info_items(INFO_ITEMS, test_dom)
+    dom, _ = test_dom
+    check_info_items(INFO_ITEMS, dom)
 
 
 def test_command_run(runner: Callable[[Sequence[str], int], Result], test_hv: Hypervisor) -> None:

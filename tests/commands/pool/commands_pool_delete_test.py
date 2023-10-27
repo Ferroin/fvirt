@@ -17,25 +17,26 @@ if TYPE_CHECKING:
 
     from click.testing import Result
 
-    from fvirt.libvirt import StoragePool
+    from fvirt.libvirt import Hypervisor, StoragePool
 
 
-def test_command_run(runner: Callable[[Sequence[str], int], Result], live_pool: StoragePool) -> None:
+def test_command_run(runner: Callable[[Sequence[str], int], Result], live_pool: tuple[StoragePool, Hypervisor]) -> None:
     '''Test that the command runs correctly.'''
-    uri = str(live_pool._hv.uri)
-    path = Path(live_pool.target)
+    pool, hv = live_pool
+    uri = str(hv.uri)
+    path = Path(pool.target)
 
     assert path.exists()
     assert path.is_dir()
 
-    runner(('-c', uri, 'pool', 'delete', live_pool.name), int(ExitCode.FAILURE))
+    runner(('-c', uri, 'pool', 'delete', pool.name), int(ExitCode.FAILURE))
 
     assert path.exists()
     assert path.is_dir()
 
-    live_pool.destroy(idempotent=True)
+    pool.destroy(idempotent=True)
 
-    runner(('-c', uri, 'pool', 'delete', live_pool.name), 0)
+    runner(('-c', uri, 'pool', 'delete', pool.name), 0)
 
     assert not path.exists()
 
