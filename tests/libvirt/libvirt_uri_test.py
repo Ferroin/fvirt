@@ -27,7 +27,7 @@ SAMPLE_URIS = (
     'hyperv://example-hyperv.com/?transport=http',
     'ch:///session',
     'bhyve+ext://example.com/system?command=nc',
-    'qemu:///embed?path=/foo',
+    'qemu:///embed?root=/foo',
     'esx://example.com/?transport=http&auto_answer=0',
 )
 
