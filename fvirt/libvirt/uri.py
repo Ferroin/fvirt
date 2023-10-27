@@ -137,8 +137,8 @@ class URI:
                 raise ValueError('Driver does not support /system paths.')
             elif path == '/embed' and DriverFlag.EMBED not in DRIVER_INFO[driver]:
                 raise ValueError('Driver does not support /embed paths.')
-            elif path == '/embed' and 'path' not in parameters:
-                raise ValueError('Parameter "path" must be specified for /embed URIs.')
+            elif path == '/embed' and 'root' not in parameters:
+                raise ValueError('Parameter "root" must be specified for /embed URIs.')
             elif path not in {'/session', '/system', '/embed', '/'} and DriverFlag.PATH not in DRIVER_INFO[driver]:
                 raise ValueError('Driver does not support arbitrary paths.')
             elif host is None and DriverFlag.CLIENT_ONLY in DRIVER_INFO[driver]:
