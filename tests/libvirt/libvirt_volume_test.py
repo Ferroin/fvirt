@@ -18,7 +18,7 @@ import pytest
 
 from lxml import etree
 
-from fvirt.libvirt import Hypervisor, InvalidOperation, LifecycleResult, PlatformNotSupported, StoragePool
+from fvirt.libvirt import Hypervisor, InvalidOperation, LifecycleResult, StoragePool
 from fvirt.libvirt.volume import MATCH_ALIASES, Volume
 from fvirt.util.match import MatchTarget
 
