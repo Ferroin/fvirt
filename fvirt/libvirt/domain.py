@@ -407,7 +407,7 @@ class Domain(RunnableEntity):
         return stream
 
 
-class Domains(BaseEntityAccess):
+class Domains(BaseEntityAccess[Domain]):
     '''Domain access mixin for Entity access protocol.'''
     @property
     def _count_funcs(self: Self) -> Iterable[str]:
@@ -422,21 +422,21 @@ class Domains(BaseEntityAccess):
         return Domain
 
 
-class DomainsByName(NameMap, Domains):
+class DomainsByName(NameMap[Domain], Domains):
     '''Immutabkle mapping returning domains on a Hypervisor based on their names.'''
     @property
     def _lookup_func(self: Self) -> str:
         return 'lookupByName'
 
 
-class DomainsByUUID(UUIDMap, Domains):
+class DomainsByUUID(UUIDMap[Domain], Domains):
     '''Immutabkle mapping returning domains on a Hypervisor based on their UUIDs.'''
     @property
     def _lookup_func(self: Self) -> str:
         return 'lookupByUUIDString'
 
 
-class DomainsByID(EntityMap, Domains):
+class DomainsByID(EntityMap[Domain], Domains):
     '''Immutabkle mapping returning running domains on a Hypervisor based on their IDs.'''
     @property
     def _count_funcs(self: Self) -> Iterable[str]:
@@ -460,7 +460,7 @@ class DomainsByID(EntityMap, Domains):
         return key
 
 
-class DomainAccess(EntityAccess, Domains):
+class DomainAccess(EntityAccess[Domain], Domains):
     '''Class used for accessing domains on a Hypervisor.
 
        DomainAccess instances are iterable, returning the domains on
@@ -491,7 +491,7 @@ class DomainAccess(EntityAccess, Domains):
                 pass
 
         if ret is None:
-            ret = cast(Domain | None, super().get(key))
+            ret = super().get(key)
 
         return ret
 

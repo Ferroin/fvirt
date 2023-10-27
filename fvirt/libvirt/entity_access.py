@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import Iterable, Iterator, Mapping, Sized
-from typing import TYPE_CHECKING, Any, Self, cast, final
+from typing import TYPE_CHECKING, Any, Generic, Self, TypeVar, cast, final
 from uuid import UUID
 
 import libvirt
@@ -18,8 +18,10 @@ if TYPE_CHECKING:
     from .hypervisor import Hypervisor
     from ..util.match import MatchArgument
 
+T = TypeVar('T', bound=Entity)
 
-class BaseEntityAccess(ABC, Sized):
+
+class BaseEntityAccess(ABC, Sized, Generic[T]):
     '''Abstract base class for entity access protocols.'''
     def __init__(self: Self, parent: Hypervisor | Entity) -> None:
         self._parent = parent
@@ -50,7 +52,8 @@ class BaseEntityAccess(ABC, Sized):
             return link
 
     @staticmethod
-    def _filter_entities(entities: Iterable[Entity]) -> Iterable[Entity]:
+    def _filter_entities(entities: Iterable[Any]) -> Iterable[Any]:
+        '''Used to filter entities prior to wrapping them in _entity_class.'''
         return entities
 
     @property
@@ -68,11 +71,11 @@ class BaseEntityAccess(ABC, Sized):
 
     @property
     @abstractmethod
-    def _entity_class(self: Self) -> type:
+    def _entity_class(self: Self) -> type[T]:
         '''The class used to encapsulate the entities.'''
 
 
-class EntityMap(BaseEntityAccess, Mapping):
+class EntityMap(BaseEntityAccess[T], Mapping):
     '''ABC for mappings of entities on a hypervisor.'''
     def __iter__(self: Self) -> Iterator[str]:
         with self._parent:
@@ -84,7 +87,7 @@ class EntityMap(BaseEntityAccess, Mapping):
                 case entities:
                     return iter(self._get_key(x) for x in self._filter_entities(entities))
 
-    def __getitem__(self: Self, key: Any) -> Entity:
+    def __getitem__(self: Self, key: Any) -> T:
         key = self._coerce_key(key)
 
         with self._parent:
@@ -95,7 +98,7 @@ class EntityMap(BaseEntityAccess, Mapping):
                     case None:
                         raise KeyError(key)
                     case entity:
-                        return cast(Entity, self._entity_class(entity, self._parent))
+                        return self._entity_class(entity, self._parent)
             except libvirt.libvirtError:
                 raise KeyError(key)
 
@@ -113,7 +116,7 @@ class EntityMap(BaseEntityAccess, Mapping):
         '''Name of the lookup method called on virConnect to find an entity.'''
 
 
-class NameMap(EntityMap):
+class NameMap(EntityMap[T]):
     '''Mapping access to entities by name.'''
     def _get_key(self: Self, entity: Any) -> str:
         return cast(str, entity.name())
@@ -125,7 +128,7 @@ class NameMap(EntityMap):
         return key
 
 
-class UUIDMap(EntityMap):
+class UUIDMap(EntityMap[T]):
     '''Mapping access by UUID.
 
        On access, accepts either a UUID string, a big-endian bytes object
@@ -155,7 +158,7 @@ class UUIDMap(EntityMap):
         return cast(str, key)
 
 
-class EntityAccess(BaseEntityAccess, Iterable):
+class EntityAccess(BaseEntityAccess[T], Iterable):
     '''Class providing top-level entity access protocol.
 
        Instances are directly iterable to access entities, though the
@@ -168,7 +171,7 @@ class EntityAccess(BaseEntityAccess, Iterable):
        relatively quickly, but it also means that iterator access only
        works correctly if you have something holding the Hypervisor
        connection open.'''
-    def __iter__(self: Self) -> Iterator[Entity]:
+    def __iter__(self: Self) -> Iterator[T]:
         with self._parent:
             link = self._get_parent_link()
 
@@ -178,7 +181,7 @@ class EntityAccess(BaseEntityAccess, Iterable):
                 case entities:
                     return iter(self._entity_class(x, self._parent) for x in self._filter_entities(entities))
 
-    def get(self: Self, key: Any) -> Entity | None:
+    def get(self: Self, key: Any) -> T | None:
         '''Look up an entity by a general identifier.
 
            This tries, in order, looking up by name and then by UUID. If
@@ -186,7 +189,7 @@ class EntityAccess(BaseEntityAccess, Iterable):
 
            Child classes should override this to specify an appropriate
            type signature.'''
-        ret: Entity | None = None
+        ret: T | None = None
 
         if hasattr(self, 'by_name'):
             if isinstance(key, str):
@@ -203,9 +206,9 @@ class EntityAccess(BaseEntityAccess, Iterable):
 
         return ret
 
-    def match(self: Self, match: MatchArgument) -> Iterable[Entity]:
+    def match(self: Self, match: MatchArgument) -> Iterable[T]:
         '''Return an iterable of entities that match given match parameters.'''
-        def f(entity: Entity) -> bool:
+        def f(entity: T) -> bool:
             value = match[0].get_value(entity)
             return match[1].match(value) is not None
 

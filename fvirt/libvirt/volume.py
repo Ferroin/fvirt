@@ -8,13 +8,13 @@ from __future__ import annotations
 import io
 import os
 
-from typing import TYPE_CHECKING, Any, Final, Self, overload
+from typing import TYPE_CHECKING, Any, Final, Self, cast, overload
 
 import libvirt
 
 from .descriptors import ConfigProperty, MethodProperty
 from .entity import Entity, LifecycleResult
-from .entity_access import BaseEntityAccess, EntityAccess, NameMap
+from .entity_access import BaseEntityAccess, EntityAccess, EntityMap, NameMap
 from .exceptions import InvalidOperation, SubOperationFailed
 from .stream import Stream
 from ..util.match import MatchAlias
@@ -335,7 +335,7 @@ class Volume(Entity):
         return LifecycleResult.SUCCESS
 
 
-class Volumes(BaseEntityAccess):
+class Volumes(BaseEntityAccess[Volume]):
     '''Volume access mixin for Entity access protocol.'''
     @property
     def _count_funcs(self: Self) -> Iterable[str]:
@@ -350,14 +350,30 @@ class Volumes(BaseEntityAccess):
         return Volume
 
 
-class VolumesByName(NameMap, Volumes):
-    '''Immutabkle mapping returning volumes on a StoragePool based on their names.'''
+class VolumesByName(NameMap[Volume], Volumes):
+    '''Immutable mapping returning volumes on a StoragePool based on their names.'''
     @property
     def _lookup_func(self: Self) -> str:
         return 'storageVolLookupByName'
 
 
-class VolumeAccess(EntityAccess, Volumes):
+class VolumesByKey(EntityMap[Volume], Volumes):
+    '''Immutable mapping returning Volumes on a StoragePool based on their key.'''
+    def _get_key(self: Self, entity: Any) -> str:
+        return cast(str, entity.key())
+
+    def _coerce_key(self: Self, key: Any) -> str:
+        if not isinstance(key, str):
+            raise KeyError(key)
+
+        return key
+
+    @property
+    def _lookup_func(self: Self) -> str:
+        return 'storageVolLookupByKey'
+
+
+class VolumeAccess(EntityAccess[Volume], Volumes):
     '''Class used for accessing volumes on a StoragePool.
 
        VolumeAccess instances are iterable, returning the volumes in
@@ -367,12 +383,18 @@ class VolumeAccess(EntityAccess, Volumes):
        the total number of volumes on the StoragePool.'''
     def __init__(self: Self, parent: StoragePool) -> None:
         self.__by_name = VolumesByName(parent)
+        self.__by_key = VolumesByKey(parent)
         super().__init__(parent)
 
     @property
     def by_name(self: Self) -> VolumesByName:
         '''Mapping access to volumes by name.'''
         return self.__by_name
+
+    @property
+    def by_key(self: Self) -> VolumesByKey:
+        '''Mapping access to volumes by key.'''
+        return self.__by_key
 
 
 __all__ = [
