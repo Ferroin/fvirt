@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     from .state import State
 
 
-def __read_file(path: str) -> str:
+def _read_file(path: str) -> str:
     with click.open_file(path, mode='r') as f:
         return cast(str, f.read())
 
@@ -54,11 +54,7 @@ class NewCommand(Command, ABC):
         ) -> None:
             success = 0
 
-            confdata = list(state.pool.map(__read_file, confpath))
-
-            for cpath in confpath:
-                with click.open_file(cpath, mode='r') as config:
-                    confdata.append(config.read())
+            confdata = list(state.pool.map(_read_file, confpath))
 
             uri = state.hypervisor.uri
 
@@ -164,7 +160,7 @@ class NewCommand(Command, ABC):
             params += self.mixin_parent_params()
 
         params += (click.Argument(
-            param_decls=('configpath',),
+            param_decls=('confpath',),
             type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True, resolve_path=True),
             nargs=-1,
         ),)
