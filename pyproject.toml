@@ -89,6 +89,7 @@ markers = [
 required_plugins = [
     "pytest-click",
     "pytest-unique",
+    "pytest-xdist",
 ]
 testpaths = "tests"
 timeout = 30
