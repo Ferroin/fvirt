@@ -20,28 +20,26 @@ if TYPE_CHECKING:
 
     from click.testing import Result
 
-    from fvirt.libvirt import StoragePool, Volume
+    from fvirt.libvirt import Hypervisor, StoragePool, Volume
 
 
 @pytest.mark.libvirtd
-def test_info_items(live_volume: Volume) -> None:
+def test_info_items(live_volume: tuple[Volume, StoragePool, Hypervisor]) -> None:
     '''Test that the defined info items are valid.'''
-    check_info_items(INFO_ITEMS, live_volume)
+    vol, _, _ = live_volume
+    check_info_items(INFO_ITEMS, vol)
 
 
 @pytest.mark.libvirtd
-def test_command_run(runner: Callable[[Sequence[str], int], Result], live_pool: StoragePool, volume_factory: Callable[[StoragePool], Volume]) -> None:
+def test_command_run(runner: Callable[[Sequence[str], int], Result], live_volume: tuple[Volume, StoragePool, Hypervisor]) -> None:
     '''Test that the command runs correctly.'''
-    uri = str(live_pool._hv.uri)
-    vol = volume_factory(live_pool)
+    vol, pool, hv = live_volume
+    uri = str(hv.uri)
 
-    try:
-        result = runner(('-c', uri, 'volume', 'info', live_pool.name, vol.name), 0)
-        assert len(result.output) > 0
+    result = runner(('-c', uri, 'volume', 'info', pool.name, vol.name), 0)
+    assert len(result.output) > 0
 
-        check_info_output(result.output, INFO_ITEMS, vol, f'Volume: { vol.name }')
+    check_info_output(result.output, INFO_ITEMS, vol, f'Volume: { vol.name }')
 
-        match = re.search(f'^  Storage Pool: { live_pool.name }$', result.output, re.MULTILINE)
-        assert match, 'Storage pool reference not found in output.'
-    finally:
-        vol.undefine()
+    match = re.search(f'^  Storage Pool: { pool.name }$', result.output, re.MULTILINE)
+    assert match, 'Storage pool reference not found in output.'

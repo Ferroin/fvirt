@@ -14,22 +14,24 @@ if TYPE_CHECKING:
 
     from click.testing import Result
 
-    from fvirt.libvirt import StoragePool
+    from fvirt.libvirt import Hypervisor, StoragePool
 
 
-def test_command_run(runner: Callable[[Sequence[str], int], Result], live_pool: StoragePool) -> None:
+def test_command_run(runner: Callable[[Sequence[str], int], Result], live_pool: tuple[StoragePool, Hypervisor]) -> None:
     '''Test that the command runs correctly.'''
-    if live_pool.running:
-        live_pool.destroy()
+    pool, hv = live_pool
 
-    assert not live_pool.running
+    if pool.running:
+        pool.destroy()
 
-    uri = str(live_pool._hv.uri)
+    assert not pool.running
 
-    result = runner(('-c', uri, 'pool', 'start', live_pool.name), 0)
+    uri = str(hv.uri)
+
+    result = runner(('-c', uri, 'pool', 'start', pool.name), 0)
     assert len(result.output) > 0
 
-    assert live_pool.running
+    assert pool.running
 
 
 @pytest.mark.xfail(reason='Test not yet implemented')

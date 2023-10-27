@@ -72,21 +72,27 @@ def xslt_doc_factory() -> Callable[[str, str], str]:
 
 @pytest.fixture(scope='session')
 def libvirt_event_loop() -> None:
-    '''Ensure that the libvirt event loop is running.'''
+    '''Ensure that fvirt's libvirt event loop is running.'''
     start_libvirt_event_thread()
     return None
 
 
 @pytest.fixture(scope='session')
 def test_uri() -> str:
-    '''Provide the libvirt URI to use for testing.'''
+    '''Provide a libvirt URI to use for testing.'''
     return 'test:///default'
 
 
 @pytest.fixture(scope='session')
-def live_uri(libvirt_event_loop: None) -> str:
+def live_uri() -> str:
     '''Provide a live libvirt URI to use for testing.'''
     return 'qemu:///session'
+
+
+@pytest.fixture
+def embed_uri(tmp_path: Path) -> str:
+    '''Provide an embedded QEMU libvirt URI to use for testing.'''
+    return f'qemu:///embed?root={str(tmp_path)}'
 
 
 @pytest.fixture(scope='session')
@@ -108,12 +114,53 @@ def serial(lock_dir: Path) -> Callable[[str], _GeneratorContextManager[None]]:
 
 @pytest.fixture
 def test_hv(test_uri: str) -> Hypervisor:
+    '''Provide a fvirt.libvirt.Hypervisor instance for testing.
+
+       The provided instance will utilize the libvirt test driver with
+       the default configuration, making it suitble for cases where
+       interaction with live resources is not required.
+
+       Because of how the test driver works, tests using this fixture
+       do not need to worry about other tests accessing the hypervisor
+       concurrently with them, but they do need to account for the
+       possibility that the state exposed is not a clean instance of
+       the test driver.'''
     return Hypervisor(hvuri=URI.from_string(test_uri))
 
 
 @pytest.fixture
-def live_hv(live_uri: str) -> Hypervisor:
+def live_hv(live_uri: str, libvirt_event_loop: None) -> Hypervisor:
+    '''Provide a fvirt.libvirt.Hypervisor instance for testing.
+
+       The provided instance will utilize the libvirt QEMU driver in
+       session mode, making it suitable for cases that cannot be tested
+       with either the test driver or an embedded QEMU driver, such as
+       storage volume handling.
+
+       This fixture may spawn an instance of libvirtd or virtqemud for
+       the user running the tests if there is not one already running.
+
+       Because this connects to a shared instance of libvirtd, test cases
+       and fixtures that use this fixture should be written in such a
+       way that they are safe against concurrent access and usage of
+       the hypervisor, and should also make no assumptions about the
+       initial state of the hypervisor.'''
     return Hypervisor(hvuri=URI.from_string(live_uri))
+
+
+@pytest.fixture
+def embed_hv(embed_uri: str, libvirt_event_loop: None) -> Hypervisor:
+    '''Provide a fvirt.libvirt.Hypervisor instance for testing.
+
+       The provided instance will utilize the libvirt QEMU driver in
+       embedded mode with a unique root prefix, making it suitable for
+       cases that require testing of actual, live, domains.
+
+       Unlike the other hypervisor fixtures, this instance is guaranteed
+       to be in a clean, well-defined state for each test and fixture
+       that uses it and is safe against concurrent access, but it only
+       supports working with domains.'''
+    return Hypervisor(hvuri=URI.from_string(embed_uri))
 
 
 @pytest.fixture
@@ -158,19 +205,20 @@ def test_dom(
         test_hv: Hypervisor,
         dom_xml: Callable[[], str],
         serial: Callable[[str], _GeneratorContextManager[None]]
-) -> Generator[Domain, None, None]:
-    '''Provide a running Domain instance to operate on.
+) -> Generator[tuple[Domain, Hypervisor], None, None]:
+    '''Provide a running, persistent Domain instance to operate on.
 
-       Also ensures it's persistent.'''
-    with serial('domain'):
+       Yields the domain instance and the associated Hypervisor instance
+       in a tuple..'''
+    with serial('test-domain'):
         dom = test_hv.define_domain(dom_xml())
 
     dom.start()
     uuid = dom.uuid
 
-    yield dom
+    yield (dom, test_hv)
 
-    with serial('domain'):
+    with serial('test-domain'):
         if test_hv.domains.get(uuid) is not None:
             dom.destroy(idempotent=True)
             dom.undefine()
@@ -203,11 +251,12 @@ def live_pool(
         live_hv: Hypervisor,
         pool_xml: Callable[[], str],
         serial: Callable[[str], _GeneratorContextManager[None]],
-) -> Generator[StoragePool, None, None]:
-    '''Provide a running StoragePool instance to operate on.
+) -> Generator[tuple[StoragePool, Hypervisor], None, None]:
+    '''Provide a running, persistent StoragePool instance to operate on.
 
-       Also ensures it's persistent.'''
-    with serial('pool'):
+       Yields a tuple of the StoragePool instance and the associated
+       Hypervisor instance.'''
+    with serial('live-pool'):
         pool = live_hv.define_storage_pool(pool_xml())
 
     pool.build()
@@ -215,9 +264,9 @@ def live_pool(
 
     uuid = pool.uuid
 
-    yield pool
+    yield (pool, live_hv)
 
-    with serial('pool'):
+    with serial('live-pool'):
         if live_hv.storage_pools.get(uuid) is not None:
             pool.destroy(idempotent=True)
             pool.delete()
@@ -229,11 +278,12 @@ def test_pool(
         test_hv: Hypervisor,
         pool_xml: Callable[[], str],
         serial: Callable[[str], _GeneratorContextManager[None]]
-) -> Generator[StoragePool, None, None]:
-    '''Provide a running StoragePool instance to operate on.
+) -> Generator[tuple[StoragePool, Hypervisor], None, None]:
+    '''Provide a running, persistent StoragePool instance to operate on.
 
-       Also ensures it's persistent.'''
-    with serial('pool'):
+       Yields a tuple of the StoragePool instance and the associated
+       Hypervisor instance.'''
+    with serial('test-pool'):
         pool = test_hv.define_storage_pool(pool_xml())
 
     pool.build()
@@ -241,9 +291,9 @@ def test_pool(
 
     uuid = pool.uuid
 
-    yield pool
+    yield (pool, test_hv)
 
-    with serial('pool'):
+    with serial('test-pool'):
         if test_hv.storage_pools.get(uuid) is not None:
             pool.destroy(idempotent=True)
             pool.delete()
@@ -287,34 +337,38 @@ def volume_factory(volume_xml: Callable[[StoragePool, int], str]) -> Callable[[S
 
 
 @pytest.fixture
-def test_volume(test_pool: StoragePool, volume_factory: Callable[[StoragePool], Volume]) -> Generator[Volume, None, None]:
-    '''Provide a test volume to operate on.'''
-    vol = volume_factory(test_pool)
+def test_volume(
+    test_pool: tuple[StoragePool, Hypervisor],
+    volume_factory: Callable[[StoragePool], Volume],
+) -> Generator[tuple[Volume, StoragePool, Hypervisor], None, None]:
+    '''Provide a Volume instance to operate on.
 
-    assert '_hv' in dir(vol)
-
+       Yields a tuple of the Volume instance, the parent StoragePool,
+       and the associated Hypervisor.'''
+    pool, hv = test_pool
+    vol = volume_factory(pool)
     key = vol.key
 
-    yield vol
+    yield (vol, pool, hv)
 
-    assert '_hv' in dir(vol)
-
-    if test_pool.volumes.get(key) is not None:
+    if pool.volumes.get(key) is not None:
         vol.undefine()
 
 
 @pytest.fixture
-def live_volume(live_pool: StoragePool, volume_factory: Callable[[StoragePool], Volume]) -> Generator[Volume, None, None]:
-    '''Provide a live volume to operate on.'''
-    vol = volume_factory(live_pool)
+def live_volume(
+    live_pool: tuple[StoragePool, Hypervisor],
+    volume_factory: Callable[[StoragePool], Volume],
+) -> Generator[tuple[Volume, StoragePool, Hypervisor], None, None]:
+    '''Provide a Volume instance to operate on.
 
-    assert '_hv' in dir(vol)
-
+       Yields a tuple of the Volume instance, the parent StoragePool,
+       and the associated Hypervisor.'''
+    pool, hv = live_pool
+    vol = volume_factory(pool)
     key = vol.key
 
-    yield vol
+    yield (vol, pool, hv)
 
-    assert '_hv' in dir(vol)
-
-    if live_pool.volumes.get(key) is not None:
+    if pool.volumes.get(key) is not None:
         vol.undefine()

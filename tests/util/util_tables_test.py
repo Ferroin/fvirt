@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
     from click.testing import CliRunner
 
-    from fvirt.libvirt import Domain
+    from fvirt.libvirt import Domain, Hypervisor
 
 TEST_COLUMNS = {
     'name': Column(title='Name', prop='name'),
@@ -105,14 +105,15 @@ def test_column_info() -> None:
                                  [x for x in combinations(TEST_COLUMNS.keys(), 2)] +
                                  [x for x in combinations(TEST_COLUMNS.keys(), 3)] +
                                  [[x for x in TEST_COLUMNS.keys()]])
-def test_tabulate_entities(test_dom: Domain, cols: Sequence[str]) -> None:
+def test_tabulate_entities(test_dom: tuple[Domain, Hypervisor], cols: Sequence[str]) -> None:
     '''Test the tabulate_entities function.'''
-    results = tabulate_entities([test_dom], TEST_COLUMNS, cols)
+    dom, _ = test_dom
+    results = tabulate_entities([dom], TEST_COLUMNS, cols)
 
     assert len(results) == 1
 
     for idx, col in enumerate(cols):
-        assert results[0][idx] == getattr(test_dom, TEST_COLUMNS[col].prop)
+        assert results[0][idx] == getattr(dom, TEST_COLUMNS[col].prop)
 
 
 def test_render_table_without_titles() -> None:

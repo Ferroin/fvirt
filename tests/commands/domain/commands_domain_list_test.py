@@ -21,9 +21,10 @@ if TYPE_CHECKING:
     from fvirt.libvirt import Domain, Hypervisor
 
 
-def test_column_definitions(test_dom: Domain) -> None:
+def test_column_definitions(test_dom: tuple[Domain, Hypervisor]) -> None:
     '''Test that column definitions are valid.'''
-    check_columns(COLUMNS, test_dom)
+    dom, _ = test_dom
+    check_columns(COLUMNS, dom)
 
 
 def test_default_columns() -> None:

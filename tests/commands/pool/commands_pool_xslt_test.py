@@ -15,29 +15,30 @@ if TYPE_CHECKING:
 
     from click.testing import Result
 
-    from fvirt.libvirt import StoragePool
+    from fvirt.libvirt import Hypervisor, StoragePool
 
 
 def test_command_run(
     runner: Callable[[Sequence[str], int], Result],
-    live_pool: StoragePool,
+    live_pool: tuple[StoragePool, Hypervisor],
     xslt_doc_factory: Callable[[str, str], str],
     tmp_path: Path,
 ) -> None:
     '''Test that the command runs correctly.'''
-    uri = str(live_pool._hv.uri)
+    pool, hv = live_pool
+    uri = str(hv.uri)
     xslt_path = tmp_path / 'transform.xslt'
 
-    e = live_pool.config.find('/target/path')
+    e = pool.config.find('/target/path')
     assert e is not None
 
     xslt_path.write_text(xslt_doc_factory('target/path', str(tmp_path)))
 
-    result = runner(('-c', uri, 'pool', 'xslt', live_pool.name, str(xslt_path)), 0)
+    result = runner(('-c', uri, 'pool', 'xslt', pool.name, str(xslt_path)), 0)
 
     assert len(result.output) > 0
 
-    e = live_pool.config.find('/target/path')
+    e = pool.config.find('/target/path')
     assert e is not None
 
     assert e.text == str(tmp_path)

@@ -21,7 +21,6 @@ from fvirt.util.match import MatchArgument, MatchTarget
 
 from .shared import (check_entity_access_get, check_entity_access_iterable, check_entity_access_mapping, check_entity_access_match,
                      check_entity_format, check_match_aliases, check_runnable_destroy, check_runnable_start, check_undefine, check_xslt)
-from ..shared import compare_xml_trees
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -30,16 +29,22 @@ if TYPE_CHECKING:
 
 
 @pytest.mark.libvirtd
-def test_check_match_aliases(live_pool: StoragePool) -> None:
+def test_check_match_aliases(live_pool: tuple[StoragePool, Hypervisor]) -> None:
     '''Check typing for match aliases.'''
-    check_match_aliases(MATCH_ALIASES, live_pool)
+    pool, _ = live_pool
+    check_match_aliases(MATCH_ALIASES, pool)
 
 
 @pytest.mark.libvirtd
-def test_equality(live_hv: Hypervisor, pool_xml: Callable[[], str]) -> None:
+def test_equality(
+    live_hv: Hypervisor,
+    pool_xml: Callable[[], str],
+    serial: Callable[[str], _GeneratorContextManager[None]]
+) -> None:
     '''Test that pool equality checks work correctly.'''
-    pool1 = live_hv.define_storage_pool(pool_xml())
-    pool2 = live_hv.define_storage_pool(pool_xml())
+    with serial('live-pool'):
+        pool1 = live_hv.define_storage_pool(pool_xml())
+        pool2 = live_hv.define_storage_pool(pool_xml())
 
     assert pool1 == pool1
     assert pool2 == pool2
@@ -53,21 +58,24 @@ def test_equality(live_hv: Hypervisor, pool_xml: Callable[[], str]) -> None:
 
 
 @pytest.mark.libvirtd
-def test_self_wrap(live_pool: StoragePool) -> None:
+def test_self_wrap(live_pool: tuple[StoragePool, Hypervisor]) -> None:
     '''Check that instantiating a StoragePool with another StoragePool instance produces an equal StoragePool.'''
-    assert StoragePool(live_pool) == live_pool
+    pool, _ = live_pool
+    assert StoragePool(pool) == pool
 
 
 @pytest.mark.libvirtd
-def test_format(live_pool: StoragePool) -> None:
+def test_format(live_pool: tuple[StoragePool, Hypervisor]) -> None:
     '''Check that formatting a StoragePool instance can be formatted.'''
-    check_entity_format(live_pool)
+    pool, _ = live_pool
+    check_entity_format(pool)
 
 
 @pytest.mark.libvirtd
-def test_name(live_pool: StoragePool) -> None:
+def test_name(live_pool: tuple[StoragePool, Hypervisor]) -> None:
     '''Check the name attribute.'''
-    assert isinstance(live_pool.name, str)
+    pool, _ = live_pool
+    assert isinstance(pool.name, str)
 
 
 @pytest.mark.xfail(reason='Not yet implemented')
@@ -77,41 +85,44 @@ def test_define() -> None:
 
 
 @pytest.mark.libvirtd
-def test_config_raw(live_pool: StoragePool, tmp_path: Path) -> None:
+def test_config_raw(live_pool: tuple[StoragePool, Hypervisor], tmp_path: Path) -> None:
     '''Test the config_raw property.'''
-    conf = live_pool.config_raw
+    pool, _ = live_pool
+    conf = pool.config_raw
 
     assert isinstance(conf, str)
 
-    new_conf = conf.replace(f'<path>{ live_pool.target }</path>', f'<path>{ str(tmp_path) }</path>')
+    new_conf = conf.replace(f'<path>{ pool.target }</path>', f'<path>{ str(tmp_path) }</path>')
 
     assert conf != new_conf
 
-    live_pool.config_raw = new_conf
+    pool.config_raw = new_conf
 
-    e = etree.fromstring(live_pool.config_raw).find('./target/path')
+    e = etree.fromstring(pool.config_raw).find('./target/path')
     assert e is not None
 
     assert e.text == str(tmp_path)
 
 
 @pytest.mark.libvirtd
-def test_invalid_config_raw(live_pool: StoragePool, capfd: pytest.CaptureFixture) -> None:
+def test_invalid_config_raw(live_pool: tuple[StoragePool, Hypervisor], capfd: pytest.CaptureFixture) -> None:
     '''Test trying to use a bogus config with the config_raw property.'''
-    conf = live_pool.config_raw
+    pool, _ = live_pool
+    conf = pool.config_raw
 
     assert isinstance(conf, str)
 
-    bad_conf = conf.replace(f'<path>{ live_pool.target }</path>', '')
+    bad_conf = conf.replace(f'<path>{ pool.target }</path>', '')
 
     with pytest.raises(InvalidConfig):
-        live_pool.config_raw = bad_conf
+        pool.config_raw = bad_conf
 
 
 @pytest.mark.libvirtd
-def test_config(live_pool: StoragePool, tmp_path: Path) -> None:
+def test_config(live_pool: tuple[StoragePool, Hypervisor], tmp_path: Path) -> None:
     '''Test the config property.'''
-    conf = live_pool.config
+    pool, _ = live_pool
+    conf = pool.config
 
     assert isinstance(conf, etree._ElementTree)
 
@@ -120,16 +131,16 @@ def test_config(live_pool: StoragePool, tmp_path: Path) -> None:
 
     e.text = str(tmp_path)
 
-    live_pool.config = conf
-    live_pool.refresh()
+    pool.config = conf
 
-    assert cast(etree._Element, live_pool.config.find('/target/path')).text == str(tmp_path)
+    assert cast(etree._Element, pool.config.find('/target/path')).text == str(tmp_path)
 
 
 @pytest.mark.libvirtd
-def test_invalid_config(live_pool: StoragePool, capfd: pytest.CaptureFixture) -> None:
+def test_invalid_config(live_pool: tuple[StoragePool, Hypervisor], capfd: pytest.CaptureFixture) -> None:
     '''Test trying to use a bogus config with the config property.'''
-    conf = live_pool.config
+    pool, _ = live_pool
+    conf = pool.config
 
     assert isinstance(conf, etree._ElementTree)
 
@@ -139,42 +150,44 @@ def test_invalid_config(live_pool: StoragePool, capfd: pytest.CaptureFixture) ->
     e.text = ''
 
     with pytest.raises(InvalidConfig):
-        live_pool.config = conf
+        pool.config = conf
 
 
 @pytest.mark.libvirtd
-def test_config_raw_live(live_pool: StoragePool, tmp_path: Path) -> None:
+def test_config_raw_live(live_pool: tuple[StoragePool, Hypervisor], tmp_path: Path) -> None:
     '''Test that the config_raw_live property works as expected.'''
-    conf = live_pool.config_raw
-    live_conf = live_pool.config_raw_live
-    target = live_pool.target
+    pool, _ = live_pool
+    conf = pool.config_raw
+    live_conf = pool.config_raw_live
+    target = pool.target
 
     assert isinstance(conf, str)
     assert isinstance(live_conf, str)
 
-    new_conf = conf.replace(f'<path>{ live_pool.target }</path>', f'<path>{ str(tmp_path) }</path>')
+    new_conf = conf.replace(f'<path>{ pool.target }</path>', f'<path>{ str(tmp_path) }</path>')
 
     assert conf != new_conf
 
-    live_pool.config_raw = new_conf
-    live_pool.refresh()
+    pool.config_raw = new_conf
+    pool.refresh()
 
-    e1 = etree.fromstring(live_pool.config_raw).find('./target/path')
+    e1 = etree.fromstring(pool.config_raw).find('./target/path')
     assert e1 is not None
 
     assert e1.text == str(tmp_path)
 
-    e2 = etree.fromstring(live_pool.config_raw_live).find('./target/path')
+    e2 = etree.fromstring(pool.config_raw_live).find('./target/path')
     assert e2 is not None
 
     assert e2.text == target
 
 
 @pytest.mark.libvirtd
-def test_config_live(live_pool: StoragePool, tmp_path: Path) -> None:
+def test_config_live(live_pool: tuple[StoragePool, Hypervisor], tmp_path: Path) -> None:
     '''Test that the config_raw_live property works as expected.'''
-    conf = live_pool.config
-    live_conf = live_pool.config_live
+    pool, _ = live_pool
+    conf = pool.config
+    live_conf = pool.config_live
 
     assert isinstance(conf, etree._ElementTree)
     assert isinstance(live_conf, etree._ElementTree)
@@ -184,72 +197,78 @@ def test_config_live(live_pool: StoragePool, tmp_path: Path) -> None:
 
     e.text = str(tmp_path)
 
-    live_pool.config = conf
+    pool.config = conf
 
-    assert cast(etree._Element, live_pool.config.find('/target/path')).text == str(tmp_path)
-    assert cast(etree._Element, live_pool.config_live.find('/target/path')).text != str(tmp_path)
+    assert cast(etree._Element, pool.config.find('/target/path')).text == str(tmp_path)
+    assert cast(etree._Element, pool.config_live.find('/target/path')).text != str(tmp_path)
 
 
 @pytest.mark.xfail(reason='Not yet implemented')
 def test_create() -> None:
-    '''Check that creating a domain works.'''
+    '''Check that creating a pool works.'''
     assert False
 
 
 @pytest.mark.libvirtd
-def test_undefine(live_pool: StoragePool) -> None:
+def test_undefine(live_pool: tuple[StoragePool, Hypervisor]) -> None:
     '''Check that undefining a pool works.'''
-    check_undefine(live_pool._hv, 'storage_pools', live_pool)
+    pool, _ = live_pool
+    check_undefine(pool._hv, 'storage_pools', pool)
 
 
 @pytest.mark.libvirtd
 def test_define_volume(
-        live_pool: StoragePool,
+        live_pool: tuple[StoragePool, Hypervisor],
         volume_xml: Callable[[StoragePool], str],
 ) -> None:
     '''Test creating a volume.'''
-    vol_xml = volume_xml(live_pool)
-    result = live_pool.define_volume(vol_xml)
+    pool, _ = live_pool
+    vol_xml = volume_xml(pool)
+    result = pool.define_volume(vol_xml)
 
     assert isinstance(result, Volume)
 
 
 @pytest.mark.libvirtd
 def test_num_volumes(
-        live_pool: StoragePool,
+        live_pool: tuple[StoragePool, Hypervisor],
         volume_factory: Callable[[StoragePool], Volume],
 ) -> None:
     '''Check the num_volumes attribute.'''
-    assert isinstance(live_pool.num_volumes, int)
-    assert live_pool.num_volumes == 0
+    pool, _ = live_pool
+    assert isinstance(pool.num_volumes, int)
+    assert pool.num_volumes == 0
 
-    vol1 = volume_factory(live_pool)
+    vol1 = volume_factory(pool)
 
     assert isinstance(vol1, Volume)
-    assert live_pool.num_volumes == 1
+    assert pool.num_volumes == 1
 
-    vol2 = volume_factory(live_pool)
+    vol2 = volume_factory(pool)
 
     assert isinstance(vol2, Volume)
-    assert live_pool.num_volumes == 2
+    assert pool.num_volumes == 2
 
 
 @pytest.mark.libvirtd
-def test_stop(live_pool: StoragePool) -> None:
+def test_stop(live_pool: tuple[StoragePool, Hypervisor]) -> None:
     '''Check that stopping a pool works.'''
-    check_runnable_destroy(live_pool)
+    pool, _ = live_pool
+    check_runnable_destroy(pool)
 
 
 @pytest.mark.libvirtd
-def test_start(live_pool: StoragePool) -> None:
+def test_start(live_pool: tuple[StoragePool, Hypervisor]) -> None:
     '''Check that starting a pool works.'''
-    check_runnable_start(live_pool)
+    pool, _ = live_pool
+    check_runnable_start(pool)
 
 
 @pytest.mark.libvirtd
-def test_refresh(live_pool: StoragePool) -> None:
+def test_refresh(live_pool: tuple[StoragePool, Hypervisor]) -> None:
     '''Check that refreshing a pool works.'''
-    assert live_pool.refresh() == LifecycleResult.SUCCESS
+    pool, _ = live_pool
+    assert pool.refresh() == LifecycleResult.SUCCESS
 
 
 @pytest.mark.libvirtd
@@ -267,37 +286,39 @@ def test_build(live_hv: Hypervisor, pool_xml: Callable[[], str]) -> None:
 
 @pytest.mark.libvirtd
 def test_delete(
-        live_pool: StoragePool,
+        live_pool: tuple[StoragePool, Hypervisor],
         volume_factory: Callable[[StoragePool], Volume],
 ) -> None:
     '''Check that deleting a pool works.'''
-    assert live_pool.num_volumes == 0
-    assert live_pool.running == True  # noqa: E712
+    pool, _ = live_pool
+    assert pool.num_volumes == 0
+    assert pool.running == True  # noqa: E712
 
     with pytest.raises(EntityRunning):
-        result = live_pool.delete(idempotent=False)
+        result = pool.delete(idempotent=False)
 
-    live_pool.destroy()
+    pool.destroy()
 
-    result = live_pool.delete(idempotent=False)
+    result = pool.delete(idempotent=False)
 
     assert isinstance(result, LifecycleResult)
     assert result == LifecycleResult.SUCCESS
 
-    result = live_pool.delete(idempotent=False)
+    result = pool.delete(idempotent=False)
 
     assert isinstance(result, LifecycleResult)
     assert result == LifecycleResult.FAILURE
 
 
-def test_xslt(live_pool: StoragePool, xslt_doc_factory: Callable[[str, str], str], tmp_path: Path) -> None:
+def test_xslt(live_pool: tuple[StoragePool, Hypervisor], xslt_doc_factory: Callable[[str, str], str], tmp_path: Path) -> None:
     '''Check that applying an XSLT document to a pool works correctly.'''
-    check_xslt(live_pool, 'target/path', str(tmp_path), xslt_doc_factory)
+    pool, _ = live_pool
+    check_xslt(pool, 'target/path', str(tmp_path), xslt_doc_factory)
 
 
 def test_pool_access_iterable(test_hv: Hypervisor, serial: Callable[[str], _GeneratorContextManager[None]]) -> None:
     '''Test pool entity access behavior.'''
-    with serial('pool'):
+    with serial('test-pool'):
         check_entity_access_iterable(test_hv.storage_pools, StoragePool)
 
 
@@ -346,8 +367,10 @@ def test_pool_access_mapping(test_hv: Hypervisor, p: str, k: Sequence[Any], c: T
 @pytest.mark.parametrize('t', (
     'volumes',
 ))
-def test_entities(test_pool: StoragePool, t: str) -> None:
+def test_entities(test_pool: tuple[StoragePool, Hypervisor], t: str) -> None:
     '''Check that entity access attributes exist.'''
-    assert hasattr(test_pool, t)
+    pool, _ = test_pool
 
-    assert isinstance(getattr(test_pool, t), EntityAccess)
+    assert hasattr(pool, t)
+
+    assert isinstance(getattr(pool, t), EntityAccess)
