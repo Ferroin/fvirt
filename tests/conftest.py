@@ -25,6 +25,7 @@ if TYPE_CHECKING:
 
     from click.testing import CliRunner, Result
 
+PREFIX = 'fvirt-test'
 XSLT_DATA = '''
 <?xml version='1.0'?>
 <xsl:stylesheet xmlns:xsl='http://www.w3.org/1999/XSL/Transform' version='1.0'>
@@ -39,6 +40,41 @@ XSLT_DATA = '''
     </xsl:template>
 </xsl:stylesheet>
 '''.lstrip().rstrip()
+
+
+def remove_domain(dom: Domain) -> None:
+    '''Remove a domain cleanly.'''
+    if dom.running:
+        dom.destroy()
+
+    dom.undefine()
+
+
+def remove_pool(pool: StoragePool) -> None:
+    '''Remove a storage pool cleanly.'''
+    if pool.running:
+        for vol in pool.volumes:
+            vol.delete()
+
+        pool.destroy()
+
+    try:
+        pool.delete()
+    except Exception:
+        pass
+
+    pool.undefine()
+
+
+def cleanup_hv(hv: Hypervisor, prefix: str) -> None:
+    '''Clean up any objects created by our tests on the given hypervisor.'''
+    for dom in hv.domains:
+        if dom.name.startswith(prefix):
+            remove_domain(dom)
+
+    for pool in hv.storage_pools:
+        if pool.name.startswith(prefix):
+            remove_pool(pool)
 
 
 @pytest.fixture
@@ -78,7 +114,7 @@ def xslt_doc_factory() -> Callable[[str, str], str]:
 def name_factory(unique: Callable[..., str], worker_id: str) -> Callable[[], str]:
     '''Provide a factory function for creating names for objects.'''
     def inner() -> str:
-        return unique('text', prefix=f'fvirt-test-{worker_id}')
+        return unique('text', prefix=f'{PREFIX}-{worker_id}')
 
     return inner
 
@@ -102,10 +138,11 @@ def live_uri() -> str:
     return 'qemu:///session'
 
 
-@pytest.fixture
-def embed_uri(tmp_path: Path) -> str:
+@pytest.fixture(scope='session')
+def embed_uri(tmp_path_factory: pytest.TempPathFactory) -> str:
     '''Provide an embedded QEMU libvirt URI to use for testing.'''
-    return f'qemu:///embed?root={str(tmp_path)}'
+    path = tmp_path_factory.mktemp('embed')
+    return f'qemu:///embed?root={str(path)}'
 
 
 @pytest.fixture(scope='session')
@@ -126,7 +163,7 @@ def serial(lock_dir: Path) -> Callable[[str], _GeneratorContextManager[None]]:
 
 
 @pytest.fixture
-def test_hv(test_uri: str) -> Hypervisor:
+def test_hv(test_uri: str) -> Generator[Hypervisor, None, None]:
     '''Provide a fvirt.libvirt.Hypervisor instance for testing.
 
        The provided instance will utilize the libvirt test driver with
@@ -138,11 +175,13 @@ def test_hv(test_uri: str) -> Hypervisor:
        concurrently with them, but they do need to account for the
        possibility that the state exposed is not a clean instance of
        the test driver.'''
-    return Hypervisor(hvuri=URI.from_string(test_uri))
+    hv = Hypervisor(hvuri=URI.from_string(test_uri))
+
+    yield hv
 
 
-@pytest.fixture
-def live_hv(live_uri: str, libvirt_event_loop: None) -> Hypervisor:
+@pytest.fixture(scope='session')
+def live_hv(live_uri: str, libvirt_event_loop: None, worker_id: str) -> Generator[Hypervisor, None, None]:
     '''Provide a fvirt.libvirt.Hypervisor instance for testing.
 
        The provided instance will utilize the libvirt QEMU driver in
@@ -158,11 +197,15 @@ def live_hv(live_uri: str, libvirt_event_loop: None) -> Hypervisor:
        way that they are safe against concurrent access and usage of
        the hypervisor, and should also make no assumptions about the
        initial state of the hypervisor.'''
-    return Hypervisor(hvuri=URI.from_string(live_uri))
+    hv = Hypervisor(hvuri=URI.from_string(live_uri))
+
+    yield hv
+
+    cleanup_hv(hv, f'{PREFIX}-{worker_id}')
 
 
-@pytest.fixture
-def embed_hv(embed_uri: str, libvirt_event_loop: None) -> Hypervisor:
+@pytest.fixture(scope='session')
+def embed_hv(embed_uri: str, libvirt_event_loop: None, worker_id: str) -> Generator[Hypervisor, None, None]:
     '''Provide a fvirt.libvirt.Hypervisor instance for testing.
 
        The provided instance will utilize the libvirt QEMU driver in
@@ -173,7 +216,11 @@ def embed_hv(embed_uri: str, libvirt_event_loop: None) -> Hypervisor:
        to be in a clean, well-defined state for each test and fixture
        that uses it and is safe against concurrent access, but it only
        supports working with domains.'''
-    return Hypervisor(hvuri=URI.from_string(embed_uri))
+    hv = Hypervisor(hvuri=URI.from_string(embed_uri))
+
+    yield hv
+
+    cleanup_hv(hv, f'{PREFIX}-{worker_id}')
 
 
 @pytest.fixture
@@ -232,8 +279,7 @@ def test_dom(
 
     with serial('test-domain'):
         if test_hv.domains.get(uuid) is not None:
-            dom.destroy(idempotent=True)
-            dom.undefine()
+            remove_domain(dom)
 
 
 @pytest.fixture
@@ -279,9 +325,7 @@ def live_pool(
 
     with serial('live-pool'):
         if live_hv.storage_pools.get(uuid) is not None:
-            pool.destroy(idempotent=True)
-            pool.delete()
-            pool.undefine()
+            remove_pool(pool)
 
 
 @pytest.fixture
@@ -306,9 +350,7 @@ def test_pool(
 
     with serial('test-pool'):
         if test_hv.storage_pools.get(uuid) is not None:
-            pool.destroy(idempotent=True)
-            pool.delete()
-            pool.undefine()
+            remove_pool(pool)
 
 
 @pytest.fixture

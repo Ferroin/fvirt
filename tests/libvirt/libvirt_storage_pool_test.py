@@ -56,6 +56,10 @@ def test_equality(
 
     assert pool1 != ''
 
+    with serial('live-pool'):
+        pool1.undefine()
+        pool2.undefine()
+
 
 @pytest.mark.libvirtd
 def test_self_wrap(live_pool: tuple[StoragePool, Hypervisor]) -> None:
