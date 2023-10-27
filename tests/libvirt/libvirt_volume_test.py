@@ -53,6 +53,9 @@ def test_equality(live_pool: tuple[StoragePool, Hypervisor], volume_factory: Cal
 
     assert vol1 != ''
 
+    vol1.delete()
+    vol2.delete()
+
 
 @pytest.mark.libvirtd
 def test_self_wrap(live_volume: tuple[Volume, StoragePool, Hypervisor]) -> None:

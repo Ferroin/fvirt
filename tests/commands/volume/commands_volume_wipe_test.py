@@ -48,7 +48,41 @@ def test_volume_wipe(
         vol.undefine()
 
 
-@pytest.mark.xfail(reason='Test not yet implemented')
-def test_command_bulk_run() -> None:
+@pytest.mark.xfail(reason='Failing due to apparent internal bug in object matching code.')
+@pytest.mark.libvirtd
+@pytest.mark.slow
+def test_command_bulk_run(
+    runner: Callable[..., Result],
+    live_pool: tuple[StoragePool, Hypervisor],
+    volume_factory: Callable[[StoragePool, int], Volume],
+) -> None:
     '''Test running the command on multiple objects.'''
-    assert False
+    pool, hv = live_pool
+    uri = str(hv.uri)
+    count = 3
+    size = 65536
+    volumes = tuple(
+        volume_factory(pool, size) for _ in range(0, count)
+    )
+
+    try:
+        data = b'\x00\x55\xAA\xFF' * (size // 4)
+
+        for vol in volumes:
+            assert vol.capacity == size
+
+            path = Path(vol.path)
+
+            path.write_bytes(data)
+
+        runner(('-c', uri, 'volume', 'wipe', pool.name, '--match', 'name', 'fvirt-test-'), 0)
+
+        for vol in volumes:
+            assert vol.capacity == size
+
+            wiped_data = path.read_bytes()
+
+            assert wiped_data != data
+    finally:
+        for vol in volumes:
+            vol.undefine()
