@@ -5,8 +5,6 @@
 
 from __future__ import annotations
 
-import concurrent.futures
-
 from abc import ABC, abstractmethod
 from textwrap import dedent
 from typing import TYPE_CHECKING, Any, Self, cast
@@ -16,8 +14,8 @@ import click
 from .command import Command
 from .exitcode import ExitCode
 from .objects import ObjectMixin, is_object_mixin
-from ...libvirt.exceptions import InvalidConfig
-from ...libvirt.runner import RunnerResult, run_entity_method, run_hv_method
+from ...libvirt import Hypervisor, InvalidConfig
+from ...libvirt.entity import Entity
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -25,9 +23,9 @@ if TYPE_CHECKING:
     from .state import State
 
 
-def _read_file(path: str) -> str:
+def _read_file(path: str) -> tuple[str, str]:
     with click.open_file(path, mode='r') as f:
-        return cast(str, f.read())
+        return (cast(str, f.read()), path)
 
 
 class NewCommand(Command, ABC):
@@ -56,58 +54,34 @@ class NewCommand(Command, ABC):
 
             confdata = list(state.pool.map(_read_file, confpath))
 
-            uri = state.hypervisor.uri
+            with state.hypervisor as hv:
+                if hv.read_only:
+                    ctx.fail(f'Unable to define { self.NAME }s, the hypervisor connection is read-only.')
 
-            if state.hypervisor.read_only:
-                ctx.fail(f'Unable to define { self.NAME }s, the hypervisor connection is read-only.')
+                for conf in confdata:
+                    if self.HAS_PARENT:
+                        assert parent is not None
 
-            for conf in confdata:
-                if self.HAS_PARENT:
-                    assert parent is not None
+                        define_obj: Hypervisor | Entity = self.get_parent_obj(ctx, hv, parent)
+                    else:
+                        define_obj = hv
 
-                    futures = [state.pool.submit(
-                        run_entity_method,  # type: ignore
-                        uri=uri,
-                        hvprop=self.PARENT_ATTR,
-                        method=cast(NewCommand, self).NEW_METHOD,
-                        ident=parent,
-                        postproc=lambda x: x.name,
-                        arguments=[c],
-                        kwarguments=kwargs,
-                    ) for c in confdata]
-                else:
-                    futures = [state.pool.submit(
-                        run_hv_method,  # type: ignore
-                        uri=uri,
-                        method=cast(NewCommand, self).NEW_METHOD,
-                        ident='',
-                        postproc=lambda x: x.name,
-                        arguments=[c],
-                        kwarguments=kwargs,
-                    ) for c in confdata]
-
-            for f in concurrent.futures.as_completed(futures):
-                match f.result():
-                    case RunnerResult(attrs_found=False):
-                        ctx.fail(f'Unexpected internal error defining new { self.NAME }.')
-                    case RunnerResult(method_success=False, exception=InvalidConfig()):
-                        click.echo(f'The configuration at { cpath } is not valid for a { self.NAME }.')
+                for c, p in confdata:
+                    try:
+                        obj = getattr(define_obj, self.DEFINE_METHOD)(c, **kwargs)
+                    except InvalidConfig:
+                        click.echo(f'The configuration at { p } is not valid for a { self.NAME }.')
 
                         if state.fail_fast:
                             break
-                    case RunnerResult(method_success=False):
+                    except Exception:
                         click.echo(f'Failed to create { self.NAME }.')
 
                         if state.fail_fast:
                             break
-                    case RunnerResult(method_success=True, postproc_success=False):
-                        click.echo(f'Successfully defined { self.NAME }.')
+                    else:
+                        click.echo(f'Successfully defined { self.NAME }: "{ obj.name }".')
                         success += 1
-                    case RunnerResult(method_success=True, postproc_success=True, result=name):
-                        click.echo(f'Successfully defined { self.NAME }: "{ name }".')
-                        success += 1
-                    case _:
-                        raise RuntimeError
 
             click.echo(f'Finished defining specified { self.NAME }s.')
             click.echo('')
@@ -149,6 +123,9 @@ class NewCommand(Command, ABC):
         This command supports fvirt's fail-fast logic. In fail-fast mode, the
         first { self.NAME } that fails to be defined will cause the operation
         to stop, and any failure will result in a non-zero exit code.
+
+        Configuration files will be read in parallel, but each { self.NAME
+        } will be created one at a time without parallelization.
 
         This command does not support fvirt's idempotent mode.''').lstrip()
 

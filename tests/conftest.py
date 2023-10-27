@@ -8,6 +8,7 @@ from __future__ import annotations
 from collections.abc import Callable, Generator
 from contextlib import _GeneratorContextManager, contextmanager
 from pathlib import Path
+from textwrap import dedent
 from traceback import format_exception
 from typing import TYPE_CHECKING, Any
 
@@ -182,8 +183,7 @@ def dom_xml(unique: Callable[..., Any], name_factory: Callable[[], str]) -> Call
         name = name_factory()
         uuid = unique('uuid')
 
-        return f'''
-        <domain type='test'>
+        return dedent(f'''<domain type='test'>
             <name>{ name }</name>
             <uuid>{ uuid }</uuid>
             <memory unit='MiB'>64</memory>
@@ -207,7 +207,7 @@ def dom_xml(unique: Callable[..., Any], name_factory: Callable[[], str]) -> Call
                 <memballoon model='virtio' />
             </devices>
         </domain>
-        '''
+        ''').lstrip().rstrip()
 
     return inner
 
@@ -244,8 +244,7 @@ def pool_xml(unique: Callable[..., Any], tmp_path: Path, name_factory: Callable[
         uuid = unique('uuid')
         path = tmp_path / name
 
-        return f'''
-        <pool type='dir'>
+        return dedent(f'''<pool type='dir'>
             <name>{ name }</name>
             <uuid>{ uuid }</uuid>
             <source />
@@ -253,7 +252,7 @@ def pool_xml(unique: Callable[..., Any], tmp_path: Path, name_factory: Callable[
                 <path>{ path }</path>
             </target>
         </pool>
-        '''
+        ''').lstrip().rstrip()
 
     return inner
 
@@ -322,7 +321,7 @@ def volume_xml(name_factory: Callable[[], str]) -> Callable[[StoragePool, int], 
         size = size
         path = Path(pool.target) / name
 
-        return f'''
+        return dedent(f'''
         <volume type='file'>
             <name>{ name }</name>
             <allocated units='bytes'>0</allocated>
@@ -332,7 +331,7 @@ def volume_xml(name_factory: Callable[[], str]) -> Callable[[StoragePool, int], 
                 <format type='raw' />
             </target>
         </volume>
-        '''
+        ''').lstrip().rstrip()
 
     return inner
 

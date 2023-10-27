@@ -31,18 +31,20 @@ I1 = TypeVar('I1', bound=Union[str, int, UUID])
 I2 = TypeVar('I2', bound=Union[str, int, UUID])
 T1 = TypeVar('T1')
 T2 = TypeVar('T2')
+T3 = TypeVar('T3')
 
 
 @dataclass(kw_only=True, slots=True)
-class RunnerResult(Generic[T1, T2]):
+class RunnerResult(Generic[T1, T2, T3]):
     '''Class representing the result of a runner operation.'''
     ident: T1
+    opaque: T2
     attrs_found: bool = True
     entity_found: bool | None = None
     sub_entity_found: bool | None = None
     method_success: bool | None = None
     postproc_success: bool | None = None
-    result: T2 | None = None
+    result: T3 | None = None
     exception: Exception | None = None
 
 
@@ -57,7 +59,13 @@ def _start_event_loop(state: bool | Callable) -> None:
             state()
 
 
-def _get_entity(parent: Entity | Hypervisor, prop: str, ident: I1, sub_entity: bool = False) -> Entity | RunnerResult[I1, T1 | None]:
+def _get_entity(
+    parent: Entity | Hypervisor,
+    prop: str,
+    ident: I1,
+    opaque: T1,
+    sub_entity: bool = False,
+) -> Entity | RunnerResult[I1, T1, T2 | None]:
     '''Get an entity.'''
     try:
         entity: Entity | None = getattr(parent, prop).get(ident)
@@ -65,6 +73,7 @@ def _get_entity(parent: Entity | Hypervisor, prop: str, ident: I1, sub_entity: b
         if sub_entity:
             return RunnerResult(
                 ident=ident,
+                opaque=opaque,
                 attrs_found=False,
                 entity_found=True,
                 sub_entity_found=False,
@@ -73,6 +82,7 @@ def _get_entity(parent: Entity | Hypervisor, prop: str, ident: I1, sub_entity: b
         else:
             return RunnerResult(
                 ident=ident,
+                opaque=opaque,
                 attrs_found=False,
                 entity_found=False,
                 exception=e,
@@ -82,12 +92,14 @@ def _get_entity(parent: Entity | Hypervisor, prop: str, ident: I1, sub_entity: b
         if sub_entity:
             return RunnerResult(
                 ident=ident,
+                opaque=opaque,
                 entity_found=True,
                 sub_entity_found=False,
             )
         else:
             return RunnerResult(
                 ident=ident,
+                opaque=opaque,
                 entity_found=False,
             )
 
@@ -98,17 +110,19 @@ def _run_method(
         obj: Entity | Hypervisor,
         method: str,
         ident: T1,
+        opaque: T2,
         args: Sequence[Any],
         kwargs: Mapping[str, Any],
         entity: Literal[True] | None = None,
         sub_entity: Literal[True] | None = None
-) -> RunnerResult[T1, Any] | Any:
+) -> RunnerResult[T1, T2, Any] | Any:
     '''Run a method.'''
     try:
         return getattr(obj, method)(*args, **kwargs)
     except AttributeError as e:
         return RunnerResult(
             ident=ident,
+            opaque=opaque,
             attrs_found=False,
             entity_found=entity,
             sub_entity_found=sub_entity,
@@ -117,6 +131,7 @@ def _run_method(
     except Exception as e:
         return RunnerResult(
             ident=ident,
+            opaque=opaque,
             method_success=False,
             entity_found=entity,
             sub_entity_found=sub_entity,
@@ -129,14 +144,16 @@ def _set_attribute(
     attrib: str,
     value: Any,
     ident: T1,
+    opaque: T2,
     sub_entity: Literal[True] | None = None
-) -> RunnerResult[T1, Literal[True] | None]:
+) -> RunnerResult[T1, T2, Literal[True] | None]:
     '''Set an attribute.'''
     try:
         setattr(obj, attrib, value)
     except AttributeError as e:
         return RunnerResult(
             ident=ident,
+            opaque=opaque,
             attrs_found=False,
             entity_found=True,
             sub_entity_found=sub_entity,
@@ -145,6 +162,7 @@ def _set_attribute(
     except Exception as e:
         return RunnerResult(
             ident=ident,
+            opaque=opaque,
             method_success=False,
             entity_found=True,
             sub_entity_found=sub_entity,
@@ -153,6 +171,7 @@ def _set_attribute(
 
     return RunnerResult(
         ident=ident,
+        opaque=opaque,
         method_success=True,
         entity_found=True,
         sub_entity_found=sub_entity,
@@ -162,17 +181,19 @@ def _set_attribute(
 
 def _post_process(
         ident: T1,
+        opaque: T2,
         result: Any,
-        postproc: Callable[[Any], T2],
+        postproc: Callable[[Any], T3],
         entity: Literal[True] | None = None,
         sub_entity: Literal[True] | None = None
-) -> RunnerResult[T1, T2]:
+) -> RunnerResult[T1, T2, T3]:
     '''Postprocess a result.'''
     try:
         ret = postproc(result)
     except Exception as e:
         return RunnerResult(
             ident=ident,
+            opaque=opaque,
             method_success=True,
             postproc_success=False,
             entity_found=entity,
@@ -182,6 +203,7 @@ def _post_process(
 
     return RunnerResult(
         ident=ident,
+        opaque=opaque,
         method_success=True,
         postproc_success=True,
         entity_found=entity,
@@ -194,11 +216,12 @@ def run_hv_method(
     uri: URI,
     method: str,
     ident: I1,
-    arguments: Sequence[Any],
-    kwarguments: Mapping[str, Any],
-    postproc: Callable[[Any], T1] = lambda x: x,
+    arguments: Sequence[Any] = [],
+    kwarguments: Mapping[str, Any] = dict(),
+    opaque: T1 | None = None,
+    postproc: Callable[[Any], T2] = lambda x: x,
     start_event_loop: bool | Callable = False,
-) -> RunnerResult[I1, T1]:
+) -> RunnerResult[I1, T1 | None, T2]:
     '''Call a Hypervisor method on a new Hypervisor with the given URI.
 
        The method is called with positional arguments `arguments` and keyword
@@ -218,7 +241,7 @@ def run_hv_method(
     _start_event_loop(start_event_loop)
 
     with Hypervisor(hvuri=uri) as hv:
-        match _run_method(hv, method, ident, arguments, kwarguments):
+        match _run_method(hv, method, ident, opaque, arguments, kwarguments):
             case RunnerResult() as r:
                 return r
             case retval:
@@ -226,6 +249,7 @@ def run_hv_method(
 
         return _post_process(
             ident=ident,
+            opaque=opaque,
             result=ret,
             postproc=postproc,
         )
@@ -238,9 +262,10 @@ def run_entity_method(
     ident: I1,
     arguments: Sequence[Any] = [],
     kwarguments: Mapping[str, Any] = dict(),
-    postproc: Callable[[Any], T1] = lambda x: x,
+    opaque: T1 | None = None,
+    postproc: Callable[[Any], T2] = lambda x: x,
     start_event_loop: bool = True
-) -> RunnerResult[I1, T1]:
+) -> RunnerResult[I1, T1 | None, T2]:
     '''Run a method on an entity in the hypervisor with the specified URI.
 
        `hvprop` indicates what property on the Hypervisor instance should
@@ -261,7 +286,7 @@ def run_entity_method(
     _start_event_loop(start_event_loop)
 
     with Hypervisor(hvuri=uri) as hv:
-        match _get_entity(hv, hvprop, ident):
+        match _get_entity(hv, hvprop, ident, opaque):
             case RunnerResult() as r:
                 return r
             case Entity() as e:
@@ -269,7 +294,7 @@ def run_entity_method(
             case _:
                 raise RuntimeError
 
-        match _run_method(entity, method, ident, arguments, kwarguments, entity=True):
+        match _run_method(entity, method, ident, opaque, arguments, kwarguments, entity=True):
             case RunnerResult() as r:
                 return r
             case retval:
@@ -277,6 +302,7 @@ def run_entity_method(
 
         return _post_process(
             ident=ident,
+            opaque=opaque,
             result=ret,
             postproc=postproc,
             entity=True,
@@ -291,9 +317,10 @@ def run_sub_entity_method(
     ident: tuple[I1, I2],
     arguments: Sequence[Any] = [],
     kwarguments: Mapping[str, Any] = dict(),
-    postproc: Callable[[Any], T1] = lambda x: x,
+    opaque: T1 | None = None,
+    postproc: Callable[[Any], T2] = lambda x: x,
     start_event_loop: bool = True
-) -> RunnerResult[tuple[I1, I2], T1]:
+) -> RunnerResult[tuple[I1, I2], T1 | None, T2]:
     '''Run a method on an entity in the hypervisor with the specified URI.
 
        `hvprop` indicates what property on the Hypervisor instance should
@@ -317,7 +344,7 @@ def run_sub_entity_method(
     _start_event_loop(start_event_loop)
 
     with Hypervisor(hvuri=uri) as hv:
-        match _get_entity(hv, hvprop, ident[0]):
+        match _get_entity(hv, hvprop, ident[0], opaque):
             case RunnerResult() as r:
                 return r
             case Entity() as e:
@@ -325,7 +352,7 @@ def run_sub_entity_method(
             case _:
                 raise RuntimeError
 
-        match _get_entity(parent, parentprop, ident[1], sub_entity=True):
+        match _get_entity(parent, parentprop, ident[1], opaque, sub_entity=True):
             case RunnerResult() as r:
                 return r
             case Entity() as e:
@@ -333,7 +360,7 @@ def run_sub_entity_method(
             case _:
                 raise RuntimeError
 
-        match _run_method(entity, method, ident, arguments, kwarguments, entity=True, sub_entity=True):
+        match _run_method(entity, method, ident, opaque, arguments, kwarguments, entity=True, sub_entity=True):
             case RunnerResult() as r:
                 return r
             case retval:
@@ -341,6 +368,7 @@ def run_sub_entity_method(
 
         return _post_process(
             ident=ident,
+            opaque=opaque,
             result=ret,
             postproc=postproc,
             entity=True,
@@ -354,8 +382,9 @@ def set_entity_attribute(
     attrib: str,
     value: Any,
     ident: I1,
+    opaque: T1 | None = None,
     start_event_loop: bool = True,
-) -> RunnerResult[I1, Literal[True] | None]:
+) -> RunnerResult[I1, T1 | None, Literal[True] | None]:
     '''Set an attribute on an entity.
 
        `hvprop` indicates what property on the Hypervisor instance should
@@ -370,7 +399,7 @@ def set_entity_attribute(
     _start_event_loop(start_event_loop)
 
     with Hypervisor(hvuri=uri) as hv:
-        match _get_entity(hv, hvprop, ident):
+        match _get_entity(hv, hvprop, ident, opaque):
             case RunnerResult() as r:
                 return r
             case Entity() as e:
@@ -383,6 +412,7 @@ def set_entity_attribute(
             attrib=attrib,
             value=value,
             ident=ident,
+            opaque=opaque,
         )
 
 
@@ -393,8 +423,9 @@ def set_sub_entity_attribute(
     attrib: str,
     value: Any,
     ident: tuple[I1, I2],
+    opaque: T1 | None = None,
     start_event_loop: bool = True,
-) -> RunnerResult[tuple[I1, I2], Literal[True] | None]:
+) -> RunnerResult[tuple[I1, I2], T1 | None, Literal[True] | None]:
     '''Set an attribute on an entity.
 
        `hvprop` indicates what property on the Hypervisor instance should
@@ -412,7 +443,7 @@ def set_sub_entity_attribute(
     _start_event_loop(start_event_loop)
 
     with Hypervisor(hvuri=uri) as hv:
-        match _get_entity(hv, hvprop, ident[0]):
+        match _get_entity(hv, hvprop, ident[0], opaque):
             case RunnerResult() as r:
                 return r
             case Entity() as e:
@@ -420,7 +451,7 @@ def set_sub_entity_attribute(
             case _:
                 raise RuntimeError
 
-        match _get_entity(parent, parentprop, ident[1], sub_entity=True):
+        match _get_entity(parent, parentprop, ident[1], opaque, sub_entity=True):
             case RunnerResult() as r:
                 return r
             case Entity() as e:
@@ -433,4 +464,5 @@ def set_sub_entity_attribute(
             attrib=attrib,
             value=value,
             ident=ident,
+            opaque=opaque,
         )
