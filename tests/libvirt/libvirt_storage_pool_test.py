@@ -272,16 +272,19 @@ def test_refresh(live_pool: tuple[StoragePool, Hypervisor]) -> None:
 
 
 @pytest.mark.libvirtd
-def test_build(live_hv: Hypervisor, pool_xml: Callable[[], str]) -> None:
+def test_build(live_hv: Hypervisor, pool_xml: Callable[[], str], serial: Callable[[str], _GeneratorContextManager[None]]) -> None:
     '''Check that building a pool works.'''
-    pool = live_hv.define_storage_pool(pool_xml())
+    # TODO: Needs a better test case that actually confirms the pool was built.
+    with serial('live-pool'):
+        pool = live_hv.define_storage_pool(pool_xml())
 
     result = pool.build()
 
     assert isinstance(result, LifecycleResult)
     assert result == LifecycleResult.SUCCESS
 
-    pool.undefine()
+    with serial('live-pool'):
+        pool.undefine()
 
 
 @pytest.mark.libvirtd
