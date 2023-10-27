@@ -74,6 +74,15 @@ def xslt_doc_factory() -> Callable[[str, str], str]:
 
 
 @pytest.fixture(scope='session')
+def name_factory(unique: Callable[..., str], worker_id: str) -> Callable[[], str]:
+    '''Provide a factory function for creating names for objects.'''
+    def inner() -> str:
+        return unique('text', prefix=f'fvirt-test-{worker_id}')
+
+    return inner
+
+
+@pytest.fixture(scope='session')
 def libvirt_event_loop() -> None:
     '''Ensure that fvirt's libvirt event loop is running.'''
     start_libvirt_event_thread()
@@ -167,10 +176,10 @@ def embed_hv(embed_uri: str, libvirt_event_loop: None) -> Hypervisor:
 
 
 @pytest.fixture
-def dom_xml(unique: Callable[..., Any]) -> Callable[[], str]:
+def dom_xml(unique: Callable[..., Any], name_factory: Callable[[], str]) -> Callable[[], str]:
     '''Provide a factory that produces domain XML strings.'''
     def inner() -> str:
-        name = unique('text', prefix='fvirt-test')
+        name = name_factory()
         uuid = unique('uuid')
 
         return f'''
@@ -228,10 +237,10 @@ def test_dom(
 
 
 @pytest.fixture
-def pool_xml(unique: Callable[..., Any], tmp_path: Path) -> Callable[[], str]:
+def pool_xml(unique: Callable[..., Any], tmp_path: Path, name_factory: Callable[[], str]) -> Callable[[], str]:
     '''Provide a factory function that produces storage pool XML strings.'''
     def inner() -> str:
-        name = unique('text', prefix='fvirt-test')
+        name = name_factory()
         uuid = unique('uuid')
         path = tmp_path / name
 
@@ -304,12 +313,12 @@ def test_pool(
 
 
 @pytest.fixture
-def volume_xml(unique: Callable[..., Any]) -> Callable[[StoragePool, int], str]:
+def volume_xml(name_factory: Callable[[], str]) -> Callable[[StoragePool, int], str]:
     '''Provide a function that, given a storage pool, will produce an XML string for a Volume.
 
        The storage pool used should be a directory type pool.'''
     def inner(pool: StoragePool, size: int = 1024 * 1024) -> str:
-        name = unique('text', prefix='fvirt-test')
+        name = name_factory()
         size = size
         path = Path(pool.target) / name
 
