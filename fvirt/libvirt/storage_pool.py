@@ -215,7 +215,7 @@ class StoragePool(RunnableEntity):
         return Volume(vol, self)
 
 
-class StoragePools(BaseEntityAccess):
+class StoragePools(BaseEntityAccess[StoragePool]):
     '''Storage pool access mixin.'''
     @property
     def _count_funcs(self: Self) -> Iterable[str]:
@@ -230,21 +230,21 @@ class StoragePools(BaseEntityAccess):
         return StoragePool
 
 
-class StoragePoolsByName(NameMap, StoragePools):
+class StoragePoolsByName(NameMap[StoragePool], StoragePools):
     '''Immutabkle mapping returning storage pools on a Hypervisor based on their names.'''
     @property
     def _lookup_func(self: Self) -> str:
         return 'storagePoolLookupByName'
 
 
-class StoragePoolsByUUID(UUIDMap, StoragePools):
+class StoragePoolsByUUID(UUIDMap[StoragePool], StoragePools):
     '''Immutabkle mapping returning storage pools on a Hypervisor based on their UUIDs.'''
     @property
     def _lookup_func(self: Self) -> str:
         return 'storagePoolLookupByUUIDString'
 
 
-class StoragePoolAccess(EntityAccess, StoragePools):
+class StoragePoolAccess(EntityAccess[StoragePool], StoragePools):
     '''Class used for accessing storage pools on a Hypervisor.
 
        StoragePoolAccess instances are iterable, returning the storage
@@ -259,7 +259,7 @@ class StoragePoolAccess(EntityAccess, StoragePools):
 
     def get(self: Self, key: Any) -> StoragePool | None:
         '''Look up a storage pool by a general identifier.'''
-        return cast(StoragePool, super().get(key))
+        return super().get(key)
 
     @property
     def by_name(self: Self) -> StoragePoolsByName:
