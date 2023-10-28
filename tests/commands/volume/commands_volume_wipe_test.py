@@ -48,7 +48,6 @@ def test_volume_wipe(
         vol.undefine()
 
 
-@pytest.mark.xfail(reason='Failing due to apparent internal bug in object matching code.')
 @pytest.mark.libvirtd
 @pytest.mark.slow
 def test_command_bulk_run(

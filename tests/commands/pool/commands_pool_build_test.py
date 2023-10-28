@@ -37,7 +37,6 @@ def test_command_run(
         pool.undefine()
 
 
-@pytest.mark.xfail(reason='Failing due to apparent bug in object matching code.')
 @pytest.mark.libvirtd
 def test_command_bulk_run(
     runner: Callable[[Sequence[str], int], Result],

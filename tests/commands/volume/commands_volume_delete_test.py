@@ -33,7 +33,6 @@ def test_command_run(runner: Callable[[Sequence[str], int], Result], live_volume
 
 
 @pytest.mark.libvirtd
-@pytest.mark.xfail(reason='Apparent bug in object matching code.')
 def test_command_bulk_run(
     runner: Callable[[Sequence[str], int], Result],
     live_pool: tuple[StoragePool, Hypervisor],
