@@ -173,25 +173,25 @@ class LifecycleCommand(MatchCommand):
                     if state.fail_fast:
                         break
 
-                click.echo(f'Finished { op_help.continuous } specified { self.NAME }s.')
-                click.echo('')
-                click.echo('Results:')
-                click.echo(f'  Success:     { success }')
-                click.echo(f'  Failed:      { len(futures) - success }')
+            click.echo(f'Finished { op_help.continuous } specified { self.NAME }s.')
+            click.echo('')
+            click.echo('Results:')
+            click.echo(f'  Success:     { success }')
+            click.echo(f'  Failed:      { len(futures) - success }')
 
-                if skipped:
-                    click.echo(f'    Skipped:   { skipped }')
+            if skipped:
+                click.echo(f'    Skipped:   { skipped }')
 
-                if timed_out:
-                    click.echo(f'    Timed Out: { timed_out }')
+            if timed_out:
+                click.echo(f'    Timed Out: { timed_out }')
 
-                if forced:
-                    click.echo(f'    Forced:    { forced }')
+            if forced:
+                click.echo(f'    Forced:    { forced }')
 
-                click.echo(f'Total:         { len(futures) }')
+            click.echo(f'Total:         { len(futures) }')
 
-                if success != len(futures) or (not futures and state.fail_if_no_match):
-                    ctx.exit(ExitCode.FAILURE)
+            if success != len(futures) or (not futures and state.fail_if_no_match):
+                ctx.exit(ExitCode.FAILURE)
 
         params = tuple(params) + self.mixin_params(required=False)
 
