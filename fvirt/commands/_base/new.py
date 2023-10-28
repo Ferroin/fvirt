@@ -16,6 +16,7 @@ from .exitcode import ExitCode
 from .objects import ObjectMixin, is_object_mixin
 from ...libvirt import Hypervisor, InvalidConfig
 from ...libvirt.entity import Entity
+from ...util.report import summary
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -85,10 +86,10 @@ class NewCommand(Command, ABC):
 
             click.echo(f'Finished defining specified { self.NAME }s.')
             click.echo('')
-            click.echo('Results:')
-            click.echo(f'  Success:     { success }')
-            click.echo(f'  Failed:      { len(confdata) - success }')
-            click.echo(f'Total:         { len(confdata) }')
+            click.echo(summary(
+                total=len(confdata),
+                success=success,
+            ))
 
             if success != len(confdata) and confdata:
                 ctx.exit(ExitCode.FAILURE)

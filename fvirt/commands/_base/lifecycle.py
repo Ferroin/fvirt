@@ -20,6 +20,7 @@ from .match import MatchArgument, MatchCommand, get_match_or_entity
 from .objects import is_object_mixin
 from ...libvirt import InvalidOperation, LifecycleResult
 from ...libvirt.runner import RunnerResult, run_entity_method, run_sub_entity_method
+from ...util.report import summary
 
 if TYPE_CHECKING:
     from .state import State
@@ -175,20 +176,14 @@ class LifecycleCommand(MatchCommand):
 
             click.echo(f'Finished { op_help.continuous } specified { self.NAME }s.')
             click.echo('')
-            click.echo('Results:')
-            click.echo(f'  Success:     { success }')
-            click.echo(f'  Failed:      { len(futures) - success }')
-
-            if skipped:
-                click.echo(f'    Skipped:   { skipped }')
-
-            if timed_out:
-                click.echo(f'    Timed Out: { timed_out }')
-
-            if forced:
-                click.echo(f'    Forced:    { forced }')
-
-            click.echo(f'Total:         { len(futures) }')
+            click.echo(summary(
+                total=len(futures),
+                success=success,
+                skipped=skipped,
+                forced=forced,
+                timed_out=timed_out,
+                idempotent=state.idempotent,
+            ))
 
             if success != len(futures) or (not futures and state.fail_if_no_match):
                 ctx.exit(ExitCode.FAILURE)

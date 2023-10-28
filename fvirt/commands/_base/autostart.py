@@ -16,6 +16,7 @@ from .match import MatchArgument, MatchCommand, get_match_or_entity
 from .objects import is_object_mixin
 from ...libvirt import InsufficientPrivileges
 from ...libvirt.entity import RunnableEntity
+from ...util.report import summary
 
 if TYPE_CHECKING:
     from .state import State
@@ -73,14 +74,12 @@ class AutostartCommand(MatchCommand):
 
                 click.echo(f'Finished setting autostart status for specified { self.NAME }s.')
                 click.echo('')
-                click.echo('Results:')
-                click.echo(f'  Success:     { success }')
-                click.echo(f'  Failed:      { len(entities) - success }')
-
-                if skipped:
-                    click.echo(f'    Skipped:   { skipped }')
-
-                click.echo(f'Total:         { len(entities) }')
+                click.echo(summary(
+                    total=len(entities),
+                    success=success,
+                    skipped=skipped,
+                    idempotent=cli_state.idempotent,
+                ))
 
                 if success != len(entities) or (not entities and cli_state.fail_if_no_match):
                     ctx.exit(ExitCode.OPERATION_FAILED)
