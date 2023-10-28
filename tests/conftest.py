@@ -148,7 +148,7 @@ def embed_uri(tmp_path_factory: pytest.TempPathFactory) -> str:
 @pytest.fixture(scope='session')
 def lock_dir(tmp_path_factory: pytest.TempPathFactory) -> Path:
     '''Provide a session-scoped lock directory.'''
-    return tmp_path_factory.mktemp('lock')
+    return tmp_path_factory.getbasetemp() / 'lock'
 
 
 @pytest.fixture
