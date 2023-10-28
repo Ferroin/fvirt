@@ -168,7 +168,7 @@ class LifecycleCommand(MatchCommand):
                         case _:
                             raise RuntimeError
                 except InvalidOperation:
-                    click.echo(f'Failed to { op_help.verb } { self.NAME } "{ r.ident }", operation is not supported for this { self.NAME }.')
+                    click.echo(f'Failed to { op_help.verb } { self.NAME }, operation is not supported for this { self.NAME }.')
 
                     if state.fail_fast:
                         break
