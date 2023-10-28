@@ -11,13 +11,13 @@ from typing import TYPE_CHECKING, Any, Self, TypeGuard, cast
 import click
 
 from .exitcode import ExitCode
+from ...libvirt.entity import Entity
 from ...libvirt.entity_access import EntityAccess
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
     from ...libvirt import Hypervisor
-    from ...libvirt.entity import Entity
     from ...util.match import MatchArgument
 
 
@@ -122,7 +122,7 @@ class ObjectMixin(ABC):
 
     def get_entity(self: Self, ctx: click.Context, parent: Entity | Hypervisor, ident: Any) -> Entity:
         '''Look up an entity based on an identifier.'''
-        entity = cast(EntityAccess, getattr(parent, self.LOOKUP_ATTR)).get(ident)
+        entity = cast(EntityAccess[Entity], getattr(parent, self.LOOKUP_ATTR)).get(ident)
 
         if entity is None:
             click.echo(f'Could not find { self.NAME } "{ ident }".', err=True)
@@ -135,7 +135,7 @@ class ObjectMixin(ABC):
         if self.PARENT_ATTR is None or self.PARENT_NAME is None:
             raise RuntimeError
 
-        parent = cast(EntityAccess, getattr(hv, self.PARENT_ATTR)).get(parent_ident)
+        parent = cast(EntityAccess[Entity], getattr(hv, self.PARENT_ATTR)).get(parent_ident)
 
         if not parent:
             click.echo(f'Could not find { self.PARENT_NAME } "{ parent_ident }".', err=True)
