@@ -46,7 +46,7 @@ BAD_URIS = (
     f'{ CLIENT_ONLY_DRIVER }:///',  # Client-only driver without host
     f'{ NON_SYSTEM_DRIVER }:///system',  # Using /system with non-system driver
     f'{ NON_SESSION_DRIVER }:///session',  # Using /session path with non-session driver
-    f'{ NON_EMBED_DRIVER }:///embed?path=/foo',  # Using /embed path with non-embed driver
+    f'{ NON_EMBED_DRIVER }:///embed?root=/foo',  # Using /embed path with non-embed driver
     f'{ EMBED_DRIVER }:///embed',  # Using /embed without path parameter
     f'{ NON_REMOTE_DRIVER }://example.com/session',  # Local-only driver with host
     f'{ NON_PATH_DRIVER }:///foo/bar',  # Using arbitrary path with driver that does not support it
