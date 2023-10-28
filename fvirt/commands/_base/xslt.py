@@ -18,6 +18,7 @@ from .match import MatchCommand, get_match_or_entity
 from .objects import is_object_mixin
 from ...libvirt.runner import RunnerResult, run_entity_method, run_sub_entity_method
 from ...util.match import MatchAlias, MatchTarget
+from ...util.report import summary
 
 if TYPE_CHECKING:
     import re
@@ -138,10 +139,10 @@ class XSLTCommand(MatchCommand):
 
             click.echo(f'Finished modifying specified { self.NAME }s using XSLT document at { xslt }.')
             click.echo('')
-            click.echo('Results:')
-            click.echo(f'  Success:     { success }')
-            click.echo(f'  Failed:      { len(futures) - success }')
-            click.echo(f'Total:         { len(futures) }')
+            click.echo(summary(
+                total=len(futures),
+                success=success,
+            ))
 
             if success != len(futures) or (not futures and state.fail_if_no_match):
                 ctx.exit(3)

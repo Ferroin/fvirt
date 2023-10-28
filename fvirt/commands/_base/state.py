@@ -5,7 +5,6 @@
 
 from __future__ import annotations
 
-import math
 import threading
 
 from concurrent.futures import ThreadPoolExecutor
@@ -14,7 +13,7 @@ from typing import Self
 from ...libvirt import URI, Hypervisor
 from ...libvirt.events import start_libvirt_event_thread
 from ...util.dummy_pool import DummyExecutor
-from ...util.units import bytes_to_unit
+from ...util.units import bytes_to_unit, count_integer_digits
 
 
 class State:
@@ -106,15 +105,7 @@ class State:
 
         v, u = bytes_to_unit(value, iec=(self.__units == 'iec'))
 
-        # The below code only works reliably for values with an absolute
-        # value less than 10e15, but because our conversions down-shift
-        # by up to 18 places, it’s probably fine (we’re unlikely
-        # to ever have to deal with byte counts in excess of 1000
-        # quettabytes/quibibytes).
-        if v == 0.0:
-            digits = 1
-        else:
-            digits = math.floor(math.log10(v))+1
+        digits = count_integer_digits(v)
 
         p = max(4 - digits, 0)
 

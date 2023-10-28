@@ -126,6 +126,21 @@ def bytes_to_unit(value: int, /, *, iec: bool = False) -> tuple[float, str]:
     )
 
 
+def count_integer_digits(n: int | float) -> int:
+    '''Count the number of digits in an int or float.
+
+       For floats, this only counts the digits in the integral part.
+
+       The exact code used for this is only reliable up to values with
+       an absolute value of roughly 10e15.'''
+    if n == 0.0:
+        return 1
+    else:
+        return math.floor(math.log10(n))+1
+
+
 __all__ = [
     'unit_to_bytes',
+    'bytes_to_unit',
+    'count_integer_digits',
 ]
