@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from fvirt.libvirt import Hypervisor
 
 
+@pytest.mark.libvirtd
 def test_command_run(
     runner: Callable[[Sequence[str], int], Result],
     live_hv: Hypervisor,
@@ -36,7 +37,24 @@ def test_command_run(
         pool.undefine()
 
 
-@pytest.mark.xfail(reason='Test not yet implemented')
-def test_command_bulk_run() -> None:
+@pytest.mark.xfail(reason='Failing due to apparent bug in object matching code.')
+@pytest.mark.libvirtd
+def test_command_bulk_run(
+    runner: Callable[[Sequence[str], int], Result],
+    live_hv: Hypervisor,
+    pool_xml: Callable[[], str],
+    serial: Callable[[str], _GeneratorContextManager[None]],
+    worker_id: str,
+) -> None:
     '''Test running the command on multiple objects.'''
-    assert False
+    count = 3
+
+    with serial('live-pool'):
+        pools = tuple(live_hv.define_storage_pool(pool_xml()) for _ in range(0, count))
+
+    result = runner(('-c', str(live_hv.uri), 'pool', 'build', '--match', 'name', f'^fvirt-test-{worker_id}'), 0)
+    assert len(result.output) > 0
+
+    with serial('live-pool'):
+        for pool in pools:
+            pool.undefine()
