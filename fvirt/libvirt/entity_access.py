@@ -13,10 +13,10 @@ from uuid import UUID
 import libvirt
 
 from .entity import Entity
+from ..util.match import MatchArgument, match_items
 
 if TYPE_CHECKING:
     from .hypervisor import Hypervisor
-    from ..util.match import MatchArgument
 
 T = TypeVar('T', bound=Entity)
 
@@ -208,8 +208,4 @@ class EntityAccess(BaseEntityAccess[T], Iterable):
 
     def match(self: Self, match: MatchArgument) -> Iterable[T]:
         '''Return an iterable of entities that match given match parameters.'''
-        def f(entity: T) -> bool:
-            value = match[0].get_value(entity)
-            return match[1].match(value) is not None
-
-        return filter(f, self)
+        return match_items(self, match)

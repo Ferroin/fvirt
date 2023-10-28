@@ -8,14 +8,19 @@ from __future__ import annotations
 import re
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Final, Self
+from typing import TYPE_CHECKING, Final, Self, TypeVar
 
 from lxml import etree
 
-if TYPE_CHECKING:
-    from ..libvirt.entity import Entity
+from ..libvirt.entity import Entity
 
-MATCH_HELP: Final = '''fvirt object matching is based on two parameters passed to the --match
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+
+T = TypeVar('T', bound=Entity)
+
+MATCH_HELP: Final = '''
+fvirt object matching is based on two parameters passed to the --match
 option of a fvirt command. The first is the match target, and the second
 is the match pattern.
 
@@ -35,7 +40,7 @@ are fully supported.
 
 To see a list of recognized match aliases for a given subcommand, run
 `fvirt <subcommand> help aliases`
-'''
+'''.lstrip().rstrip()
 
 
 @dataclass(kw_only=True, slots=True)
@@ -90,9 +95,20 @@ class MatchTarget:
 
 MatchArgument = tuple[MatchTarget, re.Pattern]
 
+
+def match_items(items: Iterable[T], match: MatchArgument) -> Iterable[T]:
+    '''Match a group of items based on the match argument.'''
+    def f(entity: T) -> bool:
+        value = match[0].get_value(entity)
+        return match[1].search(value) is not None
+
+    return filter(f, items)
+
+
 __all__ = [
     'MatchAlias',
     'MatchArgument',
     'MatchTarget',
     'MATCH_HELP',
+    'match_items',
 ]
