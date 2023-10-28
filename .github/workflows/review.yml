@@ -3,6 +3,9 @@ name: Review
 
 on:
   pull_request: null
+  push:
+    branches:
+      - main
 
 concurrency:
   group: review-${{ github.ref }}
@@ -14,6 +17,7 @@ env:
 
 jobs:
   actionlint:
+    if: github.event_name == 'pull_request'
     permissions:
       contents: read
       pull-requests: write
@@ -29,6 +33,7 @@ jobs:
           reporter: github-pr-review
 
   languagetool:
+    if: github.event_name == 'pull_request'
     permissions:
       contents: read
       pull-requests: write
@@ -44,6 +49,7 @@ jobs:
           reporter: github-pr-review
 
   markdownlint:
+    if: github.event_name == 'pull_request'
     permissions:
       contents: read
       pull-requests: write
@@ -60,6 +66,7 @@ jobs:
           markdownlint_flags: -s ./.mdl-style.rb .
 
   detect-secrets:
+    if: github.event_name == 'pull_request'
     permissions:
       contents: read
       pull-requests: write
