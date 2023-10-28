@@ -92,7 +92,7 @@ class NewCommand(Command, ABC):
             ))
 
             if success != len(confdata) and confdata:
-                ctx.exit(ExitCode.FAILURE)
+                ctx.exit(ExitCode.OPERATION_FAILED)
 
         if self.HAS_PARENT:
             header = dedent(f'''

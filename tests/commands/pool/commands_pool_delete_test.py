@@ -29,7 +29,7 @@ def test_command_run(runner: Callable[[Sequence[str], int], Result], live_pool: 
     assert path.exists()
     assert path.is_dir()
 
-    runner(('-c', uri, 'pool', 'delete', pool.name), int(ExitCode.FAILURE))
+    runner(('-c', uri, 'pool', 'delete', pool.name), int(ExitCode.OPERATION_FAILED))
 
     assert path.exists()
     assert path.is_dir()

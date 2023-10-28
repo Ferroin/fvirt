@@ -103,7 +103,7 @@ class HelpCommand(Command):
                     if subcmd is None:
                         click.echo(f'{ topic } is not a recognized help topic.')
                         _print_topics(ctx, group, topics)
-                        ctx.exit(ExitCode.FAILURE)
+                        ctx.exit(ExitCode.BAD_ARGUMENTS)
                     else:
                         ctx.info_name = topic
                         click.echo(subcmd.get_help(ctx))
