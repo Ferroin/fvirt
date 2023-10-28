@@ -56,10 +56,6 @@ def test_equality(
 
     assert pool1 != ''
 
-    with serial('live-pool'):
-        pool1.undefine()
-        pool2.undefine()
-
 
 @pytest.mark.libvirtd
 def test_self_wrap(live_pool: tuple[StoragePool, Hypervisor]) -> None:
@@ -82,10 +78,14 @@ def test_name(live_pool: tuple[StoragePool, Hypervisor]) -> None:
     assert isinstance(pool.name, str)
 
 
-@pytest.mark.xfail(reason='Not yet implemented')
-def test_define() -> None:
+@pytest.mark.libvirtd
+def test_define(live_hv: Hypervisor, pool_xml: Callable[[], str], serial: Callable[[str], _GeneratorContextManager[None]]) -> None:
     '''Check that defining a pool works.'''
-    assert False
+    with serial('live-pool'):
+        pool = live_hv.define_storage_pool(pool_xml())
+
+    assert isinstance(pool, StoragePool)
+    assert not pool.running
 
 
 @pytest.mark.libvirtd
@@ -207,10 +207,14 @@ def test_config_live(live_pool: tuple[StoragePool, Hypervisor], tmp_path: Path) 
     assert cast(etree._Element, pool.config_live.find('/target/path')).text != str(tmp_path)
 
 
-@pytest.mark.xfail(reason='Not yet implemented')
-def test_create() -> None:
+@pytest.mark.libvirtd
+def test_create(live_hv: Hypervisor, pool_xml: Callable[[], str], serial: Callable[[str], _GeneratorContextManager[None]]) -> None:
     '''Check that creating a pool works.'''
-    assert False
+    with serial('live-pool'):
+        pool = live_hv.create_storage_pool(pool_xml())
+
+    assert isinstance(pool, StoragePool)
+    assert pool.running
 
 
 @pytest.mark.libvirtd
