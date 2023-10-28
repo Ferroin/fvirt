@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import re
 
-from typing import TYPE_CHECKING, Any, Concatenate, Final, ParamSpec, Self, Type, TypeVar
+from typing import TYPE_CHECKING, Any, Concatenate, Final, ParamSpec, Self, Type, TypeVar, cast
 
 import click
 
@@ -114,8 +114,11 @@ def get_match_or_entity(
 
         entities = [item]
     else:
+        usage = cast(click.Command, obj).get_usage(ctx)
+        click.echo(usage, err=True)
+        click.echo('', err=True)
         click.echo(f'Either match parameters or a { obj.NAME } spicifier is required.', err=True)
-        ctx.exit(ExitCode.FAILURE)
+        ctx.exit(ExitCode.BAD_ARGUMENTS)
 
     return entities
 

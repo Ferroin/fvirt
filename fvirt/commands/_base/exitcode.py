@@ -12,8 +12,9 @@ from enum import IntEnum, unique
 class ExitCode(IntEnum):
     '''Enumerable of exit codes for fvirt.'''
     SUCCESS = 0
-    FAILURE = 1
-    ENTITY_NOT_FOUND = 2
-    PARENT_NOT_FOUND = 3
-    OPERATION_FAILED = 4
-    PATH_NOT_VALID = 5
+    BAD_ARGUMENTS = 1
+    GENERAL_FAILURE = 2
+    ENTITY_NOT_FOUND = 3
+    PARENT_NOT_FOUND = 4
+    OPERATION_FAILED = 5
+    PATH_NOT_VALID = 6

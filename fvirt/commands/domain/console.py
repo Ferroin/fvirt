@@ -92,7 +92,7 @@ class _ConsoleCommand(Command, DomainMixin):
                 codec = codecs.lookup(encoding)
             except LookupError:
                 click.echo(f'"{ encoding }" is not a recognized encoding.', err=True)
-                ctx.exit(ExitCode.FAILURE)
+                ctx.exit(ExitCode.BAD_ARGUMENTS)
 
             decode = codec.incrementaldecoder(errors='replace').decode
             encode = codec.incrementalencoder(errors='replace').encode

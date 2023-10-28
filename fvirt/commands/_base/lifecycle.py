@@ -186,7 +186,7 @@ class LifecycleCommand(MatchCommand):
             ))
 
             if success != len(futures) or (not futures and state.fail_if_no_match):
-                ctx.exit(ExitCode.FAILURE)
+                ctx.exit(ExitCode.OPERATION_FAILED)
 
         params = tuple(params) + self.mixin_params(required=False)
 

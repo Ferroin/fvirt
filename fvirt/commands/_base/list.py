@@ -92,7 +92,8 @@ class ListCommand(MatchCommand):
                     entities = getattr(obj, self.LOOKUP_ATTR).match(match)
 
                 if not entities and state.fail_if_no_match:
-                    ctx.fail('No { self.NAME }s found matching the specified parameters.')
+                    click.echo(f'No { self.NAME }s found matching the specified parameters.', err=True)
+                    ctx.exit(ExitCode.ENTITY_NOT_FOUND)
 
                 if only is None:
                     data = tabulate_entities(entities, columns, cols, lambda x: state.convert_units(x))

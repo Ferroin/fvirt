@@ -83,10 +83,10 @@ class FileTransferCommand(Command):
                         transferred = transfer(f, **transfer_args)
                     except OSError as e:
                         click.echo(f'Operation failed due to local system error: { e.strerror }.', err=True)
-                        ctx.exit(ExitCode.FAILURE)
+                        ctx.exit(ExitCode.OPERATION_FAILED)
                     except libvirt.libvirtError:
                         click.echo('Operation failed due to libvirt error.', err=True)
-                        ctx.exit(ExitCode.FAILURE)
+                        ctx.exit(ExitCode.OPERATION_FAILED)
 
                 click.echo(f'Finished transferring data, copied { state.convert_units(transferred) } of data.')
                 ctx.exit(ExitCode.SUCCESS)
