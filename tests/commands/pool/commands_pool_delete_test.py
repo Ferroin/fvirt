@@ -8,12 +8,11 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-import pytest
-
 from fvirt.commands._base.exitcode import ExitCode
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
+    from contextlib import _GeneratorContextManager
 
     from click.testing import Result
 
@@ -41,7 +40,49 @@ def test_command_run(runner: Callable[[Sequence[str], int], Result], live_pool: 
     assert not path.exists()
 
 
-@pytest.mark.xfail(reason='Test not yet implemented')
-def test_command_bulk_run() -> None:
+def test_command_bulk_run(
+    runner: Callable[[Sequence[str], int], Result],
+    live_hv: Hypervisor,
+    pool_xml: Callable[[], str],
+    serial: Callable[[str], _GeneratorContextManager],
+    worker_id: str,
+) -> None:
     '''Test running the command on multiple objects.'''
-    assert False
+    uri = str(live_hv.uri)
+    count = 3
+
+    with serial('live-pool'):
+        pools = tuple(
+            live_hv.define_storage_pool(pool_xml()) for _ in range(0, count)
+        )
+
+    for p in pools:
+        p.build()
+        p.start()
+
+    assert all(p.running for p in pools)
+
+    paths = tuple(
+        Path(p.target) for p in pools
+    )
+
+    assert all(p.exists() for p in paths)
+    assert all(p.is_dir() for p in paths)
+
+    runner(('-c', uri, 'pool', 'delete', '--match', 'name', f'fvirt-test-{worker_id}'), int(ExitCode.OPERATION_FAILED))
+
+    assert all(p.exists() for p in paths)
+    assert all(p.is_dir() for p in paths)
+
+    for p in pools:
+        p.destroy()
+
+    assert all((not p.running) for p in pools)
+
+    runner(('-c', uri, 'pool', 'delete', '--match', 'name', f'fvirt-test-{worker_id}'), 0)
+
+    assert all((not p.exists()) for p in paths)
+
+    with serial('live-pool'):
+        for p in pools:
+            p.undefine()
