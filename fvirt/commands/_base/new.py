@@ -69,7 +69,7 @@ class NewCommand(Command, ABC):
 
                 for c, p in confdata:
                     try:
-                        obj = getattr(define_obj, self.DEFINE_METHOD)(c, **kwargs)
+                        obj = getattr(define_obj, cast(NewCommand, self).NEW_METHOD)(c, **kwargs)
                     except InvalidConfig:
                         click.echo(f'The configuration at { p } is not valid for a { self.NAME }.')
 
