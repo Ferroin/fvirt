@@ -5,6 +5,8 @@
 
 from __future__ import annotations
 
+import sys
+
 from collections.abc import Callable, Generator
 from contextlib import _GeneratorContextManager, contextmanager
 from pathlib import Path
@@ -24,6 +26,17 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
     from click.testing import CliRunner, Result
+
+if not sys.warnoptions:
+    import os
+    import warnings
+
+    warnings.simplefilter('default', category=DeprecationWarning)
+    warnings.simplefilter('default', category=SyntaxWarning)
+    warnings.simplefilter('default', category=RuntimeWarning)
+    warnings.simplefilter('default', category=PendingDeprecationWarning)
+    os.environ['PYTHONWARNINGS'] = 'default::DeprecationWarning,default::SyntaxWarning,default::RuntimeWarning,default::PendingDeprecationWarning'
+
 
 PREFIX = 'fvirt-test'
 XSLT_DATA = '''
