@@ -52,6 +52,7 @@ def test_command_bulk_run(
     runner: Callable[..., Result],
     live_pool: tuple[StoragePool, Hypervisor],
     volume_factory: Callable[[StoragePool, int], Volume],
+    worker_id: str,
 ) -> None:
     '''Test running the command on multiple objects.'''
     pool, hv = live_pool
@@ -72,7 +73,7 @@ def test_command_bulk_run(
 
             path.write_bytes(data)
 
-        runner(('-c', uri, 'volume', 'wipe', pool.name, '--match', 'name', 'fvirt-test-'), 0)
+        runner(('-c', uri, 'volume', 'wipe', pool.name, '--match', 'name', f'fvirt-test-{worker_id}'), 0)
 
         for vol in volumes:
             assert vol.capacity == size

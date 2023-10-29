@@ -42,6 +42,8 @@ if not sys.warnoptions:
 
 FAIL_NON_RUNNABLE = os.environ.get('FVIRT_FAIL_NON_RUNNABLE_TESTS', 0)
 TEST_SKIP = os.environ.get('FVIRT_TEST_SKIP_TESTS', 0)
+GROUP_COUNT = int(os.environ.get('FVIRT_TEST_OBJECT_GROUP_SIZE', 3))
+
 PREFIX = 'fvirt-test'
 XSLT_DATA = '''
 <?xml version='1.0'?>
@@ -372,9 +374,9 @@ def pool_xml(unique: Callable[..., Any], tmp_path: Path, name_factory: Callable[
 
 @pytest.fixture
 def live_pool(
-        live_hv: Hypervisor,
-        pool_xml: Callable[[], str],
-        serial: Callable[[str], _GeneratorContextManager[None]],
+    live_hv: Hypervisor,
+    pool_xml: Callable[[], str],
+    serial: Callable[[str], _GeneratorContextManager[None]],
 ) -> Generator[tuple[StoragePool, Hypervisor], None, None]:
     '''Provide a running, persistent StoragePool instance to operate on.
 
@@ -396,10 +398,37 @@ def live_pool(
 
 
 @pytest.fixture
+def live_pool_group(
+    live_hv: Hypervisor,
+    pool_xml: Callable[[], str],
+    serial: Callable[[str], _GeneratorContextManager[None]],
+) -> Generator[tuple[tuple[StoragePool, ...], Hypervisor], None, None]:
+    '''Provide a tuple of storage pools to operate on.
+
+       Yields a tuple of the tuple of StoragePool instances and the
+       Hypervisor instance.'''
+    with serial('live-pool'):
+        pools = tuple(
+            live_hv.define_storage_pool(pool_xml()) for _ in range(0, GROUP_COUNT)
+        )
+
+    for pool in pools:
+        pool.build()
+        pool.start()
+
+    yield (pools, live_hv)
+
+    with serial('live-pool'):
+        for pool in pools:
+            if pool in live_hv.storage_pools:
+                remove_pool(pool)
+
+
+@pytest.fixture
 def test_pool(
-        test_hv: Hypervisor,
-        pool_xml: Callable[[], str],
-        serial: Callable[[str], _GeneratorContextManager[None]]
+    test_hv: Hypervisor,
+    pool_xml: Callable[[], str],
+    serial: Callable[[str], _GeneratorContextManager[None]]
 ) -> Generator[tuple[StoragePool, Hypervisor], None, None]:
     '''Provide a running, persistent StoragePool instance to operate on.
 
@@ -492,3 +521,25 @@ def live_volume(
 
     if pool.volumes.get(key) is not None:
         vol.undefine()
+
+
+@pytest.fixture
+def live_volume_group(
+    live_pool: tuple[StoragePool, Hypervisor],
+    volume_factory: Callable[[StoragePool], Volume],
+) -> Generator[tuple[tuple[Volume, ...], StoragePool, Hypervisor], None, None]:
+    '''Provide a group of Volume instances to operate on.
+
+       Yields a tuple of a tuple of the Volume instances, the parent StoragePool,
+       and the associated Hypervisor.'''
+    pool, hv = live_pool
+
+    vols = tuple(
+        volume_factory(pool) for _ in range(0, GROUP_COUNT)
+    )
+
+    yield (vols, pool, hv)
+
+    for vol in vols:
+        if vol in pool.volumes:
+            vol.undefine()

@@ -31,20 +31,16 @@ def test_command_run(runner: Callable[[Sequence[str], int], Result], live_volume
 
 def test_command_bulk_run(
     runner: Callable[[Sequence[str], int], Result],
-    live_pool: tuple[StoragePool, Hypervisor],
-    volume_factory: Callable[[StoragePool], Volume],
+    live_volume_group: tuple[tuple[Volume], StoragePool, Hypervisor],
+    worker_id: str,
 ) -> None:
     '''Test running the command on multiple objects.'''
-    pool, hv = live_pool
+    vols, pool, hv = live_volume_group
     uri = str(hv.uri)
-    count = 3
 
-    for _ in range(0, count):
-        volume_factory(pool)
+    assert len(pool.volumes) == len(vols)
 
-    assert len(pool.volumes) == count
-
-    result = runner(('-c', uri, 'volume', 'delete', pool.name, '--match', 'name', 'fvirt-test-'), 0)
+    result = runner(('-c', uri, 'volume', 'delete', pool.name, '--match', 'name', f'fvirt-test-{worker_id}'), 0)
     assert len(result.output) > 0
 
     assert len(pool.volumes) == 0

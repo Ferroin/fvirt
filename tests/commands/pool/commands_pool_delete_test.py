@@ -12,7 +12,6 @@ from fvirt.commands._base.exitcode import ExitCode
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
-    from contextlib import _GeneratorContextManager
 
     from click.testing import Result
 
@@ -42,23 +41,12 @@ def test_command_run(runner: Callable[[Sequence[str], int], Result], live_pool: 
 
 def test_command_bulk_run(
     runner: Callable[[Sequence[str], int], Result],
-    live_hv: Hypervisor,
-    pool_xml: Callable[[], str],
-    serial: Callable[[str], _GeneratorContextManager],
+    live_pool_group: tuple[tuple[StoragePool, ...], Hypervisor],
     worker_id: str,
 ) -> None:
     '''Test running the command on multiple objects.'''
-    uri = str(live_hv.uri)
-    count = 3
-
-    with serial('live-pool'):
-        pools = tuple(
-            live_hv.define_storage_pool(pool_xml()) for _ in range(0, count)
-        )
-
-    for p in pools:
-        p.build()
-        p.start()
+    pools, hv = live_pool_group
+    uri = str(hv.uri)
 
     assert all(p.running for p in pools)
 
@@ -82,7 +70,3 @@ def test_command_bulk_run(
     runner(('-c', uri, 'pool', 'delete', '--match', 'name', f'fvirt-test-{worker_id}'), 0)
 
     assert all((not p.exists()) for p in paths)
-
-    with serial('live-pool'):
-        for p in pools:
-            p.undefine()
