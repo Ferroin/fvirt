@@ -17,7 +17,6 @@ if TYPE_CHECKING:
     from fvirt.libvirt import Hypervisor, StoragePool, Volume
 
 
-@pytest.mark.libvirtd
 def test_command_run(runner: Callable[[Sequence[str], int], Result], live_volume: tuple[Volume, StoragePool, Hypervisor]) -> None:
     '''Test that the command runs correctly.'''
     vol, pool, hv = live_volume
@@ -32,7 +31,6 @@ def test_command_run(runner: Callable[[Sequence[str], int], Result], live_volume
     assert vol1 is None
 
 
-@pytest.mark.libvirtd
 def test_command_bulk_run(
     runner: Callable[[Sequence[str], int], Result],
     live_pool: tuple[StoragePool, Hypervisor],

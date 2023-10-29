@@ -24,7 +24,6 @@ if TYPE_CHECKING:
 
 
 @pytest.mark.slow
-@pytest.mark.libvirtd
 def test_volume_download(
     runner: Callable[[Sequence[str], int], Result],
     live_volume: tuple[Volume, StoragePool, Hypervisor],
@@ -45,7 +44,6 @@ def test_volume_download(
 
 
 @pytest.mark.slow
-@pytest.mark.libvirtd
 @pytest.mark.skipif(sys.platform == 'win32', reason='Sparse data handling not supported on Windows')
 def test_volume_sparse_download(
     runner: Callable[[Sequence[str], int], Result],

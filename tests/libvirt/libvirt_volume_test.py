@@ -29,14 +29,12 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
 
-@pytest.mark.libvirtd
 def test_check_match_aliases(live_volume: tuple[Volume, StoragePool, Hypervisor]) -> None:
     '''Check typing for match aliases.'''
     vol, _, _ = live_volume
     check_match_aliases(MATCH_ALIASES, vol)
 
 
-@pytest.mark.libvirtd
 def test_equality(live_pool: tuple[StoragePool, Hypervisor], volume_factory: Callable[[StoragePool], Volume]) -> None:
     '''Test that pool equality checks work correctly.'''
     pool, _ = live_pool
@@ -57,35 +55,30 @@ def test_equality(live_pool: tuple[StoragePool, Hypervisor], volume_factory: Cal
     vol2.delete()
 
 
-@pytest.mark.libvirtd
 def test_self_wrap(live_volume: tuple[Volume, StoragePool, Hypervisor]) -> None:
     '''Check that instantiating a Volume with another Volume instance produces an equal Volume.'''
     vol, _, _ = live_volume
     assert Volume(vol) == vol
 
 
-@pytest.mark.libvirtd
 def test_format(live_volume: tuple[Volume, StoragePool, Hypervisor]) -> None:
     '''Check that formatting a Volume instance can be formatted.'''
     vol, _, _ = live_volume
     check_entity_format(vol)
 
 
-@pytest.mark.libvirtd
 def test_name(live_volume: tuple[Volume, StoragePool, Hypervisor]) -> None:
     '''Check the name attribute.'''
     vol, _, _ = live_volume
     assert isinstance(vol.name, str)
 
 
-@pytest.mark.libvirtd
 def test_key(live_volume: tuple[Volume, StoragePool, Hypervisor]) -> None:
     '''Check the key attribute.'''
     vol, _, _ = live_volume
     assert isinstance(vol.key, str)
 
 
-@pytest.mark.libvirtd
 def test_config_raw(live_volume: tuple[Volume, StoragePool, Hypervisor]) -> None:
     '''Check that the config_raw property works correctly.'''
     vol, _, _ = live_volume
@@ -99,7 +92,6 @@ def test_config_raw(live_volume: tuple[Volume, StoragePool, Hypervisor]) -> None
         vol.config_raw = conf
 
 
-@pytest.mark.libvirtd
 def test_config(live_volume: tuple[Volume, StoragePool, Hypervisor]) -> None:
     '''Check that the config property works correctly.'''
     vol, _, _ = live_volume
@@ -111,7 +103,6 @@ def test_config(live_volume: tuple[Volume, StoragePool, Hypervisor]) -> None:
         vol.config = conf
 
 
-@pytest.mark.libvirtd
 def test_xslt(live_volume: tuple[Volume, StoragePool, Hypervisor], xslt_doc_factory: Callable[[str, str], str]) -> None:
     '''Check that the apply_xslt() method properly throws an InvalidOperation error.'''
     vol, _, _ = live_volume
@@ -121,14 +112,12 @@ def test_xslt(live_volume: tuple[Volume, StoragePool, Hypervisor], xslt_doc_fact
         vol.apply_xslt(xslt)
 
 
-@pytest.mark.libvirtd
 def test_undefine(live_volume: tuple[Volume, StoragePool, Hypervisor]) -> None:
     '''Check that undefining a volume works.'''
     vol, pool, _ = live_volume
     check_undefine(pool, 'volumes', vol)
 
 
-@pytest.mark.libvirtd
 def test_delete(live_volume: tuple[Volume, StoragePool, Hypervisor]) -> None:
     '''Check that deleting a volume works.'''
     vol, pool, _ = live_volume
@@ -158,7 +147,6 @@ def test_delete(live_volume: tuple[Volume, StoragePool, Hypervisor]) -> None:
     assert pool.volumes.get(name) is None
 
 
-@pytest.mark.libvirtd
 @pytest.mark.slow
 def test_wipe(live_pool: tuple[StoragePool, Hypervisor], volume_factory: Callable[[StoragePool, int], Volume]) -> None:
     '''Test that wiping volumes works correctly.'''
@@ -185,7 +173,6 @@ def test_wipe(live_pool: tuple[StoragePool, Hypervisor], volume_factory: Callabl
         vol.undefine()
 
 
-@pytest.mark.libvirtd
 def test_resize_invalid(live_volume: tuple[Volume, StoragePool, Hypervisor]) -> None:
     '''Test that resizing volumes fails correctly in invalid cases.'''
     vol, _, _ = live_volume
@@ -206,7 +193,6 @@ def test_resize_invalid(live_volume: tuple[Volume, StoragePool, Hypervisor]) -> 
         vol.resize(1024)
 
 
-@pytest.mark.libvirtd
 def test_resize_absolute(live_volume: tuple[Volume, StoragePool, Hypervisor]) -> None:
     '''Test that resizing volumes works correctly with absolute sizes.'''
     vol, _, _ = live_volume
@@ -227,7 +213,6 @@ def test_resize_absolute(live_volume: tuple[Volume, StoragePool, Hypervisor]) ->
     assert vol.capacity == size + 4096
 
 
-@pytest.mark.libvirtd
 def test_resize_relative(live_volume: tuple[Volume, StoragePool, Hypervisor]) -> None:
     '''Test that resizing volumes works correctly with relative sizes.'''
     vol, _, _ = live_volume
@@ -248,7 +233,6 @@ def test_resize_relative(live_volume: tuple[Volume, StoragePool, Hypervisor]) ->
     assert vol.capacity == size + 4096
 
 
-@pytest.mark.libvirtd
 def test_resize_shrink(live_volume: tuple[Volume, StoragePool, Hypervisor]) -> None:
     '''Test that shrinking volumes works correctly with absolute sizes.'''
     vol, _, _ = live_volume
@@ -274,7 +258,6 @@ def test_resize_shrink(live_volume: tuple[Volume, StoragePool, Hypervisor]) -> N
     assert vol.capacity == size
 
 
-@pytest.mark.libvirtd
 def test_resize_shrink_relative(live_volume: tuple[Volume, StoragePool, Hypervisor]) -> None:
     '''Test that shrinking volumes works correctly with relative sizes.'''
     vol, _, _ = live_volume
@@ -300,7 +283,6 @@ def test_resize_shrink_relative(live_volume: tuple[Volume, StoragePool, Hypervis
     assert vol.capacity == size
 
 
-@pytest.mark.libvirtd
 def test_volume_access_iterable(live_pool: tuple[StoragePool, Hypervisor], volume_factory: Callable[[StoragePool], Volume]) -> None:
     '''Test volume entity access behavior.'''
     pool, _ = live_pool
@@ -312,7 +294,6 @@ def test_volume_access_iterable(live_pool: tuple[StoragePool, Hypervisor], volum
         vol.undefine()
 
 
-@pytest.mark.libvirtd
 def test_volume_access_get(live_pool: tuple[StoragePool, Hypervisor], volume_factory: Callable[[StoragePool], Volume]) -> None:
     '''Test volume entity access get method.'''
     pool, _ = live_pool
@@ -323,7 +304,6 @@ def test_volume_access_get(live_pool: tuple[StoragePool, Hypervisor], volume_fac
         vol.undefine()
 
 
-@pytest.mark.libvirtd
 def test_volume_access_match(live_pool: tuple[StoragePool, Hypervisor], volume_factory: Callable[[StoragePool], Volume]) -> None:
     '''Test volume entity access match method.'''
     pool, _ = live_pool
@@ -334,7 +314,6 @@ def test_volume_access_match(live_pool: tuple[StoragePool, Hypervisor], volume_f
         vol.undefine()
 
 
-@pytest.mark.libvirtd
 def test_volume_access_mapping(live_pool: tuple[StoragePool, Hypervisor], volume_factory: Callable[[StoragePool], Volume]) -> None:
     '''Test volume entity access mappings.'''
     pool, _ = live_pool
@@ -346,7 +325,6 @@ def test_volume_access_mapping(live_pool: tuple[StoragePool, Hypervisor], volume
 
 
 @pytest.mark.slow
-@pytest.mark.libvirtd
 def test_volume_download(live_volume: tuple[Volume, StoragePool, Hypervisor], unique: Callable[..., Any]) -> None:
     '''Test volume download functionality.'''
     vol, _, _ = live_volume
@@ -364,7 +342,6 @@ def test_volume_download(live_volume: tuple[Volume, StoragePool, Hypervisor], un
 
 
 @pytest.mark.slow
-@pytest.mark.libvirtd
 @pytest.mark.skipif(sys.platform == 'win32', reason='Sparse data handling not supported on Windows')
 def test_volume_sparse_download(live_volume: tuple[Volume, StoragePool, Hypervisor], unique: Callable[..., Any]) -> None:
     '''Test volume sparse download functionality.'''
@@ -389,7 +366,6 @@ def test_volume_sparse_download(live_volume: tuple[Volume, StoragePool, Hypervis
 
 
 @pytest.mark.slow
-@pytest.mark.libvirtd
 def test_volume_upload(live_volume: tuple[Volume, StoragePool, Hypervisor], unique: Callable[..., Any]) -> None:
     '''Test volume upload functionality.'''
     vol, _, _ = live_volume
@@ -407,7 +383,6 @@ def test_volume_upload(live_volume: tuple[Volume, StoragePool, Hypervisor], uniq
 
 
 @pytest.mark.slow
-@pytest.mark.libvirtd
 def test_volume_upload_resize(live_volume: tuple[Volume, StoragePool, Hypervisor], unique: Callable[..., Any]) -> None:
     '''Test volume upload functionality.'''
     vol, _, _ = live_volume
@@ -425,7 +400,6 @@ def test_volume_upload_resize(live_volume: tuple[Volume, StoragePool, Hypervisor
 
 
 @pytest.mark.slow
-@pytest.mark.libvirtd
 @pytest.mark.skipif(sys.platform == 'win32', reason='Sparse data handling not supported on Windows')
 def test_volume_sparse_upload(live_volume: tuple[Volume, StoragePool, Hypervisor], unique: Callable[..., Any]) -> None:
     '''Test volume sparse upload functionality.'''

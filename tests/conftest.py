@@ -5,6 +5,9 @@
 
 from __future__ import annotations
 
+import os
+import platform
+import shutil
 import sys
 
 from collections.abc import Callable, Generator
@@ -28,7 +31,6 @@ if TYPE_CHECKING:
     from click.testing import CliRunner, Result
 
 if not sys.warnoptions:
-    import os
     import warnings
 
     warnings.simplefilter('default', category=DeprecationWarning)
@@ -38,6 +40,8 @@ if not sys.warnoptions:
     os.environ['PYTHONWARNINGS'] = 'default::DeprecationWarning,default::SyntaxWarning,default::RuntimeWarning,default::PendingDeprecationWarning'
 
 
+FAIL_NON_RUNNABLE = os.environ.get('FVIRT_FAIL_NON_RUNNABLE_TESTS', 0)
+TEST_SKIP = os.environ.get('FVIRT_TEST_SKIP_TESTS', 0)
 PREFIX = 'fvirt-test'
 XSLT_DATA = '''
 <?xml version='1.0'?>
@@ -53,6 +57,14 @@ XSLT_DATA = '''
     </xsl:template>
 </xsl:stylesheet>
 '''.lstrip().rstrip()
+
+
+def skip_or_fail(msg: str) -> None:
+    '''Skip or fail a test with the given message.'''
+    if FAIL_NON_RUNNABLE:
+        pytest.fail(msg)
+    else:
+        pytest.skip(msg)
 
 
 def remove_domain(dom: Domain) -> None:
@@ -140,19 +152,61 @@ def libvirt_event_loop() -> None:
 
 
 @pytest.fixture(scope='session')
+def virtqemud() -> str | None:
+    '''Provide a path to virtqemud.'''
+    return shutil.which('virtqemud')
+
+
+@pytest.fixture(scope='session')
+def sys_arch() -> str | None:
+    '''Provide the system CPU architecture.'''
+    arch: str | None = platform.machine()
+
+    match arch:
+        case 'AMD64':
+            arch = 'x86_64'
+        case '':
+            arch = None
+
+    return arch
+
+
+@pytest.fixture(scope='session')
+def qemu_system(sys_arch: str | None) -> str | None:
+    '''Provide a path to a native qemu-system emulator.'''
+    if sys_arch is not None:
+        return shutil.which(f'qemu-system-{sys_arch}')
+    else:
+        return None
+
+
+@pytest.fixture
+def require_qemu(virtqemud: str | None, qemu_system: str | None) -> None:
+    '''Check for a usable copy of virtqemud and qmeu-system emulator, and skip or fail if one is not found.'''
+    if TEST_SKIP:
+        skip_or_fail('Requested skipping possibly skipped tests.')
+
+    if virtqemud is None:
+        skip_or_fail('Could not find virtqemud, which is required to run this test.')
+
+    if qemu_system is None:
+        skip_or_fail('Could not find QEMU system emulator, which is required to run this test.')
+
+
+@pytest.fixture(scope='session')
 def test_uri() -> str:
     '''Provide a libvirt URI to use for testing.'''
     return 'test:///default'
 
 
-@pytest.fixture(scope='session')
-def live_uri() -> str:
+@pytest.fixture
+def live_uri(require_qemu: None) -> str:
     '''Provide a live libvirt URI to use for testing.'''
     return 'qemu:///session'
 
 
-@pytest.fixture(scope='session')
-def embed_uri(tmp_path_factory: pytest.TempPathFactory) -> str:
+@pytest.fixture
+def embed_uri(require_qemu: None, tmp_path_factory: pytest.TempPathFactory) -> str:
     '''Provide an embedded QEMU libvirt URI to use for testing.'''
     path = tmp_path_factory.mktemp('embed')
     return f'qemu:///embed?root={str(path)}'
@@ -193,7 +247,7 @@ def test_hv(test_uri: str) -> Generator[Hypervisor, None, None]:
     yield hv
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture
 def live_hv(live_uri: str, libvirt_event_loop: None, worker_id: str) -> Generator[Hypervisor, None, None]:
     '''Provide a fvirt.libvirt.Hypervisor instance for testing.
 
@@ -217,7 +271,7 @@ def live_hv(live_uri: str, libvirt_event_loop: None, worker_id: str) -> Generato
     cleanup_hv(hv, f'{PREFIX}-{worker_id}')
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture
 def embed_hv(embed_uri: str, libvirt_event_loop: None, worker_id: str) -> Generator[Hypervisor, None, None]:
     '''Provide a fvirt.libvirt.Hypervisor instance for testing.
 

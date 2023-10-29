@@ -28,14 +28,12 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 
-@pytest.mark.libvirtd
 def test_check_match_aliases(live_pool: tuple[StoragePool, Hypervisor]) -> None:
     '''Check typing for match aliases.'''
     pool, _ = live_pool
     check_match_aliases(MATCH_ALIASES, pool)
 
 
-@pytest.mark.libvirtd
 def test_equality(
     live_hv: Hypervisor,
     pool_xml: Callable[[], str],
@@ -57,28 +55,24 @@ def test_equality(
     assert pool1 != ''
 
 
-@pytest.mark.libvirtd
 def test_self_wrap(live_pool: tuple[StoragePool, Hypervisor]) -> None:
     '''Check that instantiating a StoragePool with another StoragePool instance produces an equal StoragePool.'''
     pool, _ = live_pool
     assert StoragePool(pool) == pool
 
 
-@pytest.mark.libvirtd
 def test_format(live_pool: tuple[StoragePool, Hypervisor]) -> None:
     '''Check that formatting a StoragePool instance can be formatted.'''
     pool, _ = live_pool
     check_entity_format(pool)
 
 
-@pytest.mark.libvirtd
 def test_name(live_pool: tuple[StoragePool, Hypervisor]) -> None:
     '''Check the name attribute.'''
     pool, _ = live_pool
     assert isinstance(pool.name, str)
 
 
-@pytest.mark.libvirtd
 def test_define(live_hv: Hypervisor, pool_xml: Callable[[], str], serial: Callable[[str], _GeneratorContextManager[None]]) -> None:
     '''Check that defining a pool works.'''
     with serial('live-pool'):
@@ -88,7 +82,6 @@ def test_define(live_hv: Hypervisor, pool_xml: Callable[[], str], serial: Callab
     assert not pool.running
 
 
-@pytest.mark.libvirtd
 def test_config_raw(live_pool: tuple[StoragePool, Hypervisor], tmp_path: Path) -> None:
     '''Test the config_raw property.'''
     pool, _ = live_pool
@@ -108,7 +101,6 @@ def test_config_raw(live_pool: tuple[StoragePool, Hypervisor], tmp_path: Path) -
     assert e.text == str(tmp_path)
 
 
-@pytest.mark.libvirtd
 def test_invalid_config_raw(live_pool: tuple[StoragePool, Hypervisor], capfd: pytest.CaptureFixture) -> None:
     '''Test trying to use a bogus config with the config_raw property.'''
     pool, _ = live_pool
@@ -122,7 +114,6 @@ def test_invalid_config_raw(live_pool: tuple[StoragePool, Hypervisor], capfd: py
         pool.config_raw = bad_conf
 
 
-@pytest.mark.libvirtd
 def test_config(live_pool: tuple[StoragePool, Hypervisor], tmp_path: Path) -> None:
     '''Test the config property.'''
     pool, _ = live_pool
@@ -140,7 +131,6 @@ def test_config(live_pool: tuple[StoragePool, Hypervisor], tmp_path: Path) -> No
     assert cast(etree._Element, pool.config.find('/target/path')).text == str(tmp_path)
 
 
-@pytest.mark.libvirtd
 def test_invalid_config(live_pool: tuple[StoragePool, Hypervisor], capfd: pytest.CaptureFixture) -> None:
     '''Test trying to use a bogus config with the config property.'''
     pool, _ = live_pool
@@ -157,7 +147,6 @@ def test_invalid_config(live_pool: tuple[StoragePool, Hypervisor], capfd: pytest
         pool.config = conf
 
 
-@pytest.mark.libvirtd
 def test_config_raw_live(live_pool: tuple[StoragePool, Hypervisor], tmp_path: Path) -> None:
     '''Test that the config_raw_live property works as expected.'''
     pool, _ = live_pool
@@ -186,7 +175,6 @@ def test_config_raw_live(live_pool: tuple[StoragePool, Hypervisor], tmp_path: Pa
     assert e2.text == target
 
 
-@pytest.mark.libvirtd
 def test_config_live(live_pool: tuple[StoragePool, Hypervisor], tmp_path: Path) -> None:
     '''Test that the config_raw_live property works as expected.'''
     pool, _ = live_pool
@@ -207,7 +195,6 @@ def test_config_live(live_pool: tuple[StoragePool, Hypervisor], tmp_path: Path) 
     assert cast(etree._Element, pool.config_live.find('/target/path')).text != str(tmp_path)
 
 
-@pytest.mark.libvirtd
 def test_create(live_hv: Hypervisor, pool_xml: Callable[[], str], serial: Callable[[str], _GeneratorContextManager[None]]) -> None:
     '''Check that creating a pool works.'''
     with serial('live-pool'):
@@ -217,14 +204,12 @@ def test_create(live_hv: Hypervisor, pool_xml: Callable[[], str], serial: Callab
     assert pool.running
 
 
-@pytest.mark.libvirtd
 def test_undefine(live_pool: tuple[StoragePool, Hypervisor]) -> None:
     '''Check that undefining a pool works.'''
     pool, _ = live_pool
     check_undefine(pool._hv, 'storage_pools', pool)
 
 
-@pytest.mark.libvirtd
 def test_define_volume(
         live_pool: tuple[StoragePool, Hypervisor],
         volume_xml: Callable[[StoragePool], str],
@@ -237,7 +222,6 @@ def test_define_volume(
     assert isinstance(result, Volume)
 
 
-@pytest.mark.libvirtd
 def test_num_volumes(
         live_pool: tuple[StoragePool, Hypervisor],
         volume_factory: Callable[[StoragePool], Volume],
@@ -258,28 +242,24 @@ def test_num_volumes(
     assert pool.num_volumes == 2
 
 
-@pytest.mark.libvirtd
 def test_stop(live_pool: tuple[StoragePool, Hypervisor]) -> None:
     '''Check that stopping a pool works.'''
     pool, _ = live_pool
     check_runnable_destroy(pool)
 
 
-@pytest.mark.libvirtd
 def test_start(live_pool: tuple[StoragePool, Hypervisor]) -> None:
     '''Check that starting a pool works.'''
     pool, _ = live_pool
     check_runnable_start(pool)
 
 
-@pytest.mark.libvirtd
 def test_refresh(live_pool: tuple[StoragePool, Hypervisor]) -> None:
     '''Check that refreshing a pool works.'''
     pool, _ = live_pool
     assert pool.refresh() == LifecycleResult.SUCCESS
 
 
-@pytest.mark.libvirtd
 def test_build(live_hv: Hypervisor, pool_xml: Callable[[], str], serial: Callable[[str], _GeneratorContextManager[None]]) -> None:
     '''Check that building a pool works.'''
     # TODO: Needs a better test case that actually confirms the pool was built.
@@ -295,7 +275,6 @@ def test_build(live_hv: Hypervisor, pool_xml: Callable[[], str], serial: Callabl
         pool.undefine()
 
 
-@pytest.mark.libvirtd
 def test_delete(
         live_pool: tuple[StoragePool, Hypervisor],
         volume_factory: Callable[[StoragePool], Volume],

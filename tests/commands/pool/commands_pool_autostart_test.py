@@ -18,7 +18,6 @@ if TYPE_CHECKING:
     from fvirt.libvirt import Hypervisor, StoragePool
 
 
-@pytest.mark.libvirtd
 def test_command_run(
     runner: Callable[[Sequence[str], int], Result],
     live_pool: tuple[StoragePool, Hypervisor],
@@ -40,7 +39,6 @@ def test_command_run(
     assert pool.autostart == False  # noqa: E712
 
 
-@pytest.mark.libvirtd
 def test_command_run_bulk(
     runner: Callable[[Sequence[str], int], Result],
     live_hv: Hypervisor,
