@@ -7,8 +7,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import pytest
-
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
@@ -31,7 +29,18 @@ def test_command_run(runner: Callable[[Sequence[str], int], Result], live_pool: 
     assert not pool.running
 
 
-@pytest.mark.xfail(reason='Test not yet implemented')
-def test_command_bulk_run() -> None:
+def test_command_bulk_run(
+    runner: Callable[[Sequence[str], int], Result],
+    live_pool_group: tuple[tuple[StoragePool, ...], Hypervisor],
+    worker_id: str,
+) -> None:
     '''Test running the command on multiple objects.'''
-    assert False
+    pools, hv = live_pool_group
+    uri = str(hv.uri)
+
+    assert all(p.running for p in pools)
+
+    result = runner(('-c', uri, 'pool', 'stop', '--match', 'name', f'fvirt-test-{worker_id}'), 0)
+    assert len(result.output) > 0
+
+    assert all((not p.running) for p in pools)

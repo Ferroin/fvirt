@@ -8,8 +8,6 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-import pytest
-
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
@@ -36,7 +34,22 @@ def test_command_run(runner: Callable[[Sequence[str], int], Result], live_pool: 
     assert len(pool.volumes) == 1
 
 
-@pytest.mark.xfail(reason='Test not yet implemented')
-def test_command_bulk_run() -> None:
+def test_command_bulk_run(
+    runner: Callable[[Sequence[str], int], Result],
+    live_pool_group: tuple[tuple[StoragePool, ...], Hypervisor],
+    worker_id: str,
+) -> None:
     '''Test running the command on multiple objects.'''
-    assert False
+    pools, hv = live_pool_group
+    uri = str(hv.uri)
+
+    assert all(len(p.volumes) == 0 for p in pools)
+
+    for p in [Path(p.target) / 'test-volume' for p in pools]:
+        p.touch(exist_ok=False)
+        p.write_bytes(b'\0' * 65536)
+
+    result = runner(('-c', uri, 'pool', 'refresh', '--match', 'name', f'fvirt-test-{worker_id}'), 0)
+    assert len(result.output) > 0
+
+    assert all(len(p.volumes) == 1 for p in pools)
