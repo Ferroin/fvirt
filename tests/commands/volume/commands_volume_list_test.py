@@ -32,7 +32,6 @@ def test_default_columns() -> None:
     check_default_columns(COLUMNS, DEFAULT_COLS)
 
 
-@pytest.mark.libvirtd
 def test_list(runner: Callable[[Sequence[str], int], Result], live_volume: tuple[Volume, StoragePool, Hypervisor]) -> None:
     '''Test the list command.'''
     vol, pool, hv = live_volume
@@ -44,7 +43,6 @@ def test_list(runner: Callable[[Sequence[str], int], Result], live_volume: tuple
     check_list_output(result.output, vol, tuple(COLUMNS[x] for x in DEFAULT_COLS))
 
 
-@pytest.mark.libvirtd
 def test_no_headings(runner: Callable[[Sequence[str], int], Result], live_volume: tuple[Volume, StoragePool, Hypervisor]) -> None:
     '''Test the --no-headings option.'''
     vol, pool, hv = live_volume
@@ -56,7 +54,6 @@ def test_no_headings(runner: Callable[[Sequence[str], int], Result], live_volume
     check_list_entry(result.output, vol, tuple(COLUMNS[x] for x in DEFAULT_COLS))
 
 
-@pytest.mark.libvirtd
 def test_list_only_name(runner: Callable[[Sequence[str], int], Result], live_volume: tuple[Volume, StoragePool, Hypervisor]) -> None:
     '''Test listing only names.'''
     vol, pool, hv = live_volume
@@ -67,7 +64,6 @@ def test_list_only_name(runner: Callable[[Sequence[str], int], Result], live_vol
     assert result.output.rstrip() == str(vol.name)
 
 
-@pytest.mark.libvirtd
 def test_list_only_key(runner: Callable[[Sequence[str], int], Result], live_volume: tuple[Volume, StoragePool, Hypervisor]) -> None:
     '''Test listing only keys.'''
     vol, pool, hv = live_volume

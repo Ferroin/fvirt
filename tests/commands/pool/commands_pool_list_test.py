@@ -32,7 +32,6 @@ def test_default_columns() -> None:
     check_default_columns(COLUMNS, DEFAULT_COLS)
 
 
-@pytest.mark.libvirtd
 def test_list(runner: Callable[[Sequence[str], int], Result], test_pool: tuple[StoragePool, Hypervisor]) -> None:
     '''Test the list command.'''
     pool, hv = test_pool
@@ -43,7 +42,6 @@ def test_list(runner: Callable[[Sequence[str], int], Result], test_pool: tuple[S
     check_list_output(result.output, pool, tuple(COLUMNS[x] for x in DEFAULT_COLS))
 
 
-@pytest.mark.libvirtd
 def test_no_headings(runner: Callable[[Sequence[str], int], Result], test_pool: tuple[StoragePool, Hypervisor]) -> None:
     '''Test the --no-headings option.'''
     pool, hv = test_pool
@@ -54,7 +52,6 @@ def test_no_headings(runner: Callable[[Sequence[str], int], Result], test_pool: 
     check_list_entry(result.output, pool, tuple(COLUMNS[x] for x in DEFAULT_COLS))
 
 
-@pytest.mark.libvirtd
 def test_list_only_name(runner: Callable[[Sequence[str], int], Result], test_pool: tuple[StoragePool, Hypervisor]) -> None:
     '''Test listing only names.'''
     pool, hv = test_pool
@@ -65,7 +62,6 @@ def test_list_only_name(runner: Callable[[Sequence[str], int], Result], test_poo
     assert result.output.rstrip() == str(pool.name)
 
 
-@pytest.mark.libvirtd
 def test_list_only_uuid(runner: Callable[[Sequence[str], int], Result], test_pool: tuple[StoragePool, Hypervisor]) -> None:
     '''Test listing only UUIDs.'''
     pool, hv = test_pool

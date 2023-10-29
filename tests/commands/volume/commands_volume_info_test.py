@@ -23,14 +23,12 @@ if TYPE_CHECKING:
     from fvirt.libvirt import Hypervisor, StoragePool, Volume
 
 
-@pytest.mark.libvirtd
 def test_info_items(live_volume: tuple[Volume, StoragePool, Hypervisor]) -> None:
     '''Test that the defined info items are valid.'''
     vol, _, _ = live_volume
     check_info_items(INFO_ITEMS, vol)
 
 
-@pytest.mark.libvirtd
 def test_command_run(runner: Callable[[Sequence[str], int], Result], live_volume: tuple[Volume, StoragePool, Hypervisor]) -> None:
     '''Test that the command runs correctly.'''
     vol, pool, hv = live_volume

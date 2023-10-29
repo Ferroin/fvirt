@@ -215,7 +215,7 @@ jobs:
       - name: Install python dependencies
         run: poetry install
       - name: Run pytest
-        run: poetry run pytest -n logical --dist worksteal
+        run: FVIRT_FAIL_NON_RUNNABLE_TESTS=1 poetry run pytest -n logical --dist worksteal
 
   bandit:
     name: bandit

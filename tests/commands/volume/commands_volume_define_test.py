@@ -18,7 +18,6 @@ if TYPE_CHECKING:
     from fvirt.libvirt import Hypervisor, StoragePool
 
 
-@pytest.mark.libvirtd
 def test_command_run(
     runner: Callable[[Sequence[str], int], Result],
     live_pool: tuple[StoragePool, Hypervisor],
@@ -43,7 +42,6 @@ def test_command_run(
             vol.undefine()
 
 
-@pytest.mark.libvirtd
 def test_command_bulk_run(
     runner: Callable[[Sequence[str], int], Result],
     live_pool: tuple[StoragePool, Hypervisor],
