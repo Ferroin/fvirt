@@ -93,9 +93,9 @@ def test_state(test_dom: tuple[Domain, Hypervisor]) -> None:
     assert dom.state != DomainState.RUNNING
 
 
-def test_define(test_hv: Hypervisor, dom_xml: Callable[[], str]) -> None:
+def test_define(test_hv: Hypervisor, test_dom_xml: Callable[[], str]) -> None:
     '''Check that defining a domain works.'''
-    xml = dom_xml()
+    xml = test_dom_xml()
 
     result = test_hv.define_domain(xml)
 
