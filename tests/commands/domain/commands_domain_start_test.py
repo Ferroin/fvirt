@@ -5,16 +5,51 @@
 
 from __future__ import annotations
 
-import pytest
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
+
+    from click.testing import Result
+
+    from fvirt.libvirt import Domain, Hypervisor
 
 
-@pytest.mark.xfail(reason='Requires live domain testing.')
-def test_command_run() -> None:
+def test_command_run(
+    runner: Callable[[Sequence[str], int], Result],
+    test_dom: tuple[Domain, Hypervisor],
+) -> None:
     '''Test that the command runs correctly.'''
-    assert False
+    dom, hv = test_dom
+
+    if dom.running:
+        dom.destroy()
+
+    assert not dom.running
+
+    uri = str(hv.uri)
+
+    result = runner(('-c', uri, 'domain', 'start', dom.name), 0)
+    assert len(result.output) > 0
+
+    assert dom.running
 
 
-@pytest.mark.xfail(reason='Requires live domain testing.')
-def test_command_bulk_run() -> None:
+def test_command_bulk_run(
+    runner: Callable[[Sequence[str], int], Result],
+    test_dom_group: tuple[tuple[Domain, ...], Hypervisor],
+    object_name_prefix: str,
+) -> None:
     '''Test running the command on multiple objects.'''
-    assert False
+    doms, hv = test_dom_group
+    uri = str(hv.uri)
+
+    for p in doms:
+        p.destroy(idempotent=True)
+
+    assert all((not p.running) for p in doms)
+
+    result = runner(('-c', uri, 'domain', 'start', '--match', 'name', object_name_prefix), 0)
+    assert len(result.output) > 0
+
+    assert all(p.running for p in doms)

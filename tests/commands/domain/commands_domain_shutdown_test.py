@@ -15,6 +15,18 @@ def test_command_run() -> None:
 
 
 @pytest.mark.xfail(reason='Requires live domain testing.')
+def test_shutdown_timeout() -> None:
+    '''Test that the shutdown command works with the timeout argument.'''
+    assert False
+
+
+@pytest.mark.xfail(reason='Requires live domain testing.')
+def test_shutdown_force() -> None:
+    '''Test that the shutdown command works with the force argument.'''
+    assert False
+
+
+@pytest.mark.xfail(reason='Requires live domain testing.')
 def test_command_bulk_run() -> None:
     '''Test running the command on multiple objects.'''
     assert False

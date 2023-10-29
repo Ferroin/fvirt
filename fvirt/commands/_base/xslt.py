@@ -178,14 +178,14 @@ class XSLTCommand(MatchCommand):
 
         docstr = dedent(f'{ header }\n{ body }').lstrip()
 
-        params = self.mixin_params() + (
+        params = (
             click.Argument(
                 param_decls=('xslt',),
                 nargs=1,
                 type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True, resolve_path=True),
                 required=True,
             ),
-        )
+        ) + self.mixin_params()
 
         super().__init__(
             name=name,

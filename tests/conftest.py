@@ -140,14 +140,14 @@ def xslt_doc_factory() -> Callable[[str, str], str]:
 @pytest.fixture(scope='session')
 def object_name_prefix(worker_id: str) -> str:
     '''Provide the object name prefix for fvirt tests.'''
-    return f'{PREFIX}-{worker_id}'
+    return f'{PREFIX}-{worker_id}-'
 
 
 @pytest.fixture(scope='session')
 def name_factory(unique: Callable[..., str], object_name_prefix: str) -> Callable[[], str]:
     '''Provide a factory function for creating names for objects.'''
     def inner() -> str:
-        return unique('text', prefix=object_name_prefix)
+        return unique('text', prefix=object_name_prefix.rstrip('-'))
 
     return inner
 
@@ -256,7 +256,7 @@ def test_hv(test_uri: str) -> Generator[Hypervisor, None, None]:
 
 
 @pytest.fixture
-def live_hv(live_uri: str, libvirt_event_loop: None, worker_id: str) -> Generator[Hypervisor, None, None]:
+def live_hv(live_uri: str, libvirt_event_loop: None, object_name_prefix: str) -> Generator[Hypervisor, None, None]:
     '''Provide a fvirt.libvirt.Hypervisor instance for testing.
 
        The provided instance will utilize the libvirt QEMU driver in
@@ -276,11 +276,11 @@ def live_hv(live_uri: str, libvirt_event_loop: None, worker_id: str) -> Generato
 
     yield hv
 
-    cleanup_hv(hv, f'{PREFIX}-{worker_id}')
+    cleanup_hv(hv, object_name_prefix)
 
 
 @pytest.fixture
-def embed_hv(embed_uri: str, libvirt_event_loop: None, worker_id: str) -> Generator[Hypervisor, None, None]:
+def embed_hv(embed_uri: str, libvirt_event_loop: None, object_name_prefix: str) -> Generator[Hypervisor, None, None]:
     '''Provide a fvirt.libvirt.Hypervisor instance for testing.
 
        The provided instance will utilize the libvirt QEMU driver in
@@ -295,11 +295,11 @@ def embed_hv(embed_uri: str, libvirt_event_loop: None, worker_id: str) -> Genera
 
     yield hv
 
-    cleanup_hv(hv, f'{PREFIX}-{worker_id}')
+    cleanup_hv(hv, object_name_prefix)
 
 
 @pytest.fixture
-def dom_xml(unique: Callable[..., Any], name_factory: Callable[[], str]) -> Callable[[], str]:
+def test_dom_xml(unique: Callable[..., Any], name_factory: Callable[[], str]) -> Callable[[], str]:
     '''Provide a factory that produces domain XML strings.'''
     def inner() -> str:
         name = name_factory()
@@ -336,24 +336,43 @@ def dom_xml(unique: Callable[..., Any], name_factory: Callable[[], str]) -> Call
 
 @pytest.fixture
 def test_dom(
-        test_hv: Hypervisor,
-        dom_xml: Callable[[], str],
-        serial: Callable[[str], _GeneratorContextManager[None]]
+    test_hv: Hypervisor,
+    test_dom_xml: Callable[[], str],
 ) -> Generator[tuple[Domain, Hypervisor], None, None]:
     '''Provide a running, persistent Domain instance to operate on.
 
        Yields the domain instance and the associated Hypervisor instance
        in a tuple..'''
-    with serial('test-domain'):
-        dom = test_hv.define_domain(dom_xml())
+    dom = test_hv.define_domain(test_dom_xml())
 
     dom.start()
-    uuid = dom.uuid
 
     yield (dom, test_hv)
 
-    with serial('test-domain'):
-        if test_hv.domains.get(uuid) is not None:
+    if dom.valid and dom in test_hv.domains:
+        remove_domain(dom)
+
+
+@pytest.fixture
+def test_dom_group(
+    test_hv: Hypervisor,
+    test_dom_xml: Callable[[], str],
+) -> Generator[tuple[tuple[Domain, ...], Hypervisor], None, None]:
+    '''Provide a group of running, persistent Domain instances to operate on.
+
+       Yields the a tuple of the domain instances and the associated
+       Hypervisor instance as a tuple.'''
+    doms = tuple(
+        test_hv.define_domain(test_dom_xml()) for _ in range(0, GROUP_COUNT)
+    )
+
+    for dom in doms:
+        dom.start()
+
+    yield (doms, test_hv)
+
+    for dom in doms:
+        if dom.valid and dom in test_hv.domains:
             remove_domain(dom)
 
 
