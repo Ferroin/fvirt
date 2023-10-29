@@ -9,8 +9,6 @@ import re
 
 from typing import TYPE_CHECKING
 
-import pytest
-
 from fvirt.commands.volume.info import INFO_ITEMS
 
 from ..shared import check_info_items, check_info_output

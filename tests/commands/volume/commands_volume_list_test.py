@@ -7,8 +7,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import pytest
-
 from fvirt.commands.volume.list import COLUMNS, DEFAULT_COLS
 
 from ..shared import check_columns, check_default_columns, check_list_entry, check_list_output
