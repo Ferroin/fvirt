@@ -37,7 +37,7 @@ def test_command_run(runner: Callable[[Sequence[str], int], Result], live_pool: 
 def test_command_bulk_run(
     runner: Callable[[Sequence[str], int], Result],
     live_pool_group: tuple[tuple[StoragePool, ...], Hypervisor],
-    worker_id: str,
+    object_name_prefix: str
 ) -> None:
     '''Test running the command on multiple objects.'''
     pools, hv = live_pool_group
@@ -49,7 +49,7 @@ def test_command_bulk_run(
         p.touch(exist_ok=False)
         p.write_bytes(b'\0' * 65536)
 
-    result = runner(('-c', uri, 'pool', 'refresh', '--match', 'name', f'fvirt-test-{worker_id}'), 0)
+    result = runner(('-c', uri, 'pool', 'refresh', '--match', 'name', object_name_prefix), 0)
     assert len(result.output) > 0
 
     assert all(len(p.volumes) == 1 for p in pools)

@@ -138,10 +138,16 @@ def xslt_doc_factory() -> Callable[[str, str], str]:
 
 
 @pytest.fixture(scope='session')
-def name_factory(unique: Callable[..., str], worker_id: str) -> Callable[[], str]:
+def object_name_prefix(worker_id: str) -> str:
+    '''Provide the object name prefix for fvirt tests.'''
+    return f'{PREFIX}-{worker_id}'
+
+
+@pytest.fixture(scope='session')
+def name_factory(unique: Callable[..., str], object_name_prefix: str) -> Callable[[], str]:
     '''Provide a factory function for creating names for objects.'''
     def inner() -> str:
-        return unique('text', prefix=f'{PREFIX}-{worker_id}')
+        return unique('text', prefix=object_name_prefix)
 
     return inner
 
