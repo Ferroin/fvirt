@@ -38,16 +38,15 @@ class AutostartCommand(MatchCommand):
         assert is_object_mixin(self)
 
         params = self.mixin_params() + (
-            click.Argument(
-                param_decls=('state',),
-                nargs=1,
-                type=click.BOOL,
+            click.Option(
+                param_decls=('--enable/--disable',),
+                is_flag=True,
                 required=True,
             ),
         )
 
-        def cb(ctx: click.Context, cli_state: State, /, match: MatchArgument, entity: str | None, state: bool) -> None:
-            with cli_state.hypervisor as hv:
+        def cb(ctx: click.Context, state: State, /, match: MatchArgument, entity: str | None, enable: bool) -> None:
+            with state.hypervisor as hv:
                 entities = cast(Sequence[RunnableEntity], get_match_or_entity(
                     obj=self,
                     hv=hv,
@@ -60,13 +59,13 @@ class AutostartCommand(MatchCommand):
                 skipped = 0
 
                 for e in entities:
-                    if e.autostart == state:
+                    if e.autostart == enable:
                         skipped += 1
-                        if cli_state.idempotent:
+                        if state.idempotent:
                             success += 1
                     else:
                         try:
-                            e.autostart = state
+                            e.autostart = enable
                         except InsufficientPrivileges:
                             ctx.fail(f'Cannot modify { self.NAME } autostart state as the Hypervisor connection is read-only.')
 
@@ -78,10 +77,10 @@ class AutostartCommand(MatchCommand):
                     total=len(entities),
                     success=success,
                     skipped=skipped,
-                    idempotent=cli_state.idempotent,
+                    idempotent=state.idempotent,
                 ))
 
-                if success != len(entities) or (not entities and cli_state.fail_if_no_match):
+                if success != len(entities) or (not entities and state.fail_if_no_match):
                     ctx.exit(ExitCode.OPERATION_FAILED)
 
         docstr = dedent(f'''
@@ -95,10 +94,6 @@ class AutostartCommand(MatchCommand):
         be specified using the --match option, which will then cause
         all active { self.NAME }s that match to have their autostart
         state set.
-
-        STATE should be one of 'on' or 'off' to enable or disable
-        autostart functionality respectively. The integers 1 and 0 are
-        also accepted with the same meanings.
 
         If more than one { self.NAME } is requested to have it's
         autostart state set, a failure setting the autostart state for
