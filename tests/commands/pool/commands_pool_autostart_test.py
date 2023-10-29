@@ -39,7 +39,7 @@ def test_command_run(
 def test_command_run_bulk(
     runner: Callable[[Sequence[str], int], Result],
     live_pool_group: tuple[tuple[StoragePool, ...], Hypervisor],
-    worker_id: str,
+    object_name_prefix: str,
 ) -> None:
     '''Test that running the command on multiple objects works.'''
     pools, hv = live_pool_group
@@ -47,7 +47,7 @@ def test_command_run_bulk(
 
     assert all((not p.autostart) for p in pools)
 
-    result = runner(('-c', uri, 'pool', 'autostart', '--enable', '--match', 'name', f'fvirt-test-{worker_id}-'), 0)
+    result = runner(('-c', uri, 'pool', 'autostart', '--enable', '--match', 'name', object_name_prefix), 0)
     assert len(result.output) > 0
 
     assert all(p.autostart for p in pools)

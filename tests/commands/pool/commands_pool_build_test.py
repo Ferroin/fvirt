@@ -39,7 +39,7 @@ def test_command_bulk_run(
     live_hv: Hypervisor,
     pool_xml: Callable[[], str],
     serial: Callable[[str], _GeneratorContextManager[None]],
-    worker_id: str,
+    object_name_prefix: str,
 ) -> None:
     '''Test running the command on multiple objects.'''
     count = 3
@@ -47,7 +47,7 @@ def test_command_bulk_run(
     with serial('live-pool'):
         pools = tuple(live_hv.define_storage_pool(pool_xml()) for _ in range(0, count))
 
-    result = runner(('-c', str(live_hv.uri), 'pool', 'build', '--match', 'name', f'^fvirt-test-{worker_id}'), 0)
+    result = runner(('-c', str(live_hv.uri), 'pool', 'build', '--match', 'name', object_name_prefix), 0)
     assert len(result.output) > 0
 
     with serial('live-pool'):

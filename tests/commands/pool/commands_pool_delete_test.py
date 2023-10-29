@@ -42,7 +42,7 @@ def test_command_run(runner: Callable[[Sequence[str], int], Result], live_pool: 
 def test_command_bulk_run(
     runner: Callable[[Sequence[str], int], Result],
     live_pool_group: tuple[tuple[StoragePool, ...], Hypervisor],
-    worker_id: str,
+    object_name_prefix: str,
 ) -> None:
     '''Test running the command on multiple objects.'''
     pools, hv = live_pool_group
@@ -57,7 +57,7 @@ def test_command_bulk_run(
     assert all(p.exists() for p in paths)
     assert all(p.is_dir() for p in paths)
 
-    runner(('-c', uri, 'pool', 'delete', '--match', 'name', f'fvirt-test-{worker_id}'), int(ExitCode.OPERATION_FAILED))
+    runner(('-c', uri, 'pool', 'delete', '--match', 'name', object_name_prefix), int(ExitCode.OPERATION_FAILED))
 
     assert all(p.exists() for p in paths)
     assert all(p.is_dir() for p in paths)
@@ -67,6 +67,6 @@ def test_command_bulk_run(
 
     assert all((not p.running) for p in pools)
 
-    runner(('-c', uri, 'pool', 'delete', '--match', 'name', f'fvirt-test-{worker_id}'), 0)
+    runner(('-c', uri, 'pool', 'delete', '--match', 'name', object_name_prefix), 0)
 
     assert all((not p.exists()) for p in paths)
