@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
-    from contextlib import _GeneratorContextManager
 
     from click.testing import Result
 
@@ -39,19 +38,12 @@ def test_command_run(
 
 def test_command_run_bulk(
     runner: Callable[[Sequence[str], int], Result],
-    live_hv: Hypervisor,
-    pool_xml: Callable[[], str],
-    serial: Callable[[str], _GeneratorContextManager[None]],
+    live_pool_group: tuple[tuple[StoragePool, ...], Hypervisor],
     worker_id: str,
 ) -> None:
     '''Test that running the command on multiple objects works.'''
-    uri = str(live_hv.uri)
-    count = 3
-
-    with serial('live-pool'):
-        pools = tuple(
-            live_hv.define_storage_pool(pool_xml()) for _ in range(0, count)
-        )
+    pools, hv = live_pool_group
+    uri = str(hv.uri)
 
     assert all((not p.autostart) for p in pools)
 
@@ -59,7 +51,3 @@ def test_command_run_bulk(
     assert len(result.output) > 0
 
     assert all(p.autostart for p in pools)
-
-    with serial('live-pool'):
-        for p in pools:
-            p.undefine()
