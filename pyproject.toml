@@ -87,6 +87,7 @@ markers = [
 ]
 required_plugins = [
     "pytest-click",
+    "pytest-timeout",
     "pytest-unique",
     "pytest-xdist",
 ]
