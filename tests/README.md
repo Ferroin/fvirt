@@ -12,12 +12,12 @@ poetry run pytest
 
 ## Test timeouts.
 
-All tests intentionally have a hard 30 second timeout. Any test which exceeds this time limit will be terminated
+All tests intentionally have a hard 30-second timeout. Any test which exceeds this time limit will be terminated
 and counted as a failure.
 
 This policy was instituted because it’s possible for Python code interacting with libvirt to trigger situations
-in libvirt where the process simply hangs, and any situations like that that are caused by fvirt code are treated
-as critical bugs.
+in libvirt where the process simply hangs, and any such situations that are caused by fvirt code are treated as
+critical bugs.
 
 The timeout may be selectively extended on tests that truly do require more time, such as tests that work with
 live domains running actual guest operating systems, but such tests should both be marked as slow _and_ still have
