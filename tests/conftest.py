@@ -266,13 +266,6 @@ def live_uri(require_virtqemud: None) -> str:
 
 
 @pytest.fixture
-def embed_uri(require_qemu: None, tmp_path_factory: pytest.TempPathFactory) -> str:
-    '''Provide an embedded QEMU libvirt URI to use for testing.'''
-    path = tmp_path_factory.mktemp('embed')
-    return f'qemu:///embed?root={str(path)}'
-
-
-@pytest.fixture
 def test_hv(test_uri: str) -> Generator[Hypervisor, None, None]:
     '''Provide a fvirt.libvirt.Hypervisor instance for testing.
 
@@ -291,13 +284,13 @@ def test_hv(test_uri: str) -> Generator[Hypervisor, None, None]:
 
 
 @pytest.fixture
-def live_hv(live_uri: str, libvirt_event_loop: None, object_name_prefix: str) -> Generator[Hypervisor, None, None]:
+def live_hv(live_uri: str, libvirt_event_loop: None, object_name_prefix: str, require_virtqemud: None) -> Generator[Hypervisor, None, None]:
     '''Provide a fvirt.libvirt.Hypervisor instance for testing.
 
        The provided instance will utilize the libvirt QEMU driver in
        session mode, making it suitable for cases that cannot be tested
-       with either the test driver or an embedded QEMU driver, such as
-       storage volume handling.
+       with the test driver, such as storage volume handling or live
+       domain operations.
 
        This fixture may spawn an instance of libvirtd or virtqemud for
        the user running the tests if there is not one already running.
@@ -308,25 +301,6 @@ def live_hv(live_uri: str, libvirt_event_loop: None, object_name_prefix: str) ->
        the hypervisor, and should also make no assumptions about the
        initial state of the hypervisor.'''
     hv = Hypervisor(hvuri=URI.from_string(live_uri))
-
-    yield hv
-
-    cleanup_hv(hv, object_name_prefix)
-
-
-@pytest.fixture
-def embed_hv(embed_uri: str, libvirt_event_loop: None, object_name_prefix: str) -> Generator[Hypervisor, None, None]:
-    '''Provide a fvirt.libvirt.Hypervisor instance for testing.
-
-       The provided instance will utilize the libvirt QEMU driver in
-       embedded mode with a unique root prefix, making it suitable for
-       cases that require testing of actual, live, domains.
-
-       Unlike the other hypervisor fixtures, this instance is guaranteed
-       to be in a clean, well-defined state for each test and fixture
-       that uses it and is safe against concurrent access, but it only
-       supports working with domains.'''
-    hv = Hypervisor(hvuri=URI.from_string(embed_uri))
 
     yield hv
 
@@ -373,7 +347,6 @@ def test_dom_xml(unique: Callable[..., Any], name_factory: Callable[[], str]) ->
 def live_dom_xml(
     sys_arch: str,
     vm_arch: str,
-    qemu: str | None,
     vm_kernel: Path,
     unique: Callable[..., Any],
     name_factory: Callable[[], str]
@@ -462,20 +435,21 @@ def test_dom_group(
 
 @pytest.fixture
 def live_dom(
-    embed_hv: Hypervisor,
+    live_hv: Hypervisor,
     live_dom_xml: Callable[[], str],
+    require_qemu: None,
     serial: Callable[[str], _GeneratorContextManager],
 ) -> Generator[tuple[Domain, Hypervisor], None, None]:
     '''Provide a live domain with a guest OS for testing.
 
        Unlike the test_dom fixture, this one does _not_ start the domaain.'''
     with serial('live-dom'):
-        dom = embed_hv.define_domain(live_dom_xml())
+        dom = live_hv.define_domain(live_dom_xml())
 
-    yield (dom, embed_hv)
+    yield (dom, live_hv)
 
     with serial('live-dom'):
-        if dom.valid and dom in embed_hv.domains:
+        if dom.valid and dom in live_hv.domains:
             remove_domain(dom)
 
 
