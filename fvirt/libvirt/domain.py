@@ -356,6 +356,8 @@ class Domain(RunnableEntity):
                         return LifecycleResult.SUCCESS
 
                 raise RuntimeError
+            elif timeout is None:
+                return LifecycleResult.SUCCESS
             else:
                 return LifecycleResult.TIMED_OUT
         else:
