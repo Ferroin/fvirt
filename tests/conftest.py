@@ -215,7 +215,7 @@ def sys_arch() -> str | None:
 def vm_arch(sys_arch: str) -> str:
     '''Provide an appropriate architecutre for VMs.'''
     match sys_arch:
-        case 'x86_64' | 'aarch64':
+        case 'x86_64':
             return sys_arch
         case _:
             return 'x86_64'
@@ -248,57 +248,9 @@ def require_qemu(require_virtqemud: None, qemu_system: str | None) -> None:
 
 
 @pytest.fixture(scope='session')
-def vm_boot_iso(vm_arch: str, serial: Callable[[str], _GeneratorContextManager]) -> Path:
-    '''Provides a path to a usable ISO image for booting live VMs.
-
-       Alpine Linux ISO images are currently used for this.'''
-    iso_path = TESTS_PATH / 'tmp' / f'boot-{ISO_VERSION}-{vm_arch}.iso'
-    tmp_path = iso_path.with_suffix('.tmp')
-    tmp_path.unlink(missing_ok=True)
-
-    with serial('iso'):
-        if not iso_path.exists():
-            ISO_INFO_URL = f'{ISO_URL_PREFIX}/v{ISO_VERSION}/releases/{vm_arch}/latest-releases.yaml'
-
-            r = requests.get(ISO_INFO_URL)
-            assert r.status_code == 200, 'Server returned unexpected status code when fetching ISO image info.'
-
-            iso_info = YAML(typ='safe').load(io.StringIO(r.text))
-
-            del r
-
-            filename = None
-            sha256 = None
-            size = None
-
-            for item in iso_info:
-                if item.flavor == 'alpine-virt':
-                    filename = item.file
-                    sha256 = item.sha256
-                    size = item.size
-                    break
-
-            assert filename is not None
-
-            ISO_URL = f'{ISO_URL_PREFIX}/v{ISO_VERSION}/releases/{vm_arch}/{filename}'
-            h = hashlib.sha256()
-            data_read = 0
-
-            r = requests.get(ISO_URL, stream=True)
-            assert r.status_code == 200, 'Server returned unexpected status code when fetching ISO image.'
-
-            with tmp_path.open('wb') as f:
-                for chunk in r.iter_content(chunk_size=(256 * 1024)):
-                    h.update(chunk)
-                    data_read += len(chunk)
-                    f.write(chunk)
-
-            assert h.hexdigest() == sha256, 'SHA-256 checksum mismatch for retrieved ISO file.'
-            assert data_read == size, 'Content size mismatch for retrieved ISO file.'
-
-            tmp_path.rename(iso_path)
-
-    return iso_path
+def vm_kernel(vm_arch: str) -> Path:
+    '''Provides a path to a usable kernel image for booting live VMs.'''
+    return TESTS_PATH / 'data' / 'test-kernels' / f'{vm_arch}.img'
 
 
 @pytest.fixture(scope='session')
@@ -422,7 +374,7 @@ def live_dom_xml(
     sys_arch: str,
     vm_arch: str,
     qemu: str | None,
-    vm_boot_iso: Path,
+    vm_kernel: Path,
     unique: Callable[..., Any],
     name_factory: Callable[[], str]
 ) -> Callable[[], str]:
@@ -434,8 +386,10 @@ def live_dom_xml(
         match vm_arch:
             case 'x86_64':
                 machine = 'q35'
+                console = 'ttyS0'
             case _:
                 machine = 'virt'
+                console = 'ttyS0'
 
         if sys_arch == vm_arch:
             dom_type = 'kvm'
@@ -446,19 +400,14 @@ def live_dom_xml(
             <name>{name}</name>
             <uuid>{uuid}</uuid>
             <vcpu>2</vcpu>
-            <memory unit='MiB'>128</memory>
+            <memory unit='MiB'>96</memory>
             <clock offset='utc' />
             <os>
                 <type arch='{vm_arch}' machine='{machine}'>hvm</type>
+                <kernel>{str(vm_kernel)}</kernel>
+                <cmdline>console={console}</cmdline>
             </os>
             <devices>
-                <drive type='file' device='cdrom'>
-                    <driver name='qemu' type='raw' />
-                    <target dev='vda' bus='virtio' />
-                    <source file={str(vm_boot_iso)} />
-                    <boot order='1' />
-                    <readonly />
-                </drive>
                 <console type='pty'>
                     <target type='serial' />
                 </console>
