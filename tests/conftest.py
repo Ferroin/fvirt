@@ -189,13 +189,20 @@ def qemu_system(sys_arch: str | None) -> str | None:
 
 
 @pytest.fixture
-def require_qemu(virtqemud: str | None, qemu_system: str | None) -> None:
-    '''Check for a usable copy of virtqemud and qmeu-system emulator, and skip or fail if one is not found.'''
+def require_virtqemud(virtqemud: str | None) -> None:
+    '''Check for a usable copy of virtqemud and skip or fail if one is not found.'''
     if TEST_SKIP:
         skip_or_fail('Requested skipping possibly skipped tests.')
 
     if virtqemud is None:
         skip_or_fail('Could not find virtqemud, which is required to run this test.')
+
+
+@pytest.fixture
+def require_qemu(require_virtqemud: None, qemu_system: str | None) -> None:
+    '''Check for a usable copy of virtqemud and qmeu-system emulator, and skip or fail if one is not found.'''
+    if TEST_SKIP:
+        skip_or_fail('Requested skipping possibly skipped tests.')
 
     if qemu_system is None:
         skip_or_fail('Could not find QEMU system emulator, which is required to run this test.')
@@ -208,7 +215,7 @@ def test_uri() -> str:
 
 
 @pytest.fixture
-def live_uri(require_qemu: None) -> str:
+def live_uri(require_virtqemud: None) -> str:
     '''Provide a live libvirt URI to use for testing.'''
     return 'qemu:///session'
 
