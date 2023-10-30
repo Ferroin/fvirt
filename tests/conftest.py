@@ -162,7 +162,12 @@ def libvirt_event_loop() -> None:
 @pytest.fixture(scope='session')
 def virtqemud() -> str | None:
     '''Provide a path to virtqemud.'''
-    return shutil.which('virtqemud')
+    virtqemud = shutil.which('virtqemud')
+
+    if virtqemud is None:
+        virtqemud = shutil.which('libvirtd')
+
+    return virtqemud
 
 
 @pytest.fixture(scope='session')
@@ -195,7 +200,7 @@ def require_virtqemud(virtqemud: str | None) -> None:
         skip_or_fail('Requested skipping possibly skipped tests.')
 
     if virtqemud is None:
-        skip_or_fail('Could not find virtqemud, which is required to run this test.')
+        skip_or_fail('Could not find virtqemud or libvirtd, which is required to run this test.')
 
 
 @pytest.fixture
