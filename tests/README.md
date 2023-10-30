@@ -27,17 +27,14 @@ a hard timeout to make sure they don’t hang.
 
 In our CI environment, tests are run concurrently using pytest-xdist. This means that all tests _must_
 be concurrency-clean for a PR to pass CI. The pytest-xdist plugin is included by default in the development
-environment, so you can easily test this locally yourself by using the `-n` option to specify how many workers to run.
+environment, and the tests will also run concurrently locally by default unless you explicitly override this behavior.
 
-This can also be used to speed up tests locally, though currently most of our tests are fast enough that using
-more than 8 workers will typically not show any benefits.
-
-Tests must also be safe against reordering of test cases.
+Tests must also be safe against reordering of test cases, and we internally utilize the pytest-randomize plugin to force reordering
 
 ## Tests with external dependencies.
 
-A number of our tests uses `qemu:///session` or `qemu:///embed` URIs. This means those tests have a functional
-dependency on virtqemud and a working qemu-system emulator respectively.
+A number of our tests uses `qemu:///session` URIs. This means those tests have a functional dependency on virtqemud
+and possibly on a working qemu-system emulator.
 
 By default, the test suite will check for these external dependencies and skip any tests that require them if they
 are not found. You can make these tests fail instead of being skipped by setting `FVIRT_FAIL_NON_RUNNABLE_TESTS`
