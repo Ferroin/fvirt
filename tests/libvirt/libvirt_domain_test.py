@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import re
 
+from time import sleep
 from typing import TYPE_CHECKING, Any, Type
 from uuid import UUID
 
@@ -23,7 +24,7 @@ from .shared import (check_entity_access_get, check_entity_access_iterable, chec
 from ..shared import compare_xml_trees
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Sequence
+    from collections.abc import Callable, Mapping, Sequence
     from contextlib import _GeneratorContextManager
 
 
@@ -280,7 +281,6 @@ def test_shutdown(test_dom: tuple[Domain, Hypervisor]) -> None:
 
 def test_shutdown_timeouts(test_dom: tuple[Domain, Hypervisor]) -> None:
     '''Check that timeout handling for the domain shutdown operation works.'''
-    # TODO: Should be redesigned once we have true live domain testing.
     dom, _ = test_dom
     assert dom.running == True  # noqa: E712
 
@@ -288,6 +288,74 @@ def test_shutdown_timeouts(test_dom: tuple[Domain, Hypervisor]) -> None:
 
     assert isinstance(result, LifecycleResult)
     assert result == LifecycleResult.SUCCESS
+    assert dom.running == False  # noqa: E712
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize('opts, expected, delay', (
+    (
+        {
+            'timeout': 0,
+            'force': True,
+        },
+        LifecycleResult.FORCED,
+        0,
+    ),
+    (
+        {
+            'timeout': 5,
+            'force': False,
+        },
+        LifecycleResult.SUCCESS,
+        0,
+    ),
+    (
+        {
+            'timeout': None,
+            'force': False,
+        },
+        LifecycleResult.SUCCESS,
+        5,
+    ),
+    (
+        {
+            'timeout': 0,
+            'force': False,
+        },
+        LifecycleResult.TIMED_OUT,
+        5,
+    ),
+    (
+        {
+            'timeout': -1,
+            'force': False,
+        },
+        LifecycleResult.SUCCESS,
+        0,
+    ),
+))
+def test_live_shutdown(opts: Mapping[str, Any], expected: LifecycleResult, delay: int, live_dom: tuple[Domain, Hypervisor]) -> None:
+    '''Check that shutting down a domain works.'''
+    dom, _ = live_dom
+
+    dom.start(idempotent=True)
+
+    assert dom.running == True  # noqa: E712
+    sleep(3)
+
+    result = dom.shutdown(**opts)
+
+    assert isinstance(result, LifecycleResult)
+    assert result == expected
+
+    t = 0
+    while t < delay:
+        if not dom.running:
+            break
+
+        t += 1
+        sleep(1)
+
     assert dom.running == False  # noqa: E712
 
 
