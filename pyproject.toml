@@ -83,6 +83,7 @@ skip_gitignore = true
 use_parentheses = true
 
 [tool.pytest.ini_options]
+addopts = "-n logical --dist worksteal"
 minversion = 7.0
 markers = [
     "slow: marks tests which may take a long time to run",
