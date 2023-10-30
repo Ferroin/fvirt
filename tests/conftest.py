@@ -5,6 +5,8 @@
 
 from __future__ import annotations
 
+import hashlib
+import io
 import os
 import platform
 import shutil
@@ -18,7 +20,9 @@ from traceback import format_exception
 from typing import TYPE_CHECKING, Any
 
 import pytest
+import requests
 
+from ruamel.yaml import YAML
 from simple_file_lock import FileLock
 
 from fvirt.cli import cli
@@ -43,6 +47,12 @@ if not sys.warnoptions:
 FAIL_NON_RUNNABLE = os.environ.get('FVIRT_FAIL_NON_RUNNABLE_TESTS', 0)
 TEST_SKIP = os.environ.get('FVIRT_TEST_SKIP_TESTS', 0)
 GROUP_COUNT = int(os.environ.get('FVIRT_TEST_OBJECT_GROUP_SIZE', 3))
+MAX_CONCURRENT_VMS = int(os.environ.get('FVIRT_TEST_MAX_CONCURRENT_VMS', 4))
+
+TESTS_PATH = Path(__file__).parent
+
+ISO_URL_PREFIX = 'https://dl-cdn.alpinelinux.org/alpine/'
+ISO_VERSION = '3.18'
 
 PREFIX = 'fvirt-test'
 XSLT_DATA = '''
@@ -160,6 +170,23 @@ def libvirt_event_loop() -> None:
 
 
 @pytest.fixture(scope='session')
+def lock_dir(tmp_path_factory: pytest.TempPathFactory) -> Path:
+    '''Provide a session-scoped lock directory.'''
+    return tmp_path_factory.getbasetemp() / 'lock'
+
+
+@pytest.fixture(scope='session')
+def serial(lock_dir: Path) -> Callable[[str], _GeneratorContextManager[None]]:
+    '''Provide a callable to serialize parts of a test against other tests.'''
+    @contextmanager
+    def inner(path: str) -> Generator[None, None, None]:
+        with FileLock(lock_dir / path):
+            yield
+
+    return inner
+
+
+@pytest.fixture(scope='session')
 def virtqemud() -> str | None:
     '''Provide a path to virtqemud.'''
     virtqemud = shutil.which('virtqemud')
@@ -185,12 +212,19 @@ def sys_arch() -> str | None:
 
 
 @pytest.fixture(scope='session')
-def qemu_system(sys_arch: str | None) -> str | None:
+def vm_arch(sys_arch: str) -> str:
+    '''Provide an appropriate architecutre for VMs.'''
+    match sys_arch:
+        case 'x86_64' | 'aarch64':
+            return sys_arch
+        case _:
+            return 'x86_64'
+
+
+@pytest.fixture(scope='session')
+def qemu_system(vm_arch: str) -> str | None:
     '''Provide a path to a native qemu-system emulator.'''
-    if sys_arch is not None:
-        return shutil.which(f'qemu-system-{sys_arch}')
-    else:
-        return None
+    return shutil.which(f'qemu-system-{vm_arch}')
 
 
 @pytest.fixture
@@ -214,6 +248,60 @@ def require_qemu(require_virtqemud: None, qemu_system: str | None) -> None:
 
 
 @pytest.fixture(scope='session')
+def vm_boot_iso(vm_arch: str, serial: Callable[[str], _GeneratorContextManager]) -> Path:
+    '''Provides a path to a usable ISO image for booting live VMs.
+
+       Alpine Linux ISO images are currently used for this.'''
+    iso_path = TESTS_PATH / 'tmp' / f'boot-{ISO_VERSION}-{vm_arch}.iso'
+    tmp_path = iso_path.with_suffix('.tmp')
+    tmp_path.unlink(missing_ok=True)
+
+    with serial('iso'):
+        if not iso_path.exists():
+            ISO_INFO_URL = f'{ISO_URL_PREFIX}/v{ISO_VERSION}/releases/{vm_arch}/latest-releases.yaml'
+
+            r = requests.get(ISO_INFO_URL)
+            assert r.status_code == 200, 'Server returned unexpected status code when fetching ISO image info.'
+
+            iso_info = YAML(typ='safe').load(io.StringIO(r.text))
+
+            del r
+
+            filename = None
+            sha256 = None
+            size = None
+
+            for item in iso_info:
+                if item.flavor == 'alpine-virt':
+                    filename = item.file
+                    sha256 = item.sha256
+                    size = item.size
+                    break
+
+            assert filename is not None
+
+            ISO_URL = f'{ISO_URL_PREFIX}/v{ISO_VERSION}/releases/{vm_arch}/{filename}'
+            h = hashlib.sha256()
+            data_read = 0
+
+            r = requests.get(ISO_URL, stream=True)
+            assert r.status_code == 200, 'Server returned unexpected status code when fetching ISO image.'
+
+            with tmp_path.open('wb') as f:
+                for chunk in r.iter_content(chunk_size=(256 * 1024)):
+                    h.update(chunk)
+                    data_read += len(chunk)
+                    f.write(chunk)
+
+            assert h.hexdigest() == sha256, 'SHA-256 checksum mismatch for retrieved ISO file.'
+            assert data_read == size, 'Content size mismatch for retrieved ISO file.'
+
+            tmp_path.rename(iso_path)
+
+    return iso_path
+
+
+@pytest.fixture(scope='session')
 def test_uri() -> str:
     '''Provide a libvirt URI to use for testing.'''
     return 'test:///default'
@@ -230,23 +318,6 @@ def embed_uri(require_qemu: None, tmp_path_factory: pytest.TempPathFactory) -> s
     '''Provide an embedded QEMU libvirt URI to use for testing.'''
     path = tmp_path_factory.mktemp('embed')
     return f'qemu:///embed?root={str(path)}'
-
-
-@pytest.fixture(scope='session')
-def lock_dir(tmp_path_factory: pytest.TempPathFactory) -> Path:
-    '''Provide a session-scoped lock directory.'''
-    return tmp_path_factory.getbasetemp() / 'lock'
-
-
-@pytest.fixture
-def serial(lock_dir: Path) -> Callable[[str], _GeneratorContextManager[None]]:
-    '''Provide a callable to serialize parts of a test against other tests.'''
-    @contextmanager
-    def inner(path: str) -> Generator[None, None, None]:
-        with FileLock(lock_dir / path):
-            yield
-
-    return inner
 
 
 @pytest.fixture
@@ -347,6 +418,58 @@ def test_dom_xml(unique: Callable[..., Any], name_factory: Callable[[], str]) ->
 
 
 @pytest.fixture
+def live_dom_xml(
+    sys_arch: str,
+    vm_arch: str,
+    qemu: str | None,
+    vm_boot_iso: Path,
+    unique: Callable[..., Any],
+    name_factory: Callable[[], str]
+) -> Callable[[], str]:
+    '''Provide a factory that produces domain XML strings.'''
+    def inner() -> str:
+        name = name_factory()
+        uuid = unique('uuid')
+
+        match vm_arch:
+            case 'x86_64':
+                machine = 'q35'
+            case _:
+                machine = 'virt'
+
+        if sys_arch == vm_arch:
+            dom_type = 'kvm'
+        else:
+            dom_type = 'qemu'
+
+        return dedent(f'''<domain type='{dom_type}'>
+            <name>{name}</name>
+            <uuid>{uuid}</uuid>
+            <vcpu>2</vcpu>
+            <memory unit='MiB'>128</memory>
+            <clock offset='utc' />
+            <os>
+                <type arch='{vm_arch}' machine='{machine}'>hvm</type>
+            </os>
+            <devices>
+                <drive type='file' device='cdrom'>
+                    <driver name='qemu' type='raw' />
+                    <target dev='vda' bus='virtio' />
+                    <source file={str(vm_boot_iso)} />
+                    <boot order='1' />
+                    <readonly />
+                </drive>
+                <console type='pty'>
+                    <target type='serial' />
+                </console>
+            </devices>
+        </domain>
+        ''').lstrip().rstrip()
+
+    return inner
+
+
+@pytest.fixture
 def test_dom(
     test_hv: Hypervisor,
     test_dom_xml: Callable[[], str],
@@ -385,6 +508,25 @@ def test_dom_group(
 
     for dom in doms:
         if dom.valid and dom in test_hv.domains:
+            remove_domain(dom)
+
+
+@pytest.fixture
+def live_dom(
+    embed_hv: Hypervisor,
+    live_dom_xml: Callable[[], str],
+    serial: Callable[[str], _GeneratorContextManager],
+) -> Generator[tuple[Domain, Hypervisor], None, None]:
+    '''Provide a live domain with a guest OS for testing.
+
+       Unlike the test_dom fixture, this one does _not_ start the domaain.'''
+    with serial('live-dom'):
+        dom = embed_hv.define_domain(live_dom_xml())
+
+    yield (dom, embed_hv)
+
+    with serial('live-dom'):
+        if dom.valid and dom in embed_hv.domains:
             remove_domain(dom)
 
 
