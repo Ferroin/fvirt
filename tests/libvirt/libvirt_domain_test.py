@@ -205,10 +205,19 @@ def test_config_live(test_dom: tuple[Domain, Hypervisor]) -> None:
     compare_xml_trees(dom.config_live, live_conf)
 
 
-@pytest.mark.xfail(reason='Requires live domain testing')
-def test_create() -> None:
+def test_create(live_hv: Hypervisor, live_dom_xml: Callable[[], str], serial: Callable[[str], _GeneratorContextManager]) -> None:
     '''Check that creating a domain works.'''
-    assert False
+    xml = live_dom_xml()
+
+    with serial('live-domain'):
+        result = live_hv.create_domain(xml)
+
+    try:
+        assert isinstance(result, Domain)
+        assert result.running
+    finally:
+        result.destroy()
+        result.undefine()
 
 
 def test_undefine(test_dom: tuple[Domain, Hypervisor]) -> None:
