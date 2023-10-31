@@ -5,8 +5,6 @@
 
 from __future__ import annotations
 
-import hashlib
-import io
 import os
 import platform
 import shutil
@@ -20,9 +18,7 @@ from traceback import format_exception
 from typing import TYPE_CHECKING, Any
 
 import pytest
-import requests
 
-from ruamel.yaml import YAML
 from simple_file_lock import FileLock
 
 from fvirt.cli import cli
@@ -50,9 +46,6 @@ GROUP_COUNT = int(os.environ.get('FVIRT_TEST_OBJECT_GROUP_SIZE', 3))
 MAX_CONCURRENT_VMS = int(os.environ.get('FVIRT_TEST_MAX_CONCURRENT_VMS', 4))
 
 TESTS_PATH = Path(__file__).parent
-
-ISO_URL_PREFIX = 'https://dl-cdn.alpinelinux.org/alpine/'
-ISO_VERSION = '3.18'
 
 PREFIX = 'fvirt-test'
 XSLT_DATA = '''
@@ -248,9 +241,12 @@ def require_qemu(require_virtqemud: None, qemu_system: str | None) -> None:
 
 
 @pytest.fixture(scope='session')
-def vm_kernel(vm_arch: str) -> Path:
+def vm_kernel(vm_arch: str) -> tuple[Path, Path]:
     '''Provides a path to a usable kernel image for booting live VMs.'''
-    return TESTS_PATH / 'data' / 'test-kernels' / f'{vm_arch}.img'
+    kernel_image = TESTS_PATH / 'data' / 'images' / vm_arch / 'kernel.img'
+    initramfs_image = TESTS_PATH / 'data' / 'images' / vm_arch / 'initramfs.img'
+
+    return (kernel_image, initramfs_image)
 
 
 @pytest.fixture(scope='session')
@@ -347,27 +343,29 @@ def test_dom_xml(unique: Callable[..., Any], name_factory: Callable[[], str]) ->
 def live_dom_xml(
     sys_arch: str,
     vm_arch: str,
-    vm_kernel: Path,
+    vm_kernel: tuple[Path, Path],
     unique: Callable[..., Any],
     name_factory: Callable[[], str]
 ) -> Callable[[], str]:
     '''Provide a factory that produces domain XML strings.'''
+    kernel, initramfs = vm_kernel
+
+    match vm_arch:
+        case 'x86_64':
+            machine = 'q35'
+            console = 'ttyS0'
+        case _:
+            machine = 'virt'
+            console = 'ttyS0'
+
+    if sys_arch == vm_arch:
+        dom_type = 'kvm'
+    else:
+        dom_type = 'qemu'
+
     def inner() -> str:
         name = name_factory()
         uuid = unique('uuid')
-
-        match vm_arch:
-            case 'x86_64':
-                machine = 'q35'
-                console = 'ttyS0'
-            case _:
-                machine = 'virt'
-                console = 'ttyS0'
-
-        if sys_arch == vm_arch:
-            dom_type = 'kvm'
-        else:
-            dom_type = 'qemu'
 
         return dedent(f'''<domain type='{dom_type}'>
             <name>{name}</name>
@@ -377,13 +375,18 @@ def live_dom_xml(
             <clock offset='utc' />
             <os>
                 <type arch='{vm_arch}' machine='{machine}'>hvm</type>
-                <kernel>{str(vm_kernel)}</kernel>
+                <kernel>{kernel}</kernel>
+                <initrd>{initramfs}</initrd>
                 <cmdline>console={console}</cmdline>
             </os>
+            <on_poweroff>destroy</on_poweroff>
+            <on_reboot>destroy</on_reboot>
+            <on_crash>destroy</on_crash>
             <devices>
                 <console type='pty'>
                     <target type='serial' />
                 </console>
+                <panic model='pvpanic' />
             </devices>
         </domain>
         ''').lstrip().rstrip()

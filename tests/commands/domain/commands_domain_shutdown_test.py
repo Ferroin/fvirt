@@ -58,6 +58,7 @@ def test_command_run(
 
     assert dom.running == True  # noqa: E712
     sleep(3)  # Ensure the domain has finished startup
+    assert dom.running == True  # noqa: E712
 
     result = runner(('-c', uri, 'domain', 'shutdown', dom.name) + opts, expected)
     assert len(result.output) > 0
@@ -87,6 +88,7 @@ def test_command_bulk_run(
 
     assert all(dom.running for dom in doms)
     sleep(5)  # Ensure the domains have finished startup
+    assert all(dom.running for dom in doms)
 
     result = runner(('-c', uri, 'domain', 'shutdown', '--match', 'name', object_name_prefix), 0)
     assert len(result.output) > 0
