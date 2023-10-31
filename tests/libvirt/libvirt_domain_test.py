@@ -350,6 +350,7 @@ def test_live_shutdown(opts: Mapping[str, Any], expected: LifecycleResult, delay
 
     assert dom.running == True  # noqa: E712
     sleep(3)
+    assert dom.running == True  # noqa: E712
 
     result = dom.shutdown(**opts)
 
