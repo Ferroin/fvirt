@@ -228,7 +228,7 @@ def test_undefine(test_dom: tuple[Domain, Hypervisor]) -> None:
 
 def test_reset(test_dom: tuple[Domain, Hypervisor]) -> None:
     '''Check that resetting a domain works.'''
-    # TODO: Should be redesigned once we have true live domain testing.
+    # TODO: Should be redesigned once we have the ability to interact with the domain console.
     dom, _ = test_dom
     assert dom.running == True  # noqa: E712
 
@@ -253,7 +253,6 @@ def test_start(test_dom: tuple[Domain, Hypervisor]) -> None:
 
 def test_shutdown(test_dom: tuple[Domain, Hypervisor]) -> None:
     '''Check that shutting down a domain works.'''
-    # TODO: Should be redesigned once we have true live domain testing.
     dom, _ = test_dom
     assert dom.running == True  # noqa: E712
 
@@ -370,7 +369,7 @@ def test_live_shutdown(opts: Mapping[str, Any], expected: LifecycleResult, delay
 
 def test_managed_save(test_dom: tuple[Domain, Hypervisor]) -> None:
     '''Check that the managed save functionality works.'''
-    # TODO: Should be redesigned once we have true live domain testing.
+    # TODO: Should be redesigned once we have domain console interaction.
     dom, _ = test_dom
     assert dom.running == True  # noqa: E712
     assert dom.has_managed_save == False  # noqa: E712
@@ -412,10 +411,32 @@ def test_managed_save(test_dom: tuple[Domain, Hypervisor]) -> None:
         dom.managed_save()
 
 
-@pytest.mark.xfail(reason='Cannot be tested without live domain testing.')
-def test_domain_console() -> None:
+@pytest.mark.slow
+@pytest.mark.xfail(reason='Apparent bug in console handling code.''')
+def test_domain_console(live_dom: tuple[Domain, Hypervisor]) -> None:
     '''Test that domain console handling works correctly.'''
-    assert False
+    dom, _ = live_dom
+
+    dom.start()
+    assert dom.running
+    sleep(3)
+
+    console = dom.console()
+
+    console.read(-1)
+
+    console.write(b'\n')
+
+    output = console.read(-1)
+
+    assert len(output) > 0
+    assert output[-4:] == b'~ #'
+
+    console.write(b'poweroff\n')
+
+    sleep(3)
+
+    assert not dom.running
 
 
 def test_domain_xslt(test_dom: tuple[Domain, Hypervisor], xslt_doc_factory: Callable[[str, str], str]) -> None:
