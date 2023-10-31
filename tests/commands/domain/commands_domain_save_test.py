@@ -8,13 +8,13 @@ from __future__ import annotations
 import pytest
 
 
-@pytest.mark.xfail(reason='Requires live domain testing.')
+@pytest.mark.skip(reason='Requires working domain console handling.')
 def test_command_run() -> None:
     '''Test that the command runs correctly.'''
     assert False
 
 
-@pytest.mark.xfail(reason='Requires live domain testing.')
+@pytest.mark.skip(reason='Requires working domain console handling.')
 def test_command_bulk_run() -> None:
     '''Test running the command on multiple objects.'''
     assert False

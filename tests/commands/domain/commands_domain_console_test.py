@@ -8,7 +8,7 @@ from __future__ import annotations
 import pytest
 
 
-@pytest.mark.xfail(reason='Requires live domain testing.')
+@pytest.mark.skip(reason='Test not yet implemented.')
 def test_command_run() -> None:
     '''Test that the command runs correctly.'''
     assert False
