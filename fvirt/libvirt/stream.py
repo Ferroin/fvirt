@@ -265,7 +265,11 @@ class Stream:
             eof = False
 
             while not eof:
-                data = self.read()
+                try:
+                    data = self.read()
+                except BlockingIOError:
+                    data = b''
+
                 ret += data
 
                 if data == b'':
@@ -273,7 +277,7 @@ class Stream:
 
             return ret
         else:
-            match self.stream.recv(nbytes, libvirt.VIR_STREAM_RECV_STOP_AT_HOLE if self.__sparse else 0):
+            match self.stream.recvFlags(nbytes, libvirt.VIR_STREAM_RECV_STOP_AT_HOLE if self.__sparse else 0):
                 case 0:
                     return b''
                 case -1:
