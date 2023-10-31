@@ -43,6 +43,7 @@ if not sys.warnoptions:
 FAIL_NON_RUNNABLE = os.environ.get('FVIRT_FAIL_NON_RUNNABLE_TESTS', 0)
 TEST_SKIP = os.environ.get('FVIRT_TEST_SKIP_TESTS', 0)
 GROUP_COUNT = int(os.environ.get('FVIRT_TEST_OBJECT_GROUP_SIZE', 3))
+NO_KVM = os.environ.get('FVIRT_NO_KVM_FOR_TESTS', 0)
 
 TESTS_PATH = Path(__file__).parent
 
@@ -347,6 +348,7 @@ def test_dom_xml(unique: Callable[..., Any], name_factory: Callable[[], str]) ->
 @pytest.fixture
 def live_dom_xml(
     sys_arch: str,
+    live_hv: Hypervisor,
     require_qemu: None,
     qemu_system: tuple[Path, str] | None,
     vm_kernel: tuple[Path, Path],
@@ -363,13 +365,19 @@ def live_dom_xml(
         case 'x86_64':
             machine = 'q35'
             console = 'ttyS0'
+
+            if live_hv.version is not None and live_hv.version.major < 9:
+                panic = 'isa'
+            else:
+                panic = 'pvpanic'
         case 'aarch64':
             machine = 'virt'
             console = 'ttyAMA0'
+            panic = 'pvpanic'
         case _:
             assert False, 'Unsupported VM architecture.'
 
-    if sys_arch == vm_arch:
+    if sys_arch == vm_arch and not NO_KVM:
         dom_type = 'kvm'
     else:
         dom_type = 'qemu'
@@ -397,7 +405,7 @@ def live_dom_xml(
                 <console type='pty'>
                     <target type='serial' />
                 </console>
-                <panic model='pvpanic' />
+                <panic model='{panic}' />
             </devices>
         </domain>
         ''').lstrip().rstrip()

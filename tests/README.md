@@ -13,7 +13,7 @@ poetry run pytest
 ## Live domain tests.
 
 A number of the tests for fvirt one or more live domains with an actual guest OS booted in them. These tests use
-kernel and initramfs images included in this repository via git-lfs, and require QEMU. By default they will try
+kernel and initramfs images included in this repository via git-lfs, and require QEMU. By default, they will try
 to run native VMs using the host system’s CPU architecture, but they will fall back to emulation if images are
 not available for the host architecture.
 

@@ -2,12 +2,12 @@
 
 This directory contains kernel and initramfs images used by the fvirt test suite for testing live domains.
 
-The kernel and initramfs are custom builds created using [buildroot](https://buildroot.org/) specifically for this
-purpose. The kernel itself is built using a highly minimal config without loadable module or most security features,
-including just the drivers that are actually needed by our test environment. The initramfs consists of Busybox, acpid
-on systems that need it to respond to shutdown signals, the QEMU guest agent, and a small handful of specific
-tools for verifying particular virtual hardware setups. The initramfs boots using busybox init, starts acpid,
-and then spawns a shell on the main console.
+The kernel and initramfs are custom-made using [buildroot](https://buildroot.org/) specifically for this purpose. The
+kernel itself is built using a highly minimal config without loadable module or most security features, including
+just the drivers that are actually needed by our test environment. The initramfs consists of Busybox, acpid on
+systems that need it to respond to shutdown signals, the QEMU guest agent, and a small handful of specific tools
+for verifying particular virtual hardware setups. The initramfs boots using busybox init, starts acpid, and then
+spawns a shell on the main console.
 
 The kernel and initramfs were specifically crafted to fulfill two particular goals:
 
@@ -18,7 +18,7 @@ The kernel and initramfs were specifically crafted to fulfill two particular goa
 
 The actual kernel and initramfs images are stored using git-lfs, so you need that to be able to make use of them.
 
-Each sub-directory corresponds to a specific CPU architecture, and should contain the following files:
+Each subdirectory corresponds to a specific CPU architecture, and should contain the following files:
 
 - `kernel.img`: The kernel image.
 - `initramfs.img`: The initramfs image.
