@@ -43,7 +43,6 @@ if not sys.warnoptions:
 FAIL_NON_RUNNABLE = os.environ.get('FVIRT_FAIL_NON_RUNNABLE_TESTS', 0)
 TEST_SKIP = os.environ.get('FVIRT_TEST_SKIP_TESTS', 0)
 GROUP_COUNT = int(os.environ.get('FVIRT_TEST_OBJECT_GROUP_SIZE', 3))
-MAX_CONCURRENT_VMS = int(os.environ.get('FVIRT_TEST_MAX_CONCURRENT_VMS', 4))
 
 TESTS_PATH = Path(__file__).parent
 
@@ -198,6 +197,8 @@ def sys_arch() -> str | None:
     match arch:
         case 'AMD64':
             arch = 'x86_64'
+        case 'ARM64':
+            arch = 'aarch64'
         case '':
             arch = None
 
@@ -205,19 +206,22 @@ def sys_arch() -> str | None:
 
 
 @pytest.fixture(scope='session')
-def vm_arch(sys_arch: str) -> str:
-    '''Provide an appropriate architecutre for VMs.'''
-    match sys_arch:
-        case 'x86_64':
-            return sys_arch
-        case _:
-            return 'x86_64'
-
-
-@pytest.fixture(scope='session')
-def qemu_system(vm_arch: str) -> str | None:
+def qemu_system(sys_arch: str) -> tuple[Path, str] | None:
     '''Provide a path to a native qemu-system emulator.'''
-    return shutil.which(f'qemu-system-{vm_arch}')
+    arches = (
+        'x86_64',
+        'aarch64',
+    )
+
+    qemu = None
+
+    for arch in (sys_arch,) + arches:
+        qemu = shutil.which(f'qemu-system-{arch}')
+
+        if qemu is not None:
+            return (Path(qemu), arch)
+
+    return None
 
 
 @pytest.fixture
@@ -231,7 +235,7 @@ def require_virtqemud(virtqemud: str | None) -> None:
 
 
 @pytest.fixture
-def require_qemu(require_virtqemud: None, qemu_system: str | None) -> None:
+def require_qemu(require_virtqemud: None, qemu_system: tuple[Path, str] | None) -> None:
     '''Check for a usable copy of virtqemud and qmeu-system emulator, and skip or fail if one is not found.'''
     if TEST_SKIP:
         skip_or_fail('Requested skipping possibly skipped tests.')
@@ -241,8 +245,9 @@ def require_qemu(require_virtqemud: None, qemu_system: str | None) -> None:
 
 
 @pytest.fixture(scope='session')
-def vm_kernel(vm_arch: str) -> tuple[Path, Path]:
+def vm_kernel(qemu_system: tuple[Path, str]) -> tuple[Path, Path]:
     '''Provides a path to a usable kernel image for booting live VMs.'''
+    _, vm_arch = qemu_system
     kernel_image = TESTS_PATH / 'data' / 'images' / vm_arch / 'kernel.img'
     initramfs_image = TESTS_PATH / 'data' / 'images' / vm_arch / 'initramfs.img'
 
@@ -342,21 +347,27 @@ def test_dom_xml(unique: Callable[..., Any], name_factory: Callable[[], str]) ->
 @pytest.fixture
 def live_dom_xml(
     sys_arch: str,
-    vm_arch: str,
+    require_qemu: None,
+    qemu_system: tuple[Path, str] | None,
     vm_kernel: tuple[Path, Path],
     unique: Callable[..., Any],
     name_factory: Callable[[], str]
 ) -> Callable[[], str]:
     '''Provide a factory that produces domain XML strings.'''
+    assert qemu_system is not None
+    _, vm_arch = qemu_system
+
     kernel, initramfs = vm_kernel
 
     match vm_arch:
         case 'x86_64':
             machine = 'q35'
             console = 'ttyS0'
-        case _:
+        case 'aarch64':
             machine = 'virt'
-            console = 'ttyS0'
+            console = 'ttyAMA0'
+        case _:
+            assert False, 'Unsupported VM architecture.'
 
     if sys_arch == vm_arch:
         dom_type = 'kvm'
