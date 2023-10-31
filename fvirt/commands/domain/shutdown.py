@@ -37,7 +37,7 @@ shutdown: Final = _ShutdownCommand(
         click.Option(
             param_decls=('--timeout',),
             type=click.IntRange(min=0),
-            default=0,
+            default=None,
             metavar='TIMEOUT',
             help='Specify a timeout in seconds within which the domain must shut down. A value of 0 means no timeout.',
         ),

@@ -454,6 +454,29 @@ def live_dom(
 
 
 @pytest.fixture
+def live_dom_group(
+    live_hv: Hypervisor,
+    live_dom_xml: Callable[[], str],
+    require_qemu: None,
+    serial: Callable[[str], _GeneratorContextManager],
+) -> Generator[tuple[tuple[Domain, ...], Hypervisor], None, None]:
+    '''Provide a group of live domains with a guest OS for testing.
+
+       Unlike the test_dom fixture, this one does _not_ start the domaain.'''
+    with serial('live-dom'):
+        doms = tuple(
+            live_hv.define_domain(live_dom_xml()) for _ in range(0, GROUP_COUNT)
+        )
+
+    yield (doms, live_hv)
+
+    with serial('live-dom'):
+        for dom in doms:
+            if dom.valid and dom in live_hv.domains:
+                remove_domain(dom)
+
+
+@pytest.fixture
 def pool_xml(unique: Callable[..., Any], tmp_path: Path, name_factory: Callable[[], str]) -> Callable[[], str]:
     '''Provide a factory function that produces storage pool XML strings.'''
     def inner() -> str:
