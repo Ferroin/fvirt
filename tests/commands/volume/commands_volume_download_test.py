@@ -23,7 +23,6 @@ if TYPE_CHECKING:
     from fvirt.libvirt import Hypervisor, StoragePool, Volume
 
 
-@pytest.mark.slow
 def test_volume_download(
     runner: Callable[[Sequence[str], int], Result],
     live_volume: tuple[Volume, StoragePool, Hypervisor],
@@ -43,7 +42,6 @@ def test_volume_download(
     assert filecmp.cmp(vol_path, target_path, shallow=False)
 
 
-@pytest.mark.slow
 @pytest.mark.skipif(sys.platform == 'win32', reason='Sparse data handling not supported on Windows')
 def test_volume_sparse_download(
     runner: Callable[[Sequence[str], int], Result],

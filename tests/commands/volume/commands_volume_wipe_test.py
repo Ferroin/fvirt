@@ -8,8 +8,6 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-import pytest
-
 if TYPE_CHECKING:
     from collections.abc import Callable
 
@@ -18,7 +16,6 @@ if TYPE_CHECKING:
     from fvirt.libvirt import Hypervisor, StoragePool, Volume
 
 
-@pytest.mark.slow
 def test_volume_wipe(
     runner: Callable[..., Result],
     live_pool: tuple[StoragePool, Hypervisor],
@@ -47,7 +44,6 @@ def test_volume_wipe(
         vol.undefine()
 
 
-@pytest.mark.slow
 def test_command_bulk_run(
     runner: Callable[..., Result],
     live_pool: tuple[StoragePool, Hypervisor],
