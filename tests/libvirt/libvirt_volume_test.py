@@ -147,7 +147,6 @@ def test_delete(live_volume: tuple[Volume, StoragePool, Hypervisor]) -> None:
     assert pool.volumes.get(name) is None
 
 
-@pytest.mark.slow
 def test_wipe(live_pool: tuple[StoragePool, Hypervisor], volume_factory: Callable[[StoragePool, int], Volume]) -> None:
     '''Test that wiping volumes works correctly.'''
     pool, _ = live_pool
@@ -324,7 +323,6 @@ def test_volume_access_mapping(live_pool: tuple[StoragePool, Hypervisor], volume
         vol.undefine()
 
 
-@pytest.mark.slow
 def test_volume_download(live_volume: tuple[Volume, StoragePool, Hypervisor], unique: Callable[..., Any]) -> None:
     '''Test volume download functionality.'''
     vol, _, _ = live_volume
@@ -341,7 +339,6 @@ def test_volume_download(live_volume: tuple[Volume, StoragePool, Hypervisor], un
     assert filecmp.cmp(vol_path, target_path, shallow=False)
 
 
-@pytest.mark.slow
 @pytest.mark.skipif(sys.platform == 'win32', reason='Sparse data handling not supported on Windows')
 def test_volume_sparse_download(live_volume: tuple[Volume, StoragePool, Hypervisor], unique: Callable[..., Any]) -> None:
     '''Test volume sparse download functionality.'''
@@ -365,7 +362,6 @@ def test_volume_sparse_download(live_volume: tuple[Volume, StoragePool, Hypervis
     assert filecmp.cmp(vol_path, target_path, shallow=False)
 
 
-@pytest.mark.slow
 def test_volume_upload(live_volume: tuple[Volume, StoragePool, Hypervisor], unique: Callable[..., Any]) -> None:
     '''Test volume upload functionality.'''
     vol, _, _ = live_volume
@@ -382,7 +378,6 @@ def test_volume_upload(live_volume: tuple[Volume, StoragePool, Hypervisor], uniq
     assert filecmp.cmp(vol_path, target_path, shallow=False)
 
 
-@pytest.mark.slow
 def test_volume_upload_resize(live_volume: tuple[Volume, StoragePool, Hypervisor], unique: Callable[..., Any]) -> None:
     '''Test volume upload functionality.'''
     vol, _, _ = live_volume
@@ -399,7 +394,6 @@ def test_volume_upload_resize(live_volume: tuple[Volume, StoragePool, Hypervisor
     assert filecmp.cmp(vol_path, target_path, shallow=False)
 
 
-@pytest.mark.slow
 @pytest.mark.skipif(sys.platform == 'win32', reason='Sparse data handling not supported on Windows')
 def test_volume_sparse_upload(live_volume: tuple[Volume, StoragePool, Hypervisor], unique: Callable[..., Any]) -> None:
     '''Test volume sparse upload functionality.'''
