@@ -14,7 +14,7 @@ from .._base.objects import StoragePoolMixin
 INFO_ITEMS: Final = (
     InfoItem(name='Name', prop='name'),
     InfoItem(name='UUID', prop='uuid'),
-    InfoItem(name='State', prop='running', color=COLUMNS['state'].color),
+    InfoItem(name='State', prop='state', color=COLUMNS['state'].color),
     InfoItem(name='Persistent', prop='persistent', color=COLUMNS['persistent'].color),
     InfoItem(name='Autostart', prop='autostart', color=COLUMNS['autostart'].color),
     InfoItem(name='Pool Type', prop='type', color=COLUMNS['type'].color),

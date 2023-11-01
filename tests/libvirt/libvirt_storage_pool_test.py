@@ -16,7 +16,7 @@ from lxml import etree
 
 from fvirt.libvirt import EntityRunning, Hypervisor, InvalidConfig, LifecycleResult, Volume
 from fvirt.libvirt.entity_access import EntityAccess
-from fvirt.libvirt.storage_pool import MATCH_ALIASES, StoragePool
+from fvirt.libvirt.storage_pool import MATCH_ALIASES, StoragePool, StoragePoolState
 from fvirt.util.match import MatchArgument, MatchTarget
 
 from .shared import (check_entity_access_get, check_entity_access_iterable, check_entity_access_mapping, check_entity_access_match,
@@ -71,6 +71,24 @@ def test_name(live_pool: tuple[StoragePool, Hypervisor]) -> None:
     '''Check the name attribute.'''
     pool, _ = live_pool
     assert isinstance(pool.name, str)
+
+
+def test_domain_state() -> None:
+    '''Check the StoragePoolState enumerable.'''
+    for s in StoragePoolState:
+        assert isinstance(s.value, int)
+
+    assert len({s.value for s in StoragePoolState}) == len(StoragePoolState), 'duplicate values in StoragePoolState'
+    assert len({str(s) for s in StoragePoolState}) == len(StoragePoolState), 'duplicate string representations in StoragePoolState'
+
+
+def test_state(live_pool: tuple[StoragePool, Hypervisor]) -> None:
+    '''Check the state attribute.'''
+    pool, _ = live_pool
+    assert isinstance(pool.state, StoragePoolState)
+    assert pool.state == StoragePoolState.RUNNING
+    assert pool.destroy() == LifecycleResult.SUCCESS
+    assert pool.state != StoragePoolState.RUNNING
 
 
 def test_define(live_hv: Hypervisor, pool_xml: Callable[[], str], serial: Callable[[str], _GeneratorContextManager[None]]) -> None:

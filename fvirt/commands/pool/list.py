@@ -9,7 +9,7 @@ from typing import Final, final
 
 from .._base.list import ListCommand
 from .._base.objects import StoragePoolMixin
-from ...libvirt.storage_pool import MATCH_ALIASES
+from ...libvirt.storage_pool import MATCH_ALIASES, StoragePoolState
 from ...util.tables import Column, color_bool, color_optional
 from ...util.terminal import get_terminal
 
@@ -30,18 +30,27 @@ use the 'fvirt pool refresh' command.
 '''.lstrip().rstrip()
 
 
-def color_state(value: bool) -> str:
+def color_state(value: StoragePoolState) -> str:
     '''Apply colors to a pool state.'''
-    if value:
-        return get_terminal().bright_green_on_black('running')
-    else:
-        return 'inactive'
+    TERM = get_terminal()
+
+    match value:
+        case s if s in {StoragePoolState.RUNNING}:
+            return TERM.bright_green_on_black(str(value))
+        case s if s in {StoragePoolState.BUILDING}:
+            return TERM.bright_yellow_on_black(str(value))
+        case s if s in {StoragePoolState.DEGRADED, StoragePoolState.INACCESSIBLE}:
+            return TERM.bright_red_on_black(str(value))
+        case _:
+            return str(value)
+
+    raise RuntimeError  # Needed because mypy thinks the above case statement is non-exhaustive.
 
 
 COLUMNS: Final = {
     'name': Column(title='Name', prop='name'),
     'uuid': Column(title='UUID', prop='uuid'),
-    'state': Column(title='State', prop='running', color=color_state),
+    'state': Column(title='State', prop='state', color=color_state),
     'persistent': Column(title='Persistent', prop='persistent', color=color_bool),
     'autostart': Column(title='Autostart', prop='autostart', color=color_bool),
     'volumes': Column(title='Volumes', prop='num_volumes', right_align=True, color=color_optional),
