@@ -28,6 +28,7 @@ flake8-debug = "^0.2.0"
 flake8-isort = "^6.1.0"
 flake8-quotes = "^3.3.2"
 flake8-sfs = "^0.0.4"
+flaky = "^3.7.0"
 isort = "^5.12.0"
 lxml-stubs = "^0.4.0"
 mypy = "^1.6.1"
@@ -81,7 +82,7 @@ skip_gitignore = true
 use_parentheses = true
 
 [tool.pytest.ini_options]
-addopts = "-n logical --dist worksteal"
+addopts = "-n logical --dist worksteal --force-flaky --no-flaky-report"
 minversion = 7.0
 markers = [
     "slow: marks tests which may take a long time to run",
