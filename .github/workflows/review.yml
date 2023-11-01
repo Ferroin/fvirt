@@ -100,9 +100,9 @@ jobs:
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
-          poetry-version: ${{ env.POETRY_VERSION }}
+          version: ${{ env.POETRY_VERSION }}
       - name: Install dependencies
-        run: poetry install --no-root --only=dev
+        run: poetry install --no-root --only=dev --sync
       - name: Run scripts/check-labels.py
         run: poetry run .github/scripts/check-labels.py
 
@@ -124,9 +124,9 @@ jobs:
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
-          poetry-version: ${{ env.POETRY_VERSION }}
+          version: ${{ env.POETRY_VERSION }}
       - name: Install dependencies
-        run: poetry install --no-root --only=dev
+        run: poetry install --no-root --only=dev --sync
       - name: Run yamllint
         run: poetry run yamllint .
 
@@ -148,9 +148,9 @@ jobs:
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
-          poetry-version: ${{ env.POETRY_VERSION }}
+          version: ${{ env.POETRY_VERSION }}
       - name: Install python dependencies
-        run: poetry install --no-root --only=dev
+        run: poetry install --no-root --only=dev --sync
       - name: Run flake8
         run: poetry run flake8
 
@@ -174,17 +174,17 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.cache/pypoetry
-          key: poetry-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ env.POETRY_VERSION }}
+          key: poetry-mypy-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ env.POETRY_VERSION }}-${{ hashFiles('/var/lib/dpkg/status') }}
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
-          poetry-version: ${{ env.POETRY_VERSION }}
+          version: ${{ env.POETRY_VERSION }}
       - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y libvirt-dev build-essential
       - name: Install python dependencies
-        run: poetry install --no-root
+        run: poetry install --no-root --sync
       - name: Run mypy
         run: poetry run mypy .
 
@@ -202,18 +202,18 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.cache/pypoetry
-          key: poetry-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ env.POETRY_VERSION }}
+          key: poetry-pytest-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ env.POETRY_VERSION }}-${{ hashFiles('/var/lib/dpkg/status') }}
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
-          poetry-version: ${{ env.POETRY_VERSION }}
+          version: ${{ env.POETRY_VERSION }}
       - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends libvirt-daemon libvirt-daemon-driver-qemu qemu-kvm qemu-utils
           sudo apt-get install -y libvirt-dev build-essential
       - name: Install python dependencies
-        run: poetry install
+        run: poetry install --sync
       - name: Run pytest
         run: FVIRT_FAIL_NON_RUNNABLE_TESTS=1 FVIRT_NO_KVM_FOR_TESTS=1 poetry run pytest -n logical --dist worksteal
 
@@ -235,8 +235,8 @@ jobs:
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
-          poetry-version: ${{ env.POETRY_VERSION }}
+          version: ${{ env.POETRY_VERSION }}
       - name: Install python dependencies
-        run: poetry install --no-root --only=dev
+        run: poetry install --no-root --only=dev --sync
       - name: Run bandit
         run: poetry run bandit -r .
