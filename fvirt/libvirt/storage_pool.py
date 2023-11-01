@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+from enum import CONTINUOUS, UNIQUE, Enum, verify
 from typing import TYPE_CHECKING, Any, Final, Self, cast, overload
 
 import libvirt
@@ -31,6 +32,21 @@ MATCH_ALIASES: Final = {
     'target': MatchAlias(property='target', desc='Match on the pool target.'),
     'type': MatchAlias(property='type', desc='Match on the pool type.'),
 }
+
+
+@verify(UNIQUE)
+@verify(CONTINUOUS)
+class StoragePoolState(Enum):
+    '''Represents the state of a storage pool.'''
+    UNKNOWN = -1
+    INACTIVE = libvirt.VIR_STORAGE_POOL_INACTIVE
+    BUILDING = libvirt.VIR_STORAGE_POOL_BUILDING
+    RUNNING = libvirt.VIR_STORAGE_POOL_RUNNING
+    DEGRADED = libvirt.VIR_STORAGE_POOL_DEGRADED
+    INACCESSIBLE = libvirt.VIR_STORAGE_POOL_INACCESSIBLE
+
+    def __str__(self: Self) -> str:
+        return self.name.lower()
 
 
 class StoragePool(RunnableEntity):
@@ -133,6 +149,20 @@ class StoragePool(RunnableEntity):
     def volumes(self: Self) -> VolumeAccess:
         '''An iterable of the volumes in the pool.'''
         return self.__volumes
+
+    @property
+    def state(self: Self) -> StoragePoolState:
+        '''The current state of the pool.'''
+        self._check_valid()
+
+        intstate = self._entity.info()[0]
+
+        try:
+            state = StoragePoolState(intstate)
+        except ValueError:
+            state = StoragePoolState.UNKNOWN
+
+        return state
 
     @property
     def num_volumes(self: Self) -> int | None:
