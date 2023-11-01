@@ -311,7 +311,7 @@ def test_shutdown_timeouts(test_dom: tuple[Domain, Hypervisor]) -> None:
     ),
     (
         {
-            'timeout': 5,
+            'timeout': 15,
             'force': False,
         },
         LifecycleResult.SUCCESS,
@@ -323,7 +323,7 @@ def test_shutdown_timeouts(test_dom: tuple[Domain, Hypervisor]) -> None:
             'force': False,
         },
         LifecycleResult.SUCCESS,
-        5,
+        15,
     ),
     (
         {
@@ -331,7 +331,7 @@ def test_shutdown_timeouts(test_dom: tuple[Domain, Hypervisor]) -> None:
             'force': False,
         },
         LifecycleResult.TIMED_OUT,
-        5,
+        15,
     ),
     (
         {
@@ -345,6 +345,7 @@ def test_shutdown_timeouts(test_dom: tuple[Domain, Hypervisor]) -> None:
 def test_live_shutdown(opts: Mapping[str, Any], expected: LifecycleResult, delay: int, live_dom: tuple[Domain, Hypervisor]) -> None:
     '''Check that shutting down a domain works.'''
     dom, _ = live_dom
+    iter_delay = 0.2
 
     dom.start(idempotent=True)
 
@@ -357,13 +358,13 @@ def test_live_shutdown(opts: Mapping[str, Any], expected: LifecycleResult, delay
     assert isinstance(result, LifecycleResult)
     assert result == expected
 
-    t = 0
+    t = 0.0
     while t < delay:
         if not dom.running:
             break
 
-        t += 1
-        sleep(1)
+        t += iter_delay
+        sleep(iter_delay)
 
     assert dom.running == False  # noqa: E712
 

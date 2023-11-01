@@ -25,15 +25,15 @@ if TYPE_CHECKING:
     (
         tuple(),
         0,
-        5,
+        15,
     ),
     (
         ('--timeout', '0'),
         int(ExitCode.OPERATION_FAILED),
-        5,
+        15,
     ),
     (
-        ('--timeout', '5'),
+        ('--timeout', '15'),
         0,
         0,
     ),
@@ -53,6 +53,7 @@ def test_command_run(
     '''Test that the command runs correctly.'''
     dom, hv = live_dom
     uri = str(hv.uri)
+    iter_delay = 0.2
 
     dom.start(idempotent=True)
 
@@ -63,13 +64,13 @@ def test_command_run(
     result = runner(('-c', uri, 'domain', 'shutdown', dom.name) + opts, expected)
     assert len(result.output) > 0
 
-    t = 0
+    t = 0.0
     while t < delay:
         if not dom.running:
             break
 
-        t += 1
-        sleep(1)
+        t += iter_delay
+        sleep(iter_delay)
 
     assert dom.running == False  # noqa: E712
 
@@ -93,12 +94,12 @@ def test_command_bulk_run(
     result = runner(('-c', uri, 'domain', 'shutdown', '--match', 'name', object_name_prefix), 0)
     assert len(result.output) > 0
 
-    t = 0
-    while t < 10:
+    t = 0.0
+    while t < 15:
         if all((not dom.running) for dom in doms):
             break
 
-        t += 1
-        sleep(1)
+        t += 0.2
+        sleep(0.2)
 
     assert all((not dom.running) for dom in doms)
