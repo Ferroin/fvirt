@@ -15,8 +15,10 @@ python = "^3.11"
 blessed = "^1.20.0"
 click = "^8.1.7"
 frozendict = "^2.3.9"
+jinja2 = {version = "^3.1.2", optional = true}
 libvirt-python = "^9.9.0"
 lxml = "^4.9.3"
+ruamel-yaml = {version = "^0.18.3", optional = true}
 
 [tool.poetry.group.dev.dependencies]
 bandit = "^1.7.5"
@@ -43,6 +45,9 @@ pytest-xdist = "^3.5.0"
 ruamel-yaml = "^0.18.5"
 simple-file-lock = "^2023.6"
 yamllint = "^1.33.0"
+
+[tool.poetry.extras]
+templates = ["jinja2", "ruamel-yaml"]
 
 [tool.mypy]
 python_version = "3.11"
