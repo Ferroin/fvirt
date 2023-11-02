@@ -184,7 +184,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libvirt-dev build-essential
       - name: Install python dependencies
-        run: poetry install --no-root --sync
+        run: poetry install --no-root --sync --all-extras
       - name: Run mypy
         run: poetry run mypy .
 
@@ -213,7 +213,7 @@ jobs:
           sudo apt-get install -y --no-install-recommends libvirt-daemon libvirt-daemon-driver-qemu qemu-kvm qemu-utils
           sudo apt-get install -y libvirt-dev build-essential
       - name: Install python dependencies
-        run: poetry install --sync
+        run: poetry install --sync --all-extras
       - name: Run pytest
         run: FVIRT_FAIL_NON_RUNNABLE_TESTS=1 FVIRT_NO_KVM_FOR_TESTS=1 poetry run pytest -n logical --dist worksteal
 
