@@ -14,6 +14,10 @@ class PlatformNotSupported(FVirtException, NotImplementedError):
     '''Raised when attempting an operation which is not supported on this platform.'''
 
 
+class FeatureNotSupported(FVirtException, RuntimeError):
+    '''Raised when attempting to use an optional fvirt feature which is not supported on this system.'''
+
+
 class NotConnected(FVirtException):
     '''Raised when a hypervisor method is called without the hypervisor being connected.'''
 
@@ -53,6 +57,7 @@ class SubOperationFailed(FVirtException):
 __all__ = [
     'FVirtException',
     'PlatformNotSupported',
+    'FeatureNotSupported',
     'EntityNotRunning',
     'EntityRunning',
     'InsufficientPrivileges',
