@@ -8,7 +8,7 @@ from __future__ import annotations
 import enum
 
 from abc import ABC, abstractmethod
-from typing import Any, Literal, Self, TypeVar, cast, final
+from typing import Any, ClassVar, Literal, Self, TypeVar, cast, final
 from uuid import UUID
 
 import libvirt
@@ -16,8 +16,9 @@ import libvirt
 from lxml import etree
 
 from .descriptors import MethodProperty
-from .exceptions import InsufficientPrivileges, InvalidEntity, NotConnected
+from .exceptions import FeatureNotSupported, InsufficientPrivileges, InvalidEntity, NotConnected
 from .hypervisor import Hypervisor
+from ..util.templates import get_environment
 
 T = TypeVar('T')
 
@@ -51,13 +52,18 @@ class Entity(ABC):
 
        Entity instances support the context manager protocol. Entering
        an entity’s context will ensure that the Hypervisor instance
-       it is tied to is connected, and that the entity itself is valid.'''
+       it is tied to is connected, and that the entity itself is valid.
+
+       Child instances must redefine the _TEMPLATE_NAME class variable
+       if they want to support templating.'''
     __slots__ = [
         '_entity',
         '_hv',
         '_parent',
         '_valid',
     ]
+
+    _TEMPLATE_NAME: ClassVar[None | str] = None
 
     def __init__(self: Self, entity: Any, parent: Hypervisor | Entity | None = None, /) -> None:
         match parent:
@@ -383,6 +389,28 @@ class Entity(ABC):
            This handles reading the config, applying the transformation,
            and then saving the config, all as one operation.'''
         self.config = xslt(self.config)
+
+    @classmethod
+    def new_config(cls: type[Entity], /, template: str | None = None, **kwargs: Any) -> str:
+        '''Create a new configuration for the entity type from a template.
+
+           Any keyword arguments will be passed on to the template itself.
+
+           If templating is not supported, a FeatureNotSupported error
+           will be raised.'''
+        env = get_environment()
+
+        if env is None:
+            raise FeatureNotSupported('Templating is not supported on this system.')
+        if cls._TEMPLATE_NAME is None:
+            raise NotImplementedError('Templating is not implemented for this class.')
+
+        if template is None:
+            tmpl = env.get_template(cls._TEMPLATE_NAME)
+        else:
+            tmpl = env.from_string(template)
+
+        return tmpl.render(**kwargs)
 
 
 class RunnableEntity(Entity):
