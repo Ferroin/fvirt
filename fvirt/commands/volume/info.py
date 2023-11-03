@@ -14,7 +14,7 @@ from .._base.objects import VolumeMixin
 INFO_ITEMS: Final = (
     InfoItem(name='Name', prop='name'),
     InfoItem(name='Key', prop='key'),
-    InfoItem(name='Volume Type', prop='type', color=COLUMNS['type'].color),
+    InfoItem(name='Volume Type', prop='vol_type', color=COLUMNS['type'].color),
     InfoItem(name='Volume Format', prop='format', color=COLUMNS['format'].color),
     InfoItem(name='Volume Path', prop='path', color=COLUMNS['path'].color),
     InfoItem(name='Total Capacity', prop='capacity', color=COLUMNS['capacity'].color, use_units=True),

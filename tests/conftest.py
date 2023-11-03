@@ -8,6 +8,7 @@ from __future__ import annotations
 import os
 import platform
 import shutil
+import subprocess
 import sys
 
 from collections.abc import Callable, Generator
@@ -19,6 +20,7 @@ from typing import TYPE_CHECKING, Any
 
 import pytest
 
+from lxml import etree
 from simple_file_lock import FileLock
 
 from fvirt.cli import cli
@@ -223,6 +225,47 @@ def qemu_system(sys_arch: str) -> tuple[Path, str] | None:
             return (Path(qemu), arch)
 
     return None
+
+
+@pytest.fixture
+def virt_xml_validate(tmp_path: Path) -> Callable[[str], None]:
+    '''Provide a function that will validate a libvirt XML document.
+
+       This uses the virt-xml-validate command from the host. If
+       this command is not found, it will skip or fail the test
+       automatically.
+
+       The schema to use will be inferred automatically from the name
+       of the root tag of the document that gets passed in.'''
+    if TEST_SKIP:
+        skip_or_fail('Requested skipping possibly skipped tests.')
+
+    cmd = shutil.which('virt-xml-validate')
+
+    if cmd is None:
+        skip_or_fail('Could not find virt-xml-validate, which is required to run this test.')
+
+    def inner(doc: str) -> None:
+        assert cmd is not None
+
+        path = tmp_path / 'test.xml'
+        path.write_text(doc)
+
+        xml = etree.XML(doc)
+        e = xml.find('.')
+        assert e is not None
+        schema = e.tag
+
+        match schema:
+            case 'pool':
+                schema = 'storagepool'
+            case 'volume':
+                schema = 'storagevol'
+
+        result = subprocess.run((cmd, str(path), schema), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        assert result.returncode == 0, f'{doc}\n\n{result.stdout}'
+
+    return inner
 
 
 @pytest.fixture

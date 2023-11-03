@@ -1,0 +1,53 @@
+<?xml version='1.0'?>
+<pool type='{{ pool.type }}'>
+    <name>{{ data.name }}</name>
+    {% if 'uuid' in data and data.uuid is not None %}
+    <uuid>{{ data.uuid }}</uuid>
+    {% endif %}
+    {% if 'features' in pool.pool and 'features' in data %}
+    <features>
+        {% if 'cow' in pool.pool.features and 'cow' in data %}
+        <cow state='{{ data.features.cow }}' />
+        {% endif %}
+    </features>
+    {% endif %}
+    {% if 'source' in pool.pool %}
+    <source>
+        {% if pool.pool.formats %}
+        <format type='{{ data.format }}' />
+        {% endif %}
+        {% if 'name' in pool.pool.source %}
+        <name>{{ data.source.name }}</name>
+        {% endif %}
+        {% if 'device' in pool.pool.source %}
+        {% for item in data.source.device %}
+        <device path='{{ item }}' />
+        {% endfor %}
+        {% endif %}
+        {% if 'dir' in pool.pool.source %}
+        <dir path='{{ data.source.path }}' />
+        {% endif %}
+        {% if 'adapter' in pool.pool.source %}
+        <adapter name='{{ data.source.adapter }}' type='scsi_host' />
+        {% endif %}
+        {% if 'host' in pool.pool.source %}
+        {% for item in data.source.host %}
+        <host name='{{ item }}' />
+        {% endfor %}
+        {% endif %}
+        {% if 'initiator' in pool.pool.source %}
+        <initiator>
+            <iqn name='{{ data.source.initiator }}' />
+        </initiator>
+        {% endif %}
+        {% if 'protocol' in pool.pool.source %}
+        <protocol ver='{{ data.source.protocol }}' />
+        {% endif %}
+    </source>
+    {% endif %}
+    {% if pool.pool.target|length > 0 %}
+    <target>
+        <path>{{ data.target.path }}</path>
+    </target>
+    {% endif %}
+</pool>
