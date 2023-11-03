@@ -1,0 +1,18 @@
+<?xml version='1.0'?>
+<volume>
+    <name>{{ data.name }}</name>
+    <capacity>{{ data.capacity }}</capacity>
+    {% if data.allocation %}
+    <allocation>{{ data.allocation }}</allocation>
+    {% endif %}
+    {% if target in pool.volume or pool.volume.formats %}
+    <target>
+        {% if pool.volume.formats and data.format %}
+        <format type='{{ data.format }}' />
+        {% endif %}
+        {% if 'nocow' in pool.volume.target and data.nocow %}
+        <nocow />
+        {% endif %}
+    </target>
+    {% endif %}
+</volume>

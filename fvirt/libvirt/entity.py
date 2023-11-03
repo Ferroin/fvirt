@@ -52,18 +52,13 @@ class Entity(ABC):
 
        Entity instances support the context manager protocol. Entering
        an entity’s context will ensure that the Hypervisor instance
-       it is tied to is connected, and that the entity itself is valid.
-
-       Child instances must redefine the _TEMPLATE_NAME class variable
-       if they want to support templating.'''
+       it is tied to is connected, and that the entity itself is valid.'''
     __slots__ = [
         '_entity',
         '_hv',
         '_parent',
         '_valid',
     ]
-
-    _TEMPLATE_NAME: ClassVar[None | str] = None
 
     def __init__(self: Self, entity: Any, parent: Hypervisor | Entity | None = None, /) -> None:
         match parent:
@@ -391,8 +386,16 @@ class Entity(ABC):
         self.config = xslt(self.config)
 
     @classmethod
-    def new_config(cls: type[Entity], /, template: str | None = None, **kwargs: Any) -> str:
-        '''Create a new configuration for the entity type from a template.
+    def _render_config(
+        cls: type[Entity],
+        /, *,
+        template_name: str | None = None,
+        template: str | None = None,
+        **kwargs: Any
+    ) -> str:
+        '''Render a configuration for the entity type from a template.
+
+           Either a template name or a raw template string must be specified.
 
            Any keyword arguments will be passed on to the template itself.
 
@@ -402,11 +405,12 @@ class Entity(ABC):
 
         if env is None:
             raise FeatureNotSupported('Templating is not supported on this system.')
-        if cls._TEMPLATE_NAME is None:
-            raise NotImplementedError('Templating is not implemented for this class.')
 
         if template is None:
-            tmpl = env.get_template(cls._TEMPLATE_NAME)
+            if template_name is None:
+                raise ValueError('One of template or template_name must be specified.')
+
+            tmpl = env.get_template(template_name)
         else:
             tmpl = env.from_string(template)
 

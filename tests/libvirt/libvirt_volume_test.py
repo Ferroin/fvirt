@@ -415,3 +415,30 @@ def test_volume_sparse_upload(live_volume: tuple[Volume, StoragePool, Hypervisor
     assert isinstance(result, int)
     assert result == (block * (block_count / 2))
     assert filecmp.cmp(vol_path, target_path, shallow=False)
+
+
+@pytest.mark.parametrize('data', (
+    {
+        'name': 'vol',
+        'capacity': 65536,
+    },
+    {
+        'name': 'vol',
+        'capacity': 65536,
+        'allocation': 0,
+    },
+    {
+        'name': 'vol',
+        'capacity': 65536,
+        'vol_format': 'raw',
+    },
+))
+def test_new_config(data: Any, live_pool: tuple[StoragePool, Hypervisor], virt_xml_validate: Callable[[str], None]) -> None:
+    '''Test the new_config class method.'''
+    pool, _ = live_pool
+
+    doc = Volume.new_config(pool=pool, **data)
+
+    assert isinstance(doc, str)
+
+    virt_xml_validate(doc)

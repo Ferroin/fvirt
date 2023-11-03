@@ -17,7 +17,7 @@ INFO_ITEMS: Final = (
     InfoItem(name='State', prop='state', color=COLUMNS['state'].color),
     InfoItem(name='Persistent', prop='persistent', color=COLUMNS['persistent'].color),
     InfoItem(name='Autostart', prop='autostart', color=COLUMNS['autostart'].color),
-    InfoItem(name='Pool Type', prop='type', color=COLUMNS['type'].color),
+    InfoItem(name='Pool Type', prop='pool_type', color=COLUMNS['type'].color),
     InfoItem(name='Pool Format', prop='format', color=COLUMNS['format'].color),
     InfoItem(name='Pool Directory', prop='dir', color=COLUMNS['dir'].color),
     InfoItem(name='Pool Device', prop='device', color=COLUMNS['device'].color),

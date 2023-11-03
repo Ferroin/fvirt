@@ -75,6 +75,7 @@ def test_command_run(
     assert dom.running == False  # noqa: E712
 
 
+@pytest.mark.slow
 def test_command_bulk_run(
     runner: Callable[[Sequence[str], int], Result],
     live_dom_group: tuple[tuple[Domain, ...], Hypervisor],

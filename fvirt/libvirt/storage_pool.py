@@ -5,12 +5,14 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping, Sequence
 from enum import CONTINUOUS, UNIQUE, Enum, verify
-from typing import TYPE_CHECKING, Any, Final, Self, cast, overload
+from typing import TYPE_CHECKING, Any, ClassVar, Final, Self, cast, overload
+from uuid import UUID
 
 import libvirt
 
+from .data import POOL_TYPE_INFO
 from .descriptors import ConfigProperty
 from .entity import LifecycleResult, RunnableEntity
 from .entity_access import BaseEntityAccess, EntityAccess, NameMap, UUIDMap
@@ -30,7 +32,7 @@ MATCH_ALIASES: Final = {
     'name': MatchAlias(property='name', desc='Match on the name of the pool.'),
     'persistent': MatchAlias(property='persistent', desc='Match on whether the pool is persistent or not.'),
     'target': MatchAlias(property='target', desc='Match on the pool target.'),
-    'type': MatchAlias(property='type', desc='Match on the pool type.'),
+    'type': MatchAlias(property='pool_type', desc='Match on the pool type.'),
 }
 
 
@@ -59,7 +61,7 @@ class StoragePool(RunnableEntity):
        The volumes in the pool can be iterated over using the `volumes` property.
 
        Volumes in the pool can be looked up by name using the `volumes_by_name` property.'''
-    type: ConfigProperty[str] = ConfigProperty(
+    pool_type: ConfigProperty[str] = ConfigProperty(
         doc='The storage pool type.',
         path='./@type',
         type=str,
@@ -129,8 +131,17 @@ class StoragePool(RunnableEntity):
     @property
     def _format_properties(self: Self) -> set[str]:
         return super()._format_properties | {
+            'allocated',
             'autostart',
+            'available',
+            'capacity',
+            'device',
+            'dir',
+            'format',
+            'host',
             'num_volumes',
+            'pool_type',
+            'target',
         }
 
     @property
@@ -243,6 +254,121 @@ class StoragePool(RunnableEntity):
             raise InvalidConfig
 
         return Volume(vol, self)
+
+    @classmethod
+    def new_config(
+        cls: type[StoragePool],
+        /, *,
+        pool_type: str,
+        name: str,
+        uuid: str | UUID | None = None,
+        target_path: str | None = None,
+        pool_format: str | None = None,
+        source_name: str | None = None,
+        devices: Sequence[str] | str | None = None,
+        hosts: Sequence[str] | str | None = None,
+        source_path: str | None = None,
+        adapter: str | None = None,
+        initiator: str | None = None,
+        protocol: str | None = None,
+        features: Mapping[str, str] = dict(),
+        template: str | None = None,
+        **kwargs: Any,
+    ) -> str:
+        '''Create a new storage pool configuration from a template.
+
+           If templating is not supported, a FeatureNotSupported error
+           will be raised.'''
+        data: dict[str, Any] = {
+            'name': name,
+            'source': dict(),
+            'target': dict(),
+        }
+
+        if pool_type not in POOL_TYPE_INFO:
+            raise ValueError(f'Unrecognized storage pool type "{pool_type}"')
+
+        pool: Mapping[str, Any] = POOL_TYPE_INFO[pool_type]
+        data['type'] = pool_type
+
+        if pool_format is not None:
+            if pool['pool']['formats']:
+                if pool_format not in pool['pool']['formats'].keys():
+                    raise ValueError(f'Format "{pool_format}" is not supported for pool type "{pool_type}"')
+                else:
+                    data['format'] = pool_format
+            else:
+                raise ValueError(f'Pool formats are not supported for pool type "{pool_type}"')
+        else:
+            if pool['pool']['formats']:
+                raise ValueError(f'A pool format is required for pool type "{pool_type}"')
+
+        if uuid is not None:
+            if isinstance(uuid, str):
+                uuid = UUID(uuid)
+
+            data['uuid'] = str(uuid)
+
+        if features:
+            data['features'] = features
+
+        if target_path is not None:
+            data['target']['path'] = target_path
+        else:
+            if pool['pool']['target'].get('path', False):
+                raise ValueError(f'Pool type "{pool_type}" requires a target path.')
+
+        if source_name is not None:
+            data['source']['name'] = source_name
+        else:
+            if pool['pool']['source'].get('name', False):
+                raise ValueError(f'Pool type "{pool_type}" requires a source name.')
+
+        if devices is not None:
+            if isinstance(devices, str):
+                devices = [devices]
+
+            data['source']['device'] = devices
+        else:
+            if pool['pool']['source'].get('devices', False):
+                raise ValueError(f'Pool type "{pool_type}" requires one or more devices.')
+
+        if source_path is not None:
+            data['source']['path'] = source_path
+        else:
+            if pool['pool']['source'].get('dir', False):
+                raise ValueError(f'Pool type "{pool_type}" requires a path.')
+
+        if adapter is not None:
+            data['source']['adapter'] = adapter
+        else:
+            if pool['pool']['source'].get('adapter', False):
+                raise ValueError(f'Pool type "{pool_type}" requires an adapter.')
+
+        if hosts is not None:
+            if isinstance(hosts, str):
+                hosts = [hosts]
+
+            data['source']['host'] = hosts
+        else:
+            if pool['pool']['source'].get('hosts', False):
+                raise ValueError(f'Pool type "{pool_type}" requires one or more hostnames.')
+
+        if initiator is not None:
+            data['source']['initiator'] = initiator
+        else:
+            if pool['pool']['source'].get('initiator', False):
+                raise ValueError(f'Pool type "{pool_type}" requires an initiator.')
+
+        if protocol is not None:
+            data['source']['protocol'] = protocol
+
+        return cls._render_config(
+            template_name='pool.xml',
+            template=template,
+            pool=pool,
+            data=data,
+        )
 
 
 class StoragePools(BaseEntityAccess[StoragePool]):

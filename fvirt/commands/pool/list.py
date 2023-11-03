@@ -57,7 +57,7 @@ COLUMNS: Final = {
     'capacity': Column(title='Capacity', prop='capacity', right_align=True, color=color_optional, use_units=True),
     'allocated': Column(title='Allocated', prop='allocated', right_align=True, color=color_optional, use_units=True),
     'available': Column(title='Available', prop='available', right_align=True, color=color_optional, use_units=True),
-    'type': Column(title='Type', prop='type', color=color_optional),
+    'type': Column(title='Type', prop='pool_type', color=color_optional),
     'format': Column(title='Format', prop='format', color=color_optional),
     'dir': Column(title='Directory', prop='dir', color=color_optional),
     'device': Column(title='Device', prop='device', color=color_optional),

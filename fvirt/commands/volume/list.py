@@ -15,7 +15,7 @@ from ...util.tables import Column, color_optional
 COLUMNS: Final = {
     'name': Column(title='Name', prop='name'),
     'key': Column(title='Key', prop='key'),
-    'type': Column(title='Type', prop='type'),
+    'type': Column(title='Type', prop='vol_type'),
     'format': Column(title='Format', prop='format'),
     'path': Column(title='Path', prop='path', color=color_optional),
     'capacity': Column(title='Capacity', prop='capacity', right_align=True, use_units=True),
