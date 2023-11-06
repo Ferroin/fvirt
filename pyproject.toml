@@ -15,7 +15,7 @@ python = "^3.11"
 blessed = "^1.20.0"
 click = "^8.1.7"
 frozendict = "^2.3.8"
-libvirt-python = "^9.6.0,!=9.7.0"
+libvirt-python = "^9.9.0"
 lxml = "^4.9.3"
 
 [tool.poetry.group.dev.dependencies]
