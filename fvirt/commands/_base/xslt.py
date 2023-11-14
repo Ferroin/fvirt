@@ -23,7 +23,7 @@ from ...util.report import summary
 if TYPE_CHECKING:
     import re
 
-    from collections.abc import Mapping
+    from collections.abc import Mapping, Sequence
 
     from .state import State
 
@@ -61,7 +61,7 @@ class XSLTCommand(MatchCommand):
 
                     parent_obj = self.get_parent_obj(ctx, hv, parent)
 
-                    futures = [state.pool.submit(
+                    futures: Sequence[concurrent.futures.Future] = [state.pool.submit(
                         run_sub_entity_method,
                         uri=uri,
                         hvprop=self.PARENT_ATTR,
@@ -78,7 +78,7 @@ class XSLTCommand(MatchCommand):
                     )]
                 else:
                     futures = [state.pool.submit(
-                        run_entity_method,  # type: ignore
+                        run_entity_method,
                         uri=uri,
                         hvprop=self.LOOKUP_ATTR,
                         method='apply_xslt',
