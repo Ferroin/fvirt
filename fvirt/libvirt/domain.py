@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from enum import CONTINUOUS, UNIQUE, Enum, verify
 from time import sleep
-from typing import TYPE_CHECKING, Any, Final, Literal, Self, cast, overload
+from typing import TYPE_CHECKING, Any, Final, Literal, NotRequired, Self, TypedDict, cast, overload
 from uuid import UUID
 
 import libvirt
@@ -23,6 +23,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterable
 
     from .hypervisor import Hypervisor
+    from .models.domain import DomainInfo
 
 
 MATCH_ALIASES: Final = {
@@ -407,6 +408,24 @@ class Domain(RunnableEntity):
         stream = Stream(self._hv, sparse=False, interactive=True)
         self._entity.openConsole(dev, stream.stream, flags)
         return stream
+
+    @classmethod
+    def new_config(
+        cls: type[Domain],
+        /, *,
+        dom_type: str,
+        config: DomainInfo,
+        template: str | None = None,
+    ) -> str:
+        '''Create a new domain configuration from a template.
+
+           If templating is not supported, a FeatureNotSupported error
+           will be raised.'''
+        return cls._render_config(
+            template_name=f'domain/{ dom_type }.xml',
+            template=template,
+            **config.dict(exclude_none=True),
+        )
 
 
 class Domains(BaseEntityAccess[Domain]):

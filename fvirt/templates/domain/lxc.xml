@@ -1,0 +1,23 @@
+{# vim: set ft=jinja : #}
+{% extends 'domains/_container.xml' %}
+{% import 'domains/_macros.xml' %}
+{% block type %}lxc{% endblock %}
+{% block xmlns %}xmlns:lxc='http://libvirt.org/schemas/domain/lxc/1.0'{% endblock %}
+{% block features %}
+    {% if 'caps' in features and features.caps %}
+        <capabilities policy='{{ features.caps.policy }}'>
+            {% for cap, state in features.caps.modify.items() %}
+                <{{ cap }} state='{{ state }}' />
+            {% endfor %}
+        </capabilities>
+    {% endif %}
+{% endblock %}
+{% block devices %}
+    {% for fs in filesystems %}
+        {{ filesystem(fs) }}
+    {% endfor %}
+    {% for interface in networks %}
+        {{ network(interface) }}
+    {% endfor %}
+    <console type='pty' />
+{% endblock %}

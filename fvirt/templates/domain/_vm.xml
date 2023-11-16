@@ -1,0 +1,131 @@
+{# vim: set ft=jinja : #}
+{% extends 'domains/_base.xml' %}
+{% import 'domains/_macros.xml' %}
+{% block os %}
+    <os{% if 'firmware' in os %} firmware='{{ os.firmware }}'{% endif %}>
+        <type {{ add_attrs(os, {'arch', 'machine'}) }}>
+            {% if os.type %}{{ os.type }}{% else %}hvm{% endif %}
+        </type>
+        {% if os.variant == 'firmware' %}
+            {% if 'loader' in os and os.loader %}
+                {% if 'path' in os.loader and os.loader.path %}
+                    <loader {{ add_attrs(os.loader, {'readonly', 'secure', 'type', 'stateless'}) }}>{{ os.loader.path }}</loader>
+                {% else %}
+                    <loader {{ add_attrs(os.loader, {'secure', 'stateless'}) }} />
+                {% endif %}
+                {% if 'nvram' in os and os.nvram %}
+                    <nvram template='{{ os.nvram.template }}'>{{ os.nvram.path }}</nvram>
+                {% endif %}
+            {% endif %}
+        {% elif os.variant == 'host' %}
+            <bootloader>{{ os.bootloader }}</bootloader>
+            {% if 'bootloader_args' in os %}
+                <bootloader_args>{{ os.bootloader_args }}</bootloader_args>
+            {% endif %}
+        {% elif os.variant == 'direct' %}
+            {% if 'loader' in os %}
+                <loader>{{ os.loader }}</loader>
+            {% endif %}
+            <kernel>{{ os.kernel }}</kernel>
+            {% if 'initrd' in os %}
+                <initrd>{{ os.initrd }}</initrd>
+            {% endif %}
+            {% if 'cmdline' in os %}
+                <cmdline>{{ os.cmdline }}</cmdline>
+            {% endif %}
+            {% if 'dtb' in os %}
+                <dtb>{{ os.dtb }}</dtb>
+            {% endif %}
+        {% endif %}
+    </os>
+{% endblock %}
+{% block cpu %}
+    {{ cpu_config(cpu) }}
+{% endblock %}
+{% block features %}
+    {% if 'pae' in features and features.pae %}
+        <pae />
+    {% endif %}
+    {% if 'acpi' in features and features.acpi %}
+        <acpi />
+    {% endif %}
+    {% if 'hyperv' in features %}
+        {% if 'passthrough' in features.hyperv %}
+            <hyperv mode='passthrough' />
+        {% else %}
+            <hyperv mode='custom' />
+            {% if 'spinlocks' in features.hyperv %}
+                <spinlocks {{ add_all_attrs(features.hyperv.spinlocks) }} />
+            {% endif %}
+            {% if 'vendor_id' in features.hyperv %}
+                <vendor_id {{ add_all_attrs(features.hyperv.vendor_id) }} />
+            {% endif %}
+            {% if 'stimer' in features.hyperv %}
+                <stimer state='{{ features.stimer.state }}'>
+                    {% if 'direct' in features.hyperv.stimer %}
+                        <direct state='{{ features.stimer.direct }}' />
+                    {% endif %}
+                </stimer>
+            {% endif %}
+            {% for key in features.hyperv if key not in {'spinlocks', 'vendor_id', 'stimer'} %}
+                <{{ key }} state='{{ features.hyperv[key] }}' />
+            {% endfor %}
+        {% endif %}
+        </hyperv>
+    {% endif %}
+    {% for feature in {'pvspinlock', 'hap', 'htm', 'vmcoreinfo', 'vmport', 'pmu', 'smm'} %}
+        {% if feature in features %}
+            <{{ feature }} state='{{ features[feature] }}' />
+        {% endif %}
+    {% endfor %}
+    {% if 'apic' in features %}
+        <apic {{ add_attrs(features.apic, {'eoi'}) }} />
+    {% endif %}
+    {% if 'gic' in features %}
+        <gic {{ add_attrs(features.gic, {'version'}) }} />
+    {% endif %}
+    {% if 'ioapic' in features %}
+        <ioapic {{ add_attrs(features.ioapic, {'driver'}) }} />
+    {% endif %}
+{% endblock %}
+{% block devices %}
+    {% for dev in devices.controllers %}
+        {{ controller(dev) }}
+    {% endfor %}
+    {% for dev in devices.disk %}
+        {{ disk(dev) }}
+    {% endfor %}
+    {% for dev in devices.fs %}
+        {{ filesystem(dev) }}
+    {% endfor %}
+    {% for dev in devices.net %}
+        {{ netif(dev) }}
+    {% endfor %}
+    {% for dev in devices.input %}
+        {{ input(dev) }}
+    {% endfor %}
+    {% for dev in devices.graphics %}
+        {{ graphics(dev) }}
+    {% endfor %}
+    {% for dev in devices.video %}
+        {{ video(dev) }}
+    {% endfor %}
+    {% for dev in devices.chardev %}
+        {{ chardev(dev) }}
+    {% endfor %}
+    {% for dev in devices.watchdog %}
+        {{ watchdog(dev) }}
+    {% endfor %}
+    {% for dev in devices.rng %}
+        {{ rng(dev) }}
+    {% endfor %}
+    {% for dev in devices.tpm %}
+        {{ tpm(dev) }}
+    {% endfor %}
+    {% for dev in devices.memballoon %}
+        {{ memballoon(dev) }}
+    {% endfor %}
+    {% for dev in devices.panic %}
+        {{ panic(dev) }}
+    {% endfor %}
+{% endblock %}

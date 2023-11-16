@@ -1,0 +1,41 @@
+<?xml version='1.0'?>
+<domain type='{% block type required %}{% endblock %}' {% block xmlns %}{% endblock %}>
+    <name>{{ name }}</name>
+    {% if uuid %}<uuid>{{ uuid }}</uuid>{% endif %}
+    {% if genid %}<genid>{{ genid }}</genid>{% else %}<genid />{% endif %}
+    {% if title %}<title>{{ title }}</title>{% endif %}
+    {% if description %}<description>{{ description }}</description>{% endif %}
+    <vcpu>{% if vcpu %}{{ vcpu }}{% else %}1{% endif %}</vcpu>
+    <memory unit='bytes'>{{ memory }}</memory>
+    {% if memtune %}
+    <memtune>
+        {% if 'hard' in memtune and memtune.hard %}<hard_limit unit='bytes'>{{ memtune.hard }}</hard_limit>{% endif %}
+        {% if 'soft' in memtune and memtune.soft %}<soft_limit unit='bytes'>{{ memtune.soft }}</soft_limit>{% endif %}
+        {% if 'swap' in memtune and memtune.swap %}<swap_hard_limit unit='bytes'>{{ memtune.swap }}</swap_hard_limit>{% endif %}
+        {% if 'min' in memtune and memtune.min %}<min_guarantee unit='bytes'>{{ memtune.min }}</min_guarantee>{% endif %}
+    </memtune>
+    {% endif %}
+    {% block os required %}
+    {% if on_poweroff %}<on_poweroff>{{ on_poweroff }}</on_poweroff>{% endif %}
+    {% if on_reboot %}<on_reboot>{{ on_reboot }}</on_reboot>{% endif %}
+    {% if on_crash %}<on_crash>{{ on_crash }}</on_crash>{% endif %}
+    {% if on_lockfailure %}<on_lockfailure>{{ on_lockfailure }}</on_lockfailure>{% endif %}
+    {% block cpu %}
+    {% if clock is defined %}
+        <clock offset='{{ clock.offset }}' {{ add_attrs(clock, 'timezone', 'basis', 'adjustment', 'start') }}>
+            {% for timer in clock.timers %}
+                <timer {{ add_attrs(timer, {'name', 'tickpolicy', 'track', 'present'}) }} />
+            {% endfor %}
+        </clock>
+    {% else %}
+        <clock offset='utc' />
+    {% endif %}
+    <features>
+        {% block features %}
+    </features>
+    <devices>
+        {% block devices required %}
+    </devices>
+    {% block extra %}
+{# vim: set ft=jinja : #}
+</domain>

@@ -1,0 +1,271 @@
+{# vim: set ft=jinja : #}
+{% macro add_attrs(obj, attrs) %}
+    {% for attr in attrs %}
+        {% if attr in obj and obj[attr] %}
+            {{ attr }}='{{ obj[attr] }}'
+        {% endif %}
+    {% endfor %}
+{% endmacro %}
+
+{% macro add_all_attrs(obj) %}
+    {% for attr, value in obj.items() %}
+        {{ attr }}='{{ value }}'
+    {% endfor %}
+{% endmacro %}
+
+{% macro cpu_config(cpu) %}
+    <cpu mode='{% if 'mode' in cpu %}{{ cpu.mode }}{% else %}custom{% endif %}'/>
+        {% if 'model' in cpu and cpu.model %}
+            <model fallback='{% if 'fallback' in cpu.model and cpu.fallback %}{{ cpu.model.fallback }}{% else %}allow{% endif %}'>
+                {{ cpu.model.name }}
+            </model>
+        {% endif %}
+        <topology
+            sockets='{% if 'sockets' in cpu %}{{ sockets }}{% else %}1{% endif %}'
+            dies='{% if 'dies' in cpu %}{{ dies }}{% else %}1{% endif %}'
+            cores='{{ cpu.cores }}'
+            threads='{% if 'threads' in cpu %}{{ threads }}{% else %}1{% endif %}'
+        />
+    </cpu>
+{% endmacro %}
+
+{% macro controller(c) %}
+    {% if c.type == 'ide' %}
+        <controller type='ide' {{ add_attrs(c, {'index', 'model'}) }} />
+    {% elif c.type == 'scsi' %}
+        <controller type='scsi' {{ add_attrs(c, {'index', 'model'}) }}>
+            {% if 'driver' in c %}
+                <driver {{ add_attrs(c.driver, {'queues', 'cmd_per_lun', 'max_sectors'}) }} />
+            {% endif %}
+        </controller>
+    {% elif c.type == 'usb' %}
+        <controller type='usb' {{ add_attrs(c, {'index', 'model', 'ports'}) }} />
+    {% elif c.type == 'virtio-serial' %}
+        <controller type='virtio-serial' {{ add_attrs(c, {'index', 'model', 'ports', 'vectors'}) }} />
+    {% elif c.type == 'xenbus' %}
+        <controller type='xenbus' {{ add_attrs(c, {'index', 'maxGrantFrames', 'maxEventChannels'}) }} />
+    {% else %}
+        <controller type='{{ c.type }}' {{ add_attrs(c, {'index'}) }} />
+    {% endif %}
+{% endmacro %}
+
+{% macro disk(d) %}
+    <disk type='{{ d.type }}' {{ add_attrs(d, {'device', 'snapshot'}) }}>
+        {% if d.type == 'file' %}
+            <source file='{{ d.src }}'{% if d.startup %} startupPolicy='{{ d.startup }}'{% endif %} />
+        {% elif d.type == 'block' %}
+            <source dev='{{ d.src }}' />
+        {% elif d.type == 'volume' %}
+            <source pool='{{ d.src.pool }}' volume='{{ d.src.volume }}'{% if d.startup %} startupPolicy='{{ d.startup }}'{% endif %} />
+        {% endif %}
+        <target {{ add_attrs(d.target, {'dev', 'bus', 'removable', 'rotation_rate'}) }}>
+            {% if 'bus' in d.target and 'address' in d.target %}
+                {% if d.target.bus in {'scsi', 'ide', 'usb', 'sata', 'sd'} %}
+                    <address type='drive' {{ add_attrs(d.target.addr, {'controller', 'bus', 'target', 'unit'}) }} />
+                {% elif d.target.bus in {'virtio', 'xen'} %}
+                    <address type='pci' {{ add_attrs(d.target.addr, {'domain', 'bus', 'slot', 'function', 'multifunction'}) }} />
+                {% endif %}
+            {% endif %}
+        </target>
+        {% if 'readonly' in d and d.readonly %}
+            <readonly />
+        {% endif %}
+        {% if 'boot' in d %}
+            <boot order='{{ d.boot }}' />
+        {% endif %}
+    </disk>
+{% endmacro %}
+
+{% macro filesystem(fs) %}
+    <filesystem type='{{ fs.type }}'{{ add_attrs(fs, {'accessmode', 'multidev', 'fmode', 'dmode'}) }}>
+        {% if 'dirver' in fs %}
+            <driver type='{{ fs.driver.type }}'{{ add_attrs(fs.driver, {'format', 'wrpolicy', 'queue'}) }} />
+        {% endif %}
+        <source {% if 'src_type' in fs %}{{ src_type }}{% else %}dir{% endif %}='{{ fs.source }}' />
+        <target dir='{{ fs.target }}' />
+        {% if 'readonly' in fs and fs.readonly %}
+            <readonly />
+        {% endif %}
+    </filesystem>
+{% endmacro %}
+
+{% macro netif(net) %}
+    <interface type='{{ net.type }}'>
+        {% if net.type == 'network' %}
+            <source network='{{ net.src }}' />
+            {% if 'virtualport' in net %}
+                <virtualport>
+                    <parameters {{ add_attrs(net.virtualport, {'instanceid'}) }} />
+                </virtualport>
+            {% endif %}
+        {% elif net.type == 'bridge' %}
+            <source bridge='{{ net.src }}' />
+            {% if 'virtualport' in net %}
+                <virtualport type='{{ net.virtualport.type }}'>
+                    <parameters {{ add_attrs(net.virtualport, {'interfaceid', 'profileid'}) }} />
+                </virtualport>
+            {% endif %}
+        {% elif net.type == 'direct' %}
+            <source dev='{{ net.src }}' mode='{{ net.mode }}' />
+            {% if 'virtualport' in net %}
+                <virtualport type='{{ net.virtualport.type }}'>
+                    <parameters {{ add_attrs(net.virtualport, {'managerid', 'typeid', 'typeidversion', 'instanceid', 'profileid'}) }} />
+                </virtualport>
+            {% endif %}
+        {% elif net.type == 'user' %}
+            {% if 'ipv4' in net %}
+                <ip family='ipv4' address='{{ net.ipv4.address }}' prefix='{{ net.ipv4.prefix }}' />
+            {% endif %}
+            {% if 'ipv6' in net %}
+                <ip family='ipv6' address='{{ net.ipv6.address }}' prefix='{{ net.ipv6.prefix }}' />
+            {% endif %}
+        {% endif %}
+        {% if 'target' in net %}
+            <target dev='{{ net.target }}' />
+        {% endif %}
+        {% if 'mac' in net and net.type not in {'direct'} %}
+            <mac address='{{ net.mac }}' />
+        {% endif %}
+        {% if 'boot' in net %}
+            <boot order='{{ net.boot }}' />
+        {% endif %}
+    </interface>
+{% endmacro %}
+
+{% macro input(idev) %}
+    {% if idev.type == 'passthrough' %}
+        <input type='{{ idev.type }}' {{ add_attrs(idev, {'bus', 'model'}) }}>
+            <source evdev='{{ idev.src.dev }}' />
+        </input>
+    {% elif idev.type == 'evdev' %}
+        <input type='{{ idev.type }}' {{ add_attrs(idev, {'bus', 'model'}) }}>
+            <source dev='{{ idev.src.dev }}' {{ add_attrs(idev.src, {'grab', 'repeat', 'grabToggle'}) }} />
+        </input>
+    {% else %}
+        <input type='{{ idev.type }}' {{ add_attrs(idev, {'bus', 'model'}) }} />
+    {% endif %}
+{% endmacro %}
+
+{% macro graphics_listeners(gdev) %}
+    {% if 'listeners' in gdev %}
+        {% for listen in gdev.listeners %}
+            {% if listen.type == 'address' %}
+                <listen type='address' address='{{ listen.address }}' />
+            {% elif listen.type == 'network' %}
+                <listen type='network' network='{{ listen.network }}' />
+            {% elif listen.type == 'socket' %}
+                <listen type='socket' socket='{{ listen.socket }}' />
+            {% elif listen.type == 'none' %}
+                <listen type='none' />
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+{% endmacro %}
+
+{% macro graphics(gdev) %}
+    {% if gdev.type == 'vnc' %}
+        <graphics type='vnc' {{ add_attrs(gdev, {'port', 'autoport', 'socket', 'passwd', 'passwdValidTo', 'keymap', 'connected', 'sharePolicy', 'websocket', 'powerControl'}) }}>
+            {{ graphics_listeners(gdev) }}
+            {% if 'audio' in gdev %}
+                <audio id='{{ gdev.audio }}' />
+            {% endif %}
+        </graphics>
+    {% elif gdev.type == 'spice' %}
+        <graphics type='spice' {{ add_attrs(gdev, {'port', 'tlsPort', 'autoport', 'socket', 'passwd', 'passwdValidTo', 'keymap', 'connected', 'defaultMode'}) }}>
+            {{ graphics_listeners(gdev) }}
+            {% if 'channels' in gdev %}
+                {% for name, mode in channels.items() %}
+                    <channel name='{{ name }}' mode='{{ mode }}' />
+                {% endfor %}
+            {% endif %}
+        </graphics>
+    {% elif gdev.type == 'rdp' %}
+        <graphics type='rdp' {{ add_attrs(gdev, {'port', 'autoport', 'multiUser', 'replaceUser'}) }}>
+            {{ graphics_listeners(gdev) }}
+        </graphics>
+    {% endif %}
+{% endmacro %}
+
+{% macro video(vdev) %}
+    <video>
+        <model type='{{ vdev.type }}' {{ add_attrs(vdev, {'vram', 'heads', 'blob', 'resolution'}) }} />
+    </video>
+{% endmacro %}
+
+{% macro charsrc(type, src) %}
+    {% if type == 'pty' %}
+        {% if 'path' in src %}
+            <source path='{{ src.path }}' />
+        {% endif %}
+    {% elif type in {'file', 'dev', 'pipe'} %}
+        <source path='{{ src.path }}' />
+    {% elif type == 'spiceport' %}
+        <source channel='{{ src.channel }}' />
+    {% elif type == 'unix' %}
+        <source mode='{{ src.mode }}' path='{{ src.path }}' />
+    {% elif type == 'tcp' %}
+        <source {{ add_attrs(src, {'mode', 'host', 'service', 'tls'}) }} />
+    {% endif %}
+{% endmacro %}
+
+{% macro chardev(cdev) %}
+    <{{ cdev.category }} type='{{ cdev.type }}'>
+        <target {{ add_attrs(cdev.target, {'target', 'address', 'port', 'name', 'state'}) }} />
+        {{ charsrc(cdev.type, cdev.source) }}
+        {% if 'log' in cdev %}
+            <log file='{{ cdev.log.file }}'{% if 'append' in cdev.log %} append='{{ cdev.log.append }}'{% endif %} />
+        {% endif %}
+    </{{ cdev.category }}>
+{% endmacro %}
+
+{% macro watchdog(wdev) %}
+    <watchdog model='{{ wdev.model }}' {{ add_attrs(wdev, {'action'}) }} />
+{% endmacro %}
+
+{% macro rng(rdev) %}
+    <rng model='{{ rdev.model }}'>
+        {% if 'rate' in rdev %}
+            <rate bytes='{{ rdev.rate.bytes }}' {{ add_attrs(rdev.rate, {'period'}) }} />
+        {% endif %}
+        {% if rdev.backend.model == 'random' %}
+            <backend model='random'>{{ rdev.backend.path }}</backend>
+        {% elif rdev.backend.model == 'builtin' %}
+            <backend model='builtin' />
+        {% elif rdev.backend.model == 'egd' %}
+            <backend model='egd' type='{{ rdev.backend.type }}'>
+                {{ charsrc(rdev.backend.type, rdev.backend) }}
+            </backend>
+        {% endif %}
+    </rng>
+{% endmacro %}
+
+{% macro tpm(dev) %}
+    <tpm{% if 'model' in dev %} model='{{ dev.model }}'{% endif %}>
+        {% if dev.type == 'passthrough' %}
+            <backend type='passthrough'>
+                <device path='{{ dev.dev }}' />
+            </backend>
+        {% elif dev.type == 'emulator' %}
+            <backend type='emulator' {{ add_attrs(dev, {'version', 'persistent_state'}) }}>
+                {% if 'encryption' in dev %}
+                    <encryption secret='{{ dev.encryption }}' />
+                {% endif %}
+                {% if 'active_pcr_banks' in dev %}
+                    {% for bank in dev.active_pcr_banks %}
+                        {% if loop.first %}<active_pcr_banks>{% endif %}
+                        <{{ bank }} />
+                        {% if loop.last %}</active_pcr_banks>{% endif %}
+                    {% endfor %}
+                {% endif %}
+            </backend>
+        {% endif %}
+    </tpm>
+{% endmacro %}
+
+{% macro memballoon(mb) %}
+    <memballoon model='{{ mb.model }}' />
+{% endmacro %}
+
+{% macro panic(dev) %}
+    <panic model='{{ dev.model }}' />
+{% endmacro %}

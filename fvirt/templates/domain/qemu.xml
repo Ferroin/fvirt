@@ -1,0 +1,16 @@
+{# vim: set ft=jinja : #}
+{% extends 'domains/_base_qemu.xml' %}
+{% block type %}qemu{% endblock %}
+{% block features %}
+    {% if 'tcg' in features %}
+        <tcg>
+            {% if 'tb_cache' in features.tcg and features.tcg.tb_cache %}
+                <tb-cache unit='MiB'>{{ features.tcg.tb_cache }}</tb-cache>
+            {% endif %}
+        </tcg>
+    {% endif %}
+    {% if 'async_teardown' in features and features.async_teardown %}
+        <async-teardown enabled='{{ features.async_teardown }}' />
+    {% endif %}
+    {{ super() }}
+{% endblock %}

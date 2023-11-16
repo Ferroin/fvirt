@@ -1,0 +1,12 @@
+{# vim: set ft=jinja : #}
+{% extends 'domains/_container.xml' %}
+{% import 'domains/_macros.xml' %}
+{% block type %}openvz{% endblock %}
+{% block devices %}
+    {% for fs in filesystems %}
+        {{ filesystem(fs) }}
+    {% endfor %}
+    {% for interface in networks %}
+        {{ network(interface) }}
+    {% endfor %}
+{% endblock %}
