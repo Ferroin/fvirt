@@ -1,0 +1,18 @@
+{# vim: set ft=jinja : #}
+{% extends 'domains/_base_qemu.xml' %}
+{% block type %}kvm{% endblock %}
+{% block features %}
+    {% if 'kvm' in features %}
+        <kvm>
+            {% for item in {'hidden', 'hint_dedicated', 'poll_control', 'pv_ipi'} %}
+                {% if item in features.kvm and features.kvm[item] %}
+                    <{{ item }} state='{{ features.kvm[item] }}' />
+                {% endif %}
+            {% endfor %}
+            {% if 'dirty_ring' in features.kvm and features.kvm.dirty_ring %}
+                <dirty-ring state='{{ features.kvm['dirty_ring'].state }}' {{ add_attrs(features.kvm['dirty_ring'], {'size'}) }} />
+            {% endif %}
+        </kvm>
+    {% endif %}
+    {{ super() }}
+{% endblock %}

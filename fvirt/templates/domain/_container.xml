@@ -1,0 +1,29 @@
+{# vim: set ft=jinja : #}
+{% extends 'domains/_base.xml' %}
+{% block os %}
+    <os>
+        <type{% if 'arch' in os %} arch='{{ os.arch }}'{% endif %}>exe</type>
+        <init>{{ os.init }}</init>
+        {% if 'initargs' in os %}
+            {% for arg in os.initargs %}
+                <initarg>{{ arg }}</initarg>
+            {% endfor %}
+        {% endif %}
+        {% if 'initenv' in os %}
+            {% for k, v in os.initenv.items() %}
+                <initenv name='{{ k }}'>{{ v }}</initenv>
+            {% endfor %}
+        {% endif %}
+        {% for elem in ['initdir', 'inituser', 'initgroup'] %}
+            {% if elem in os %}
+                <{{ elem }}>{{ os[elem] }}</{{ elem }}>
+            {% endif %}
+        {% endfor %}
+        {% if 'idmap' in os %}
+            <idmap>
+                <uid start='0' target='{{ os.idmap.uid.target }}' count='{{ os.idmap.uid.count }}' />
+                <gid start='0' target='{{ os.idmap.gid.target }}' count='{{ os.idmap.gid.count }}' />
+            </idmap>
+        {% endif %}
+    </os>
+{% endblock %}

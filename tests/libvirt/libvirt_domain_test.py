@@ -17,6 +17,7 @@ from lxml import etree
 
 from fvirt.libvirt import EntityNotRunning, Hypervisor, InvalidConfig, LifecycleResult
 from fvirt.libvirt.domain import MATCH_ALIASES, Domain, DomainState
+from fvirt.libvirt.models.domain import DomainInfo
 from fvirt.util.match import MatchArgument, MatchTarget
 
 from .shared import (check_entity_access_get, check_entity_access_iterable, check_entity_access_mapping, check_entity_access_match,
@@ -503,3 +504,53 @@ def test_domain_access_match(test_hv: Hypervisor, m: MatchArgument) -> None:
 def test_domain_access_mapping(test_hv: Hypervisor, p: str, k: Sequence[Any], c: Type[object]) -> None:
     '''Test domain entity access mappings.'''
     check_entity_access_mapping(test_hv.domains, p, k, c, Domain)
+
+
+@pytest.mark.parametrize('t, d', (
+    ('test', DomainInfo.model_validate({
+        'name': 'test',
+        'memory': 64,
+        'os': {
+            'variant': 'test',
+            'arch': 'i686',
+        },
+    })),
+    ('lxc', DomainInfo.model_validate({
+        'name': 'test',
+        'memory': 64,
+        'os': {
+            'variant': 'container',
+        },
+    })),
+    ('openvz', DomainInfo.model_validate({
+        'name': '100',
+        'memory': 64,
+        'os': {
+            'variant': 'container',
+        },
+    })),
+    ('kvm', DomainInfo.model_validate({
+        'name': 'test',
+        'memory': 64,
+        'vcpu': 4,
+        'os': {
+            'variant': 'firmware',
+            'firmware': 'efi',
+            'arch': 'x86_64',
+        },
+    })),
+    ('xen', DomainInfo.model_validate({
+        'name': 'test',
+        'memory': 64,
+        'vcpu': 4,
+        'os': {
+            'variant': 'host',
+            'bootloader': 'test_loader',
+            'arch': 'x86_64',
+            'machine': 'xenpv',
+            'type': 'linux',
+        },
+    })),
+))
+def test_new_config(t: str, d: DomainInfo, virt_xml_validate: Callable[[str], None]) -> None:
+    '''Test domain templating.'''

@@ -273,7 +273,6 @@ class StoragePool(RunnableEntity):
         protocol: str | None = None,
         features: Mapping[str, str] = dict(),
         template: str | None = None,
-        **kwargs: Any,
     ) -> str:
         '''Create a new storage pool configuration from a template.
 

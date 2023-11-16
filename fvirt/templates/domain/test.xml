@@ -1,0 +1,18 @@
+{# vim: set ft=jinja : #}
+{% extends 'domains/_base.xml' %}
+{% import 'domains/_macros.xml' %}
+{% block type %}test{% endblock %}
+{% block os %}
+    <os>
+        <type arch='{{ os.arch }}'>hvm</type>
+    </os>
+{% endblock %}
+{% block devices %}
+    {% for disk in disks %}
+        {{ disk(disk) }}
+    {% endfor %}
+    {% for interface in networks %}
+        {{ network(interface) }}
+    {% endfor %}
+    {{ memballoon({'model': 'virtio'}) }}
+{% endblock %}

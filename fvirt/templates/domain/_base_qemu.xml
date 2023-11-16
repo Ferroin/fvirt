@@ -1,0 +1,25 @@
+{# vim: set ft=jinja : #}
+{% extends 'domains/_vm.xml' %}
+{% import 'domains/_macros.xml' %}
+{% block xmlns %}xmlns:qemu='http://libvirt.org/schemas/domain/qemu/1.0'{% endblock %}
+{% block extra %}
+    {% if extra %}
+        {% if 'deprecation' in extra %}
+            <qemu:deprecation behavior='{{ extra.deprecation }}' />
+        {% endif %}
+        {% if 'commandline' in extra %}
+            <qemu:commandline>
+                {% if 'args' in extra.commandline %}
+                    {% for arg in extra.commandline.args %}
+                        <qemu:arg value='{{ arg }}' />
+                    {% endfor %}
+                {% endif %}
+                {% if 'env' in extra.commandline %}
+                    {% for name, value in extra.commandline.env.items() %}
+                        <qemu:env name='{{ name }}' value='{{ value }}' />
+                    {% endfor %}
+                {% endif %}
+            </qemu:commandline>
+        {% endif %}
+    {% endif %}
+{% endblock %}
