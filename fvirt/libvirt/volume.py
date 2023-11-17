@@ -8,11 +8,10 @@ from __future__ import annotations
 import io
 import os
 
-from typing import TYPE_CHECKING, Any, ClassVar, Final, Self, cast, overload
+from typing import TYPE_CHECKING, Any, Final, Self, cast, overload
 
 import libvirt
 
-from .data import POOL_TYPE_INFO
 from .descriptors import ConfigProperty, MethodProperty
 from .entity import Entity, LifecycleResult
 from .entity_access import BaseEntityAccess, EntityAccess, EntityMap, NameMap
@@ -21,8 +20,9 @@ from .stream import Stream
 from ..util.match import MatchAlias
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Mapping
+    from collections.abc import Iterable
 
+    from .models.volume import VolumeInfo
     from .storage_pool import StoragePool
 
 MATCH_ALIASES: Final = {
@@ -339,55 +339,17 @@ class Volume(Entity):
     def new_config(
         cls: type[Volume],
         /, *,
-        pool: StoragePool,
-        name: str,
-        capacity: int,
-        allocation: int | None = None,
-        vol_format: str | None = None,
-        nocow: str | None = None,
+        config: VolumeInfo,
         template: str | None = None,
     ) -> str:
         '''Create a new volume configuration from a template.
 
            If templating is not supported, a FeatureNotSupported error
            will be raised.'''
-        data: dict[str, dict[str, str] | str] = {
-            'name': name,
-            'capacity': str(capacity),
-            'target': dict(),
-        }
-
-        if capacity < 1:
-            raise ValueError('Volume capacity must be a positive integer.')
-
-        if allocation is not None:
-            if allocation > capacity or allocation < 0:
-                raise ValueError('Volume allocation must be a positive integer less than or equal to volume capacity.')
-
-            data['allocation'] = str(allocation)
-
-        pool_info: Mapping[str, Any] = POOL_TYPE_INFO[pool.pool_type]
-
-        if vol_format:
-            if not pool_info['volume']['formats']:
-                raise ValueError(f'Volume formats are not supported with pool type "{pool.pool_type}"')
-            elif vol_format not in pool_info['volume']['formats']:
-                raise ValueError(f'Volume format "{vol_format}" is not a supported format for volumes with a pool type of "{pool.pool_type}"')
-
-            data['format'] = vol_format
-
-        if nocow:
-            if not ('target' in pool_info['volume'] and pool_info['volume']['target'].get('nocow', False)):
-                raise ValueError(f'"nocow" parameter is not supported with pool type "{pool.pool_type}"')
-
-            assert isinstance(data['target'], dict)
-            data['target']['nocow'] = nocow
-
         return cls._render_config(
             template_name='volume.xml',
             template=template,
-            data=data,
-            pool=pool_info,
+            **config.model_dump(exclude_none=True),
         )
 
 

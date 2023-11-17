@@ -19,6 +19,7 @@ import pytest
 from lxml import etree
 
 from fvirt.libvirt import Hypervisor, InvalidOperation, LifecycleResult, StoragePool
+from fvirt.libvirt.models.volume import VolumeInfo
 from fvirt.libvirt.volume import MATCH_ALIASES, Volume
 from fvirt.util.match import MatchTarget
 
@@ -418,26 +419,23 @@ def test_volume_sparse_upload(live_volume: tuple[Volume, StoragePool, Hypervisor
 
 
 @pytest.mark.parametrize('data', (
-    {
+    VolumeInfo.model_validate({
         'name': 'vol',
+        'pool_type': 'dir',
         'capacity': 65536,
-    },
-    {
+        'format': 'raw',
+    }),
+    VolumeInfo.model_validate({
         'name': 'vol',
+        'pool_type': 'dir',
         'capacity': 65536,
         'allocation': 0,
-    },
-    {
-        'name': 'vol',
-        'capacity': 65536,
-        'vol_format': 'raw',
-    },
+        'format': 'raw',
+    }),
 ))
-def test_new_config(data: Any, live_pool: tuple[StoragePool, Hypervisor], virt_xml_validate: Callable[[str], None]) -> None:
+def test_new_config(data: VolumeInfo, virt_xml_validate: Callable[[str], None]) -> None:
     '''Test the new_config class method.'''
-    pool, _ = live_pool
-
-    doc = Volume.new_config(pool=pool, **data)
+    doc = Volume.new_config(config=data)
 
     assert isinstance(doc, str)
 

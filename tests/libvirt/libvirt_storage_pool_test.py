@@ -16,7 +16,8 @@ from lxml import etree
 
 from fvirt.libvirt import EntityRunning, Hypervisor, InvalidConfig, LifecycleResult, Volume
 from fvirt.libvirt.entity_access import EntityAccess
-from fvirt.libvirt.storage_pool import MATCH_ALIASES, POOL_TYPE_INFO, StoragePool, StoragePoolState
+from fvirt.libvirt.models.storage_pool import PoolInfo
+from fvirt.libvirt.storage_pool import MATCH_ALIASES, StoragePool, StoragePoolState
 from fvirt.util.match import MatchArgument, MatchTarget
 
 from .shared import (check_entity_access_get, check_entity_access_iterable, check_entity_access_mapping, check_entity_access_match,
@@ -32,61 +33,6 @@ def test_check_match_aliases(live_pool: tuple[StoragePool, Hypervisor]) -> None:
     '''Check typing for match aliases.'''
     pool, _ = live_pool
     check_match_aliases(MATCH_ALIASES, pool)
-
-
-def test_pool_type_info() -> None:
-    '''Check typing for POOL_TYPE_INFO.'''
-    assert isinstance(POOL_TYPE_INFO, dict)
-
-    for k, v in POOL_TYPE_INFO.items():
-        assert isinstance(k, str)
-        assert isinstance(v, dict)
-
-        assert 'type' in v
-        assert 'name' in v
-        assert 'pool' in v
-        assert 'volume' in v
-
-        assert k == v['type']
-
-        assert isinstance(v['name'], str)
-
-        assert isinstance(v['pool'], dict)
-
-        assert 'formats' in v['pool']
-        assert 'target' in v['pool']
-
-        for k2, v2 in v['pool'].items():
-            assert isinstance(k2, str)
-            assert isinstance(v2, dict)
-
-            match k2:
-                case 'formats':
-                    for k3, v3 in v2.items():
-                        assert isinstance(k3, str)
-                        assert isinstance(v3, str)
-                case _:
-                    for k3, v3 in v2.items():
-                        assert isinstance(k3, str)
-                        assert isinstance(v3, bool)
-
-        assert isinstance(v['volume'], dict)
-
-        assert 'formats' in v['volume']
-
-        for k2, v2 in v['volume'].items():
-            assert isinstance(k2, str)
-            assert isinstance(v2, dict)
-
-            match k2:
-                case 'formats':
-                    for k3, v3 in v2.items():
-                        assert isinstance(k3, str)
-                        assert isinstance(v3, str)
-                case _:
-                    for k3, v3 in v2.items():
-                        assert isinstance(k3, str)
-                        assert isinstance(v3, bool)
 
 
 def test_equality(
@@ -440,103 +386,150 @@ def test_entities(test_pool: tuple[StoragePool, Hypervisor], t: str) -> None:
 
 
 @pytest.mark.parametrize('data', (
-    {
-        'pool_type': 'dir',
+    PoolInfo.model_validate({
+        'type': 'dir',
         'name': 'pool',
-        'target_path': '/nonexistent',
-    },
-    {
-        'pool_type': 'fs',
+        'target': {
+            'path': '/nonexistent',
+        },
+    }),
+    PoolInfo.model_validate({
+        'type': 'fs',
         'name': 'pool',
-        'pool_format': 'auto',
-        'target_path': '/nonexistent',
-        'devices': '/dev/hda',
-    },
-    {
-        'pool_type': 'netfs',
+        'source': {
+            'format': 'auto',
+            'devices': [
+                '/dev/hda',
+            ],
+        },
+        'target': {
+            'path': '/nonexistent',
+        },
+    }),
+    PoolInfo.model_validate({
+        'type': 'netfs',
         'name': 'pool',
-        'pool_format': 'nfs',
-        'target_path': '/nonexistent',
-        'hosts': 'nfs.example.com',
-        'source_path': '/pool',
-        'protocol': 4,
-    },
-    {
-        'pool_type': 'logical',
+        'source': {
+            'format': 'nfs',
+            'hosts': [
+                'nfs.example.com',
+            ],
+            'protocol': 4,
+            'dir': '/pool',
+        },
+        'target': {
+            'path': '/nonexistent',
+        },
+    }),
+    PoolInfo.model_validate({
+        'type': 'logical',
         'name': 'pool',
-        'target_path': '/dev/HostVG',
-        'devices': [
-            '/dev/hda1',
-            '/dev/hdb1',
-            '/dev/hdc1',
-        ],
-    },
-    {
-        'pool_type': 'disk',
+        'source': {
+            'devices': [
+                '/dev/hda1',
+                '/dev/hdb1',
+                '/dev/hdc1',
+            ],
+        },
+        'target': {
+            'path': '/dev/HostVG',
+        },
+    }),
+    PoolInfo.model_validate({
+        'type': 'disk',
         'name': 'pool',
-        'pool_format': 'gpt',
-        'target_path': '/dev',
-        'devices': [
-            '/dev/hda',
-        ],
-    },
-    {
-        'pool_type': 'iscsi',
+        'source': {
+            'format': 'gpt',
+            'devices': [
+                '/dev/sda',
+            ],
+        },
+        'target': {
+            'path': '/dev',
+        },
+    }),
+    PoolInfo.model_validate({
+        'type': 'iscsi',
         'name': 'pool',
-        'target_path': '/dev/disk/by-path',
-        'hosts': [
-            'iscsi.example.com',
-        ],
-        'devices': [
-            'iqn.2013-06.com.example:iscsi-pool',
-        ],
-    },
-    {
-        'pool_type': 'iscsi-direct',
+        'source': {
+            'hosts': [
+                'iscsi.example.com',
+            ],
+            'devices': [
+                'iqn.2013-06.com.example:iscsi-pool',
+            ],
+        },
+        'target': {
+            'path': '/dev/disk/by-path',
+        }
+    }),
+    PoolInfo.model_validate({
+        'type': 'iscsi-direct',
         'name': 'pool',
-        'hosts': 'iscsi.example.com',
-        'devices': 'iqn.2013-06.com.example:iscsi-pool',
-        'initiator': 'iqn.2013-06.com.example:iscsi-initiator',
-    },
-    {
-        'pool_type': 'scsi',
+        'source': {
+            'hosts': [
+                'iscsi.example.com',
+            ],
+            'devices': [
+                'iqn.2013-06.com.example:iscsi-pool',
+            ],
+            'initiator': 'iqn.2013-06.com.example:iscsi-initiator',
+        },
+    }),
+    PoolInfo.model_validate({
+        'type': 'scsi',
         'name': 'pool',
-        'target_path': '/dev/disk/by-path',
-        'adapter': 'host0',
-    },
-    {
-        'pool_type': 'rbd',
+        'source': {
+            'adapter': 'host0',
+        },
+        'target': {
+            'path': '/dev/disk/by-path',
+        },
+    }),
+    PoolInfo.model_validate({
+        'type': 'rbd',
         'name': 'pool',
-        'source_name': 'pool',
-        'hosts': [
-            'mon1.example.com',
-            'mon2.example.com',
-            'mon3.example.com',
-        ],
-    },
-    {
-        'pool_type': 'gluster',
+        'source': {
+            'name': 'pool',
+            'hosts': [
+                'mon1.example.com',
+                'mon2.example.com',
+                'mon3.example.com',
+            ],
+        },
+    }),
+    PoolInfo.model_validate({
+        'type': 'gluster',
         'name': 'pool',
-        'source_name': 'pool',
-        'hosts': 'gluster.example.com',
-        'source_path': '/pool',
-    },
-    {
-        'pool_type': 'zfs',
+        'source': {
+            'name': 'pool',
+            'hosts': [
+                'gluster.example.com',
+            ],
+            'dir': '/pool',
+        },
+    }),
+    PoolInfo.model_validate({
+        'type': 'zfs',
         'name': 'pool',
-        'target_path': '/nonexistent',
-        'source_name': 'pool',
-    },
-    {
-        'pool_type': 'vstorage',
+        'source': {
+            'name': 'pool',
+        },
+    }),
+    PoolInfo.model_validate({
+        'type': 'vstorage',
         'name': 'pool',
-        'target_path': '/nonexistent',
-        'source_name': 'pool',
-    },
+        'target': {
+            'path': '/nonexistent',
+        },
+        'source': {
+            'name': 'pool',
+        },
+    }),
 ))
-def test_new_config(data: Any, virt_xml_validate: Callable[[str], None]) -> None:
+def test_new_config(data: PoolInfo, virt_xml_validate: Callable[[str], None]) -> None:
     '''Test the new_config class method.'''
-    doc = StoragePool.new_config(**data)
+    doc = StoragePool.new_config(config=data)
 
     assert isinstance(doc, str)
 
