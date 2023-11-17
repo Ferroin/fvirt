@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from enum import CONTINUOUS, UNIQUE, Enum, verify
 from time import sleep
-from typing import TYPE_CHECKING, Any, Final, Literal, NotRequired, Self, TypedDict, cast, overload
+from typing import TYPE_CHECKING, Any, Final, Literal, Self, cast, overload
 from uuid import UUID
 
 import libvirt
@@ -424,7 +424,7 @@ class Domain(RunnableEntity):
         return cls._render_config(
             template_name=f'domain/{ dom_type }.xml',
             template=template,
-            **config.dict(exclude_none=True),
+            **config.model_dump(exclude_none=True),
         )
 
 

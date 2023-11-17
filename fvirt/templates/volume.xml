@@ -1,18 +1,19 @@
 <?xml version='1.0'?>
 <volume>
-    <name>{{ data.name }}</name>
-    <capacity>{{ data.capacity }}</capacity>
-    {% if data.allocation %}
-    <allocation>{{ data.allocation }}</allocation>
+    <name>{{ name }}</name>
+    <capacity>{{ capacity }}</capacity>
+    {% if allocation is defined %}
+        <allocation>{{ allocation }}</allocation>
     {% endif %}
-    {% if target in pool.volume or pool.volume.formats %}
-    <target>
-        {% if pool.volume.formats and data.format %}
-        <format type='{{ data.format }}' />
-        {% endif %}
-        {% if 'nocow' in pool.volume.target and data.nocow %}
-        <nocow />
-        {% endif %}
-    </target>
+    {% if target %}
+        <target>
+            {% if format is defined %}
+                <format type='{{ format }}' />
+            {% endif %}
+            {% if nocow is defined and nocow %}
+                <nocow />
+            {% endif %}
+        </target>
     {% endif %}
+{# vim: set ft=jinja : #}
 </volume>
