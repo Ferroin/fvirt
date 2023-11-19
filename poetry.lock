@@ -1343,9 +1343,9 @@ pyyaml = "*"
 dev = ["doc8", "flake8", "flake8-import-order", "rstcheck[sphinx]", "sphinx"]
 
 [extras]
-templates = ["jinja2", "pydantic", "ruamel-yaml"]
+templates = ["jinja2", "psutil", "pydantic", "ruamel-yaml"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "6cf3acc526c3f0b563ee56de49c33358c5bb63a68ae7a57bc60a883b95483d28"
+content-hash = "61c24b80de9b46b48b6645197341ba0e1e504ada3f6e2c1ab636821d2501103e"

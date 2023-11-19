@@ -19,6 +19,7 @@ from collections.abc import Mapping, Sequence
 from typing import Literal, Self
 from uuid import UUID
 
+from psutil import cpu_count
 from pydantic import BaseModel, Field, ValidationInfo, field_validator, model_validator
 
 IPV4_PATTERN = re.compile(
@@ -51,7 +52,7 @@ class PCIAddress(BaseModel):
     slot: str = Field(pattern='^0x[0-9a-f]{2}$')
     function: str = Field(default='0x0', pattern='^0x[0-9a-f]$')
     domain: str | None = Field(default=None, pattern='^0x[0-9a-f]{4}$')
-    multifunction: str | None = Field(default=None)
+    multifunction: str | None = Field(default=None, pattern='^(on|off)$')
 
 
 class DriveAddress(BaseModel):
@@ -105,6 +106,88 @@ class CPUModelInfo(BaseModel):
     fallback: str | None = Field(default=None, min_length=1)
 
 
+class CPUTopology(BaseModel):
+    '''Model representing the CPU topology for a domain.
+
+       If `infer` is set to a value of 'threads', the threads property
+       will be automatically inferred from system topology if possible
+       using psutil.cpu_count(). This is useful for VMs which will have
+       their vcpus pinned to specific host CPUs.
+
+       `coalesce` indicates what level of topology the automatic fixup
+       based on vcpus should happen at. If the topology does not match the
+       number of vcpus, then the properties other than the one specified
+       by `coalesce` will be set to 1 and the property specified by
+       `coalesce` will be set to the number of vcpus. A value of None
+       for `coalesce` will try to minimize how many properties need to
+       be reset. If not using pinned vcpus, a value of 'sockets' is
+       recommended for `coalesce`.'''
+    infer: Literal['threads'] | None = Field(default=None)
+    coalesce: Literal['sockets', 'dies', 'cores', 'threads'] | None = Field(default=None)
+    sockets: int = Field(default=1, gt=0)
+    dies: int = Field(default=1, gt=0)
+    cores: int = Field(default=1, gt=0)
+    threads: int = Field(default=1, gt=0)
+
+    @model_validator(mode='after')
+    def infer_values(self: Self) -> Self:
+        if self.infer == 'threads':
+            lcpus = cpu_count(logical=True)
+            pcpus = cpu_count(logical=False)
+
+            if lcpus is not None and pcpus is not None:
+                self.threads = lcpus // pcpus
+
+        return self
+
+    @property
+    def total_cpus(self: Self) -> int:
+        '''Total number of logical CPUs described by the topology info.'''
+        return self.sockets * self.dies * self.cores * self.threads
+
+    def check(self: Self, vcpus: int) -> None:
+        '''Propery sync up the topology info with the vcpu count.
+
+           If the topology is valid for the number of vcpus, do nothing.
+
+           Otherwise if `coalesce` is set, set the property it specified
+           to the number of vcpus and all other properties to 1.
+
+           Otherwise, try to sync up the topology with the vcpu count
+           with minimal changes.
+
+           The exact manner in which this coerces the topology to match
+           the vcpu count is considered to be an implementation detail
+           and should not be relied on by users.'''
+        if vcpus < 1:
+            raise ValueError('Number of vcpus should be a positive integer')
+
+        if self.total_cpus == vcpus:
+            return
+
+        if self.coalesce is None:
+            if self.dies * self.cores * self.threads == vcpus:
+                self.sockets = 1
+                return
+
+            if self.cores * self.threads == vcpus:
+                self.sockets = 1
+                self.dies = 1
+                return
+
+            self.sockets = 1
+            self.dies = 1
+            self.cores = vcpus
+            self.threads = 1
+        else:
+            self.sockets = 1
+            self.dies = 1
+            self.cores = 1
+            self.threads = 1
+
+            setattr(self, self.coalesce, vcpus)
+
+
 class CPUInfo(BaseModel):
     '''Model representing the contents of the <cpu> element in domain XML.
 
@@ -125,42 +208,7 @@ class CPUInfo(BaseModel):
        `threads` indicates the number of threads per CPU core to use.'''
     mode: str | None = Field(default=None, min_length=1)
     model: CPUModelInfo | None = Field(default=None)
-    sockets: int = Field(default=1, gt=0)
-    dies: int = Field(default=1, gt=0)
-    cores: int = Field(gt=0)
-    threads: int = Field(default=1, gt=0)
-
-    @property
-    def total_cpus(self: Self) -> int:
-        '''Total number of logical CPUs described by the topology info.'''
-        return self.sockets * self.dies * self.cores * self.threads
-
-    def check_topology(self: Self, vcpus: int) -> None:
-        '''Propery sync up the topology info with the vcpu count.
-
-           If the topology is valid for the number of vcpus, do nothing.
-
-           Otherwise, try to sync up the topology with the vcpu count
-           with minimal changes.'''
-        if vcpus < 1:
-            raise ValueError('Number of vcpus should be a positive integer')
-
-        if self.total_cpus == vcpus:
-            return
-
-        if self.dies * self.cores * self.threads == vcpus:
-            self.sockets = 1
-            return
-
-        if self.cores * self.threads == vcpus:
-            self.sockets = 1
-            self.dies = 1
-            return
-
-        self.sockets = 1
-        self.dies = 1
-        self.cores = vcpus
-        self.threads = 1
+    topology: CPUTopology = Field(default_factory=CPUTopology)
 
 
 class OSFWLoaderInfo(BaseModel):
@@ -246,6 +294,9 @@ class OSInfo(BaseModel):
        program. The optional `idmap` property indicates ID mapping
        behavior to use.
 
+       A value of `test` for `variant` indicates the minimal OS setup
+       used for domains defined for the libvirt test driver.
+
        The optional `arch` property specifies the CPU architecture for
        the domain. A value of None indicates that this is unspecified.
 
@@ -256,8 +307,8 @@ class OSInfo(BaseModel):
        The optional `type` property specifies the type of domain, such
        as hvm or pv. A value of None indicates to use a sensible default
        for this.'''
+    variant: str = Field(pattern='^(firmware|host|direct|container|test)$')
     firmware: str | None = Field(default=None, min_length=1)
-    variant: Literal['firmware', 'host', 'direct', 'container', 'test']
     arch: str | None = Field(default=None, min_length=1)
     machine: str | None = Field(default=None, min_length=1)
     type: str | None = Field(default=None, min_length=1)
@@ -283,6 +334,9 @@ class OSInfo(BaseModel):
             case 'firmware':
                 if isinstance(self.loader, str):
                     raise ValueError('Loader must be an OSFWLoaderInfo instance for variant "firmware".')
+
+                if self.nvram is not None and self.loader is None:
+                    raise ValueError('NVRAM may only be specified if loader is also specified.')
 
                 invalid_props = {
                     'bootloader',
@@ -970,9 +1024,9 @@ class DomainInfo(BaseModel):
     def fixup_vcpus(self: Self) -> Self:
         if self.cpu is not None:
             if self.vcpu == 0:
-                self.vcpus = self.cpu.total_cpus
+                self.vcpus = self.cpu.topology.total_cpus
             else:
-                self.cpu.check_topology(self.vcpus)
+                self.cpu.topology.check(self.vcpus)
         elif self.vcpu == 0:
             self.vcpu = 1
 
