@@ -413,7 +413,6 @@ class Domain(RunnableEntity):
     def new_config(
         cls: type[Domain],
         /, *,
-        dom_type: str,
         config: DomainInfo,
         template: str | None = None,
     ) -> str:
@@ -422,7 +421,7 @@ class Domain(RunnableEntity):
            If templating is not supported, a FeatureNotSupported error
            will be raised.'''
         return cls._render_config(
-            template_name=f'domain/{ dom_type }.xml',
+            template_name='domain.xml',
             template=template,
             **config.model_dump(exclude_none=True),
         )
