@@ -5,10 +5,54 @@
 
 from __future__ import annotations
 
-from typing import Self
+import functools
+
+from typing import Final, Self
 from uuid import UUID
 
 from pydantic import BaseModel, Field, model_validator
+
+_FILE_POOL_TYPES: Final = {
+    'dir',
+    'fs',
+    'netfs',
+    'gluster',
+    'vstorage',
+}
+
+_DISK_POOL_TYPES: Final = {
+    'disk',
+}
+
+FORMATS: Final[dict[str, set[str]]] = {
+    'raw': _FILE_POOL_TYPES | {'rbd'},
+    'bochs': _FILE_POOL_TYPES,
+    'cloop': _FILE_POOL_TYPES,
+    'dmg': _FILE_POOL_TYPES,
+    'iso': _FILE_POOL_TYPES,
+    'qcow': _FILE_POOL_TYPES,
+    'qcow2': _FILE_POOL_TYPES,
+    'qed': _FILE_POOL_TYPES,
+    'vmdk': _FILE_POOL_TYPES,
+    'vpc': _FILE_POOL_TYPES,
+    'none': _DISK_POOL_TYPES,
+    'linux': _DISK_POOL_TYPES,
+    'fat16': _DISK_POOL_TYPES,
+    'fat32': _DISK_POOL_TYPES,
+    'linux-swap': _DISK_POOL_TYPES,
+    'linux-lvm': _DISK_POOL_TYPES,
+    'linux-raid': _DISK_POOL_TYPES,
+    'extended': _DISK_POOL_TYPES,
+}
+
+FORMAT_POOL_TYPES: Final = functools.reduce(lambda x, y: x | y, FORMATS.values())
+
+NOCOW_POOL_TYPES: Final = {
+    'dir',
+    'fs',
+}
+
+TARGET_POOL_TYPES: Final = FORMAT_POOL_TYPES | NOCOW_POOL_TYPES
 
 
 class VolumeInfo(BaseModel):
@@ -35,7 +79,7 @@ class VolumeInfo(BaseModel):
 
     @model_validator(mode='after')
     def check_nocow(self: Self) -> Self:
-        if self.pool_type not in {'dir', 'fs'}:
+        if self.pool_type not in NOCOW_POOL_TYPES:
             if self.nocow:
                 raise ValueError('"nocow" may not be True for volumes in "{ self.pool_type }" type pools.')
 
@@ -43,44 +87,14 @@ class VolumeInfo(BaseModel):
 
     @model_validator(mode='after')
     def check_format(self: Self) -> Self:
-        match self.pool_type:
-            case 'dir' | 'fs' | 'netfs' | 'gluster' | 'vstorage':
-                valid_formats = {
-                    'raw',
-                    'bochs',
-                    'cloop',
-                    'dmg',
-                    'iso',
-                    'qcow',
-                    'qcow2',
-                    'qed',
-                    'vmdk',
-                    'vpc',
-                }
-            case 'disk':
-                valid_formats = {
-                    'none',
-                    'linux',
-                    'fat16',
-                    'fat32',
-                    'linux-swap',
-                    'linux-lvm',
-                    'linux-raid',
-                    'extended',
-                }
-            case 'rbd':
-                valid_formats = {
-                    'raw',
-                }
-            case _:
-                valid_formats = set()
-
-        if valid_formats:
-            if self.format is not None:
-                if self.format not in valid_formats:
-                    raise ValueError(f'Format "{ self.format }" is not supported for volumes in "{ self.pool_type }" type pools.')
-            else:
+        if self.pool_type in FORMAT_POOL_TYPES:
+            if self.format is None:
                 raise ValueError(f'Format must be specified for volumes in "{ self.pool_type }" type pools.')
+            elif self.format not in FORMATS.keys():
+                raise ValueError(f'Unrecognized format "{ self.format }"')
+            else:
+                if self.pool_type not in FORMATS[self.format]:
+                    raise ValueError(f'Format "{ self.format }" is not supported for volumes in "{ self.pool_type }" type pools.')
         elif self.format is not None:
             raise ValueError(f'Format may not be specified for volumes in "{ self.pool_type }" type pools.')
 
@@ -88,7 +102,7 @@ class VolumeInfo(BaseModel):
 
     @model_validator(mode='after')
     def set_target(self: Self) -> Self:
-        if self.pool_type in {'logical', 'iscsi', 'iscsi-direct', 'scsi', 'multipath', 'zfs'}:
+        if self.pool_type not in TARGET_POOL_TYPES:
             self.target = False
 
         return self
