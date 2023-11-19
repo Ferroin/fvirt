@@ -8,7 +8,7 @@ from __future__ import annotations
 import enum
 
 from abc import ABC, abstractmethod
-from typing import Any, ClassVar, Literal, Self, TypeVar, cast, final
+from typing import Any, Literal, Self, TypeVar, cast, final
 from uuid import UUID
 
 import libvirt
@@ -18,7 +18,7 @@ from lxml import etree
 from .descriptors import MethodProperty
 from .exceptions import FeatureNotSupported, InsufficientPrivileges, InvalidEntity, NotConnected
 from .hypervisor import Hypervisor
-from ..util.templates import get_environment
+from ..templates import get_environment
 
 T = TypeVar('T')
 
