@@ -10,9 +10,10 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from fvirt.util.templates import get_environment
+from fvirt.templates import get_environment
 
 if TYPE_CHECKING:
+    from pathlib import Path
     from types import ModuleType
 
 
@@ -36,3 +37,18 @@ def test_get_environment() -> None:
 
     assert isinstance(env, jinja2.Environment)
     assert len(env.list_templates()) > 0
+
+
+def test_templates(tmp_path: Path) -> None:
+    '''Check that all templates compile correctly.'''
+    pytest.importorskip('jinja2', reason='Cannot run test without jinja2.')
+
+    env = get_environment()
+
+    assert env is not None
+
+    env.compile_templates(
+        target=str(tmp_path),
+        zip=None,
+        ignore_errors=False,
+    )
