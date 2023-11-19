@@ -1009,6 +1009,8 @@ class DomainInfo(BaseModel):
        should be inferred from topology information in the `cpu` property
        if possible, otherwise a default value should be used.'''
     name: str = Field(min_length=1)
+    type: Literal['hvf', 'kvm', 'lxc', 'vz', 'qemu', 'test', 'xen']
+    template_name: str | None = Field(default=None)
     uuid: UUID | None = Field(default=None)
     genid: UUID | None = Field(default=None)
     vcpu: int = Field(default=0, ge=0)
@@ -1019,6 +1021,11 @@ class DomainInfo(BaseModel):
     clock: ClockInfo = Field(default_factory=ClockInfo)
     features: FeaturesInfo = Field(default_factory=FeaturesInfo)
     devices: Devices = Field(default_factory=Devices)
+
+    @model_validator(mode='after')
+    def set_template_name(self: Self) -> Self:
+        self.template_name = f'domain/{ self.type }.xml'
+        return self
 
     @model_validator(mode='after')
     def fixup_vcpus(self: Self) -> Self:
