@@ -1303,6 +1303,17 @@ files = [
 pbr = ">=2.0.0,<2.1.0 || >2.1.0"
 
 [[package]]
+name = "types-psutil"
+version = "5.9.5.17"
+description = "Typing stubs for psutil"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "types-psutil-5.9.5.17.tar.gz", hash = "sha256:f7d8769812d72a4b513d7ec9eb5580fe2f6013fc270394a603cb6534811f3e4d"},
+    {file = "types_psutil-5.9.5.17-py3-none-any.whl", hash = "sha256:2161d166256084acf629d30aaf6bda8bee726ae1fea530559650281056b491fc"},
+]
+
+[[package]]
 name = "typing-extensions"
 version = "4.8.0"
 description = "Backported and Experimental Type Hints for Python 3.8+"
@@ -1348,4 +1359,4 @@ templates = ["jinja2", "psutil", "pydantic", "ruamel-yaml"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "61c24b80de9b46b48b6645197341ba0e1e504ada3f6e2c1ab636821d2501103e"
+content-hash = "01bc463972c16eb75b01dd8ebf9fa84367918c02790fa081d616331e001cb000"

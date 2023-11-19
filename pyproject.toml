@@ -47,6 +47,7 @@ pytest-xdist = "^3.5.0"
 ruamel-yaml = "^0.18.5"
 simple-file-lock = "^2023.6"
 yamllint = "^1.33.0"
+types-psutil = "^5.9.5.17"
 
 [tool.poetry.extras]
 templates = ["jinja2", "psutil", "pydantic", "ruamel-yaml"]
