@@ -30,6 +30,10 @@ IPV6_PATTERN = re.compile(
     r'^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$'
 )
 
+YES_NO = Literal['yes', 'no']
+ON_OFF = Literal['on', 'off']
+CHARDEV_SRC_TYPE = Literal['stdio', 'file', 'vc', 'null', 'pty', 'dev', 'pipe', 'tcp', 'unix', 'spiceport', 'nmdm']
+
 
 def is_valid_ipv4(ip: str) -> bool:
     match = IPV4_PATTERN.match(ip)
@@ -220,9 +224,9 @@ class OSFWLoaderInfo(BaseModel):
        The remaining attributes specifiy values for the corresponding
        attributes on the <loader> element. A value of None '''
     path: str | None = Field(default=None, min_length=1)
-    readonly: str | None = Field(default=None, pattern='^(yes|no)$')
-    secure: str | None = Field(default=None, pattern='^(yes|no)$')
-    stateless: str | None = Field(default=None, pattern='^(yes|no)$')
+    readonly: YES_NO | None = Field(default=None)
+    secure: YES_NO | None = Field(default=None)
+    stateless: YES_NO | None = Field(default=None)
     type: str | None = Field(default=None, min_length=1)
 
 
@@ -438,7 +442,7 @@ class ClockTimerInfo(BaseModel):
     name: str
     track: str | None = Field(default=None, min_length=1)
     tickpolicy: str | None = Field(default=None, min_length=1)
-    present: str | None = Field(default=None, pattern='^(yes|no)$')
+    present: YES_NO | None = Field(default=None)
 
 
 class ClockInfo(BaseModel):
@@ -463,7 +467,7 @@ class FeaturesHyperVSpinlocks(BaseModel):
 
        The `state` and `retries` properties correspond to the attributes
        of the same name on the <spinlocks /> element.'''
-    state: str = Field(pattern='^(on|off)$')
+    state: ON_OFF
     retries: int | None = Field(default=None, gt=4095)
 
 
@@ -472,8 +476,8 @@ class FeaturesHyperVSTimer(BaseModel):
 
        The `state` and `direct` properties correspond to the attributes
        of the same name on the <stime /> element.'''
-    state: str = Field(pattern='^(on|off)$')
-    direct: str | None = Field(default=None, pattern='^(on|off)$')
+    state: ON_OFF
+    direct: ON_OFF | None = Field(default=None)
 
 
 class FeaturesHyperVVendorID(BaseModel):
@@ -481,7 +485,7 @@ class FeaturesHyperVVendorID(BaseModel):
 
        The `state` and `value` properties correspond to the attributes
        of the same name on the <vendor_id /> element.'''
-    state: str = Field(pattern='^(on|off)$')
+    state: ON_OFF
     value: str | None = Field(default=None, min_length=1, max_length=12)
 
 
@@ -496,21 +500,21 @@ class FeaturesHyperVInfo(BaseModel):
        Other properties correspond to the elements of the same name
        that would be put in the <hyperv> element in the config.'''
     mode: Literal['passthrough', 'custom'] = Field(default='passthrough')
-    avic: str | None = Field(default=None, pattern='^(on|off)$')
-    evmcs: str | None = Field(default=None, pattern='^(on|off)$')
-    frequencies: str | None = Field(default=None, pattern='^(on|off)$')
-    ipi: str | None = Field(default=None, pattern='^(on|off)$')
-    reenlightenment: str | None = Field(default=None, pattern='^(on|off)$')
-    relaxed: str | None = Field(default=None, pattern='^(on|off)$')
-    reset: str | None = Field(default=None, pattern='^(on|off)$')
-    runtime: str | None = Field(default=None, pattern='^(on|off)$')
+    avic: ON_OFF | None = Field(default=None)
+    evmcs: ON_OFF | None = Field(default=None)
+    frequencies: ON_OFF | None = Field(default=None)
+    ipi: ON_OFF | None = Field(default=None)
+    reenlightenment: ON_OFF | None = Field(default=None)
+    relaxed: ON_OFF | None = Field(default=None)
+    reset: ON_OFF | None = Field(default=None)
+    runtime: ON_OFF | None = Field(default=None)
     spinlocks: FeaturesHyperVSpinlocks | None = Field(default=None)
     stimer: FeaturesHyperVSTimer | None = Field(default=None)
-    synic: str | None = Field(default=None, pattern='^(on|off)$')
-    tlbflush: str | None = Field(default=None, pattern='^(on|off)$')
-    vapic: str | None = Field(default=None, pattern='^(on|off)$')
+    synic: ON_OFF | None = Field(default=None)
+    tlbflush: ON_OFF | None = Field(default=None)
+    vapic: ON_OFF | None = Field(default=None)
     vendor_id: FeaturesHyperVVendorID | None = Field(default=None)
-    vpindex: str | None = Field(default=None, pattern='^(on|off)$')
+    vpindex: ON_OFF | None = Field(default=None)
 
     @model_validator(mode='after')
     def fixup_mode(self: Self) -> Self:
@@ -527,7 +531,7 @@ class FeaturesKVMDirtyRing(BaseModel):
 
        The properties correspond to the equivalently named attributes
        on the <dirty-ring /> element.'''
-    state: str = Field(pattern='^(on|off)$')
+    state: ON_OFF
     size: int | None = Field(default=None, ge=1024, le=65536)
 
     @field_validator('size')
@@ -545,10 +549,10 @@ class FeaturesKVMInfo(BaseModel):
        The properties correspond to the equivalently named elements that
        can be found in the <kvm> element in the domain configuration.'''
     dirty_ring: FeaturesKVMDirtyRing | None = Field(default=None)
-    hidden: str | None = Field(default=None, pattern='^(on|off)$')
-    hint_dedicated: str | None = Field(default=None, pattern='^(on|off)$')
-    poll_control: str | None = Field(default=None, pattern='^(on|off)$')
-    pv_ipi: str | None = Field(default=None, pattern='^(on|off)$')
+    hidden: ON_OFF | None = Field(default=None)
+    hint_dedicated: ON_OFF | None = Field(default=None)
+    poll_control: ON_OFF | None = Field(default=None)
+    pv_ipi: ON_OFF | None = Field(default=None)
 
 
 class FeaturesXenPassthrough(BaseModel):
@@ -556,8 +560,8 @@ class FeaturesXenPassthrough(BaseModel):
 
        The properties correspond to the equivalently named attributes
        on the <passthrough /> element.'''
-    state: str = Field(pattern='^(on|off)$')
-    mode: str | None = Field(default=None, pattern='^(sync|share)_pt$')
+    state: ON_OFF
+    mode: Literal['sync_pt', 'share_pt'] | None = Field(default=None)
 
 
 class FeaturesXenInfo(BaseModel):
@@ -565,7 +569,7 @@ class FeaturesXenInfo(BaseModel):
 
        The properties correspond to the equivalently named elements that
        can be found in the <xen> element in the domain configuration.'''
-    e820_host: str | None = Field(default=None, pattern='^(on|off)$')
+    e820_host: ON_OFF | None = Field(default=None)
     passthrough: FeaturesXenPassthrough | None = Field(default=None)
 
 
@@ -584,7 +588,7 @@ class FeaturesAPICInfo(BaseModel):
        on the <apic /> element in the domain configuration. A value of
        None for that property indicates that an <apic /> element should
        be present, but should not have any attributes.'''
-    eoi: str | None = Field(default=None, pattern='^(on|off)$')
+    eoi: ON_OFF | None = Field(default=None)
 
 
 class FeaturesGICInfo(BaseModel):
@@ -594,7 +598,7 @@ class FeaturesGICInfo(BaseModel):
        name on the <gic /> element in the domain configuration. A value
        of None for that property indicates that an <gic /> element should
        be present, but should not have any attributes.'''
-    version: str | None = Field(default=None, pattern='^([23]|host)$')
+    version: Literal['2', '3', 'host'] | None = Field(default=None)
 
 
 class FeaturesIOAPICInfo(BaseModel):
@@ -604,7 +608,7 @@ class FeaturesIOAPICInfo(BaseModel):
        name on the <ioapic /> element in the domain configuration. A
        value of None for that property indicates that an <ioapic />
        element should be present, but should not have any attributes.'''
-    driver: str | None = Field(default=None, pattern='^(kvm|qemu)$')
+    driver: Literal['kvm', 'qemu'] | None = Field(default=None)
 
 
 class FeaturesCapabilities(BaseModel):
@@ -616,7 +620,7 @@ class FeaturesCapabilities(BaseModel):
        The `modify` property is a mapping of capability names to
        capability states, with each entry corresponding to an element
        under the <capabilities> element.'''
-    policy: str = Field(pattern='^(default|allow|deny)$')
+    policy: Literal['default', 'allow', 'deny']
     modify: Mapping[str, str] = Field(default_factory=dict)
 
     @field_validator('modify')
@@ -637,20 +641,20 @@ class FeaturesInfo(BaseModel):
        configuration.'''
     acpi: bool | None = Field(default=None)
     apic: FeaturesAPICInfo | None = Field(default=None)
-    async_teardown: str | None = Field(default=None, pattern='^(yes|no)$')
+    async_teardown: ON_OFF | None = Field(default=None)
     caps: FeaturesCapabilities | None = Field(default=None)
     gic: FeaturesGICInfo | None = Field(default=None)
-    hap: str | None = Field(default=None, pattern='^(on|off)$')
-    htm: str | None = Field(default=None, pattern='^(on|off)$')
+    hap: ON_OFF | None = Field(default=None)
+    htm: ON_OFF | None = Field(default=None)
     hyperv: FeaturesHyperVInfo | None = Field(default=None)
     kvm: FeaturesKVMInfo | None = Field(default=None)
     pae: bool | None = Field(default=None)
-    pmu: str | None = Field(default=None, pattern='^(on|off)$')
-    pvspinlock: str | None = Field(default=None, pattern='^(on|off)$')
-    smm: str | None = Field(default=None, pattern='^(on|off)$')
+    pmu: ON_OFF | None = Field(default=None)
+    pvspinlock: ON_OFF | None = Field(default=None)
+    smm: ON_OFF | None = Field(default=None)
     tcg: FeaturesTCGInfo | None = Field(default=None)
-    vmcoreinfo: str | None = Field(default=None, pattern='^(on|off)$')
-    vmport: str | None = Field(default=None, pattern='^(on|off)$')
+    vmcoreinfo: ON_OFF | None = Field(default=None)
+    vmport: ON_OFF | None = Field(default=None)
     xen: FeaturesXenInfo | None = Field(default=None)
 
 
@@ -684,7 +688,7 @@ class DiskTargetInfo(BaseModel):
     dev: str = Field(min_length=1)
     addr: PCIAddress | DriveAddress | None = Field(default=None)
     bus: str | None = Field(default=None, min_length=1)
-    removable: str | None = Field(default=None, pattern='^(on|off)$')
+    removable: ON_OFF | None = Field(default=None)
     rotation_rate: int | None = Field(default=None, gt=0, lt=65535)
 
     @model_validator(mode='after')
@@ -714,14 +718,21 @@ class DiskTargetInfo(BaseModel):
 
 class DiskDevice(BaseModel):
     '''Model representing a disk device in domain config.'''
-    type: str = Field(min_length=1)
+    type: Literal['file', 'block', 'volume']
     src: str | DiskVolumeSrcInfo
     target: DiskTargetInfo
     boot: int | None = Field(default=None, gt=0)
-    device: str | None = Field(default=None, pattern='^(disk|floppy|cdrom|lun)$')
+    device: Literal['disk', 'floppy', 'cdrom', 'lun'] | None = Field(default=None)
     readonly: bool = Field(default=False)
-    snapshot: str | None = Field(default=None, pattern='^(internal|external|manual|no)$')
-    startup: str | None = Field(default=None, pattern='^(mandatory|requisite|optional)$')
+    snapshot: Literal['internal', 'external', 'manual', 'no'] | None = Field(default=None)
+    startup: Literal['mandatory', 'requisite', 'optional'] | None = Field(default=None)
+
+    @model_validator(mode='after')
+    def check_startup(self: Self) -> Self:
+        if self.startup is not None and self.type not in {'file', 'volume'}:
+            raise ValueError('Startup property is only supported for "file" or "volume" type disks.')
+
+        return self
 
 
 class FilesystemDriverInfo(BaseModel):
@@ -734,14 +745,14 @@ class FilesystemDriverInfo(BaseModel):
 
 class Filesystem(BaseModel):
     '''Model representing a filesystem device in domain config.'''
-    type: str = Field(min_length=1)
+    type: Literal['mount', 'template', 'file', 'block', 'ram', 'bind']
     source: str = Field(min_length=1)
     target: str = Field(min_length=1)
-    accessmode: str | None = Field(default=None, min_length=1)
+    accessmode: Literal['passthrough', 'mapped', 'squash'] | None = Field(default=None)
     dmode: str | None = Field(default=None, min_length=1)
     driver: FilesystemDriverInfo | None = Field(default=None)
     fmode: str | None = Field(default=None, min_length=1)
-    multidev: str | None = Field(default=None, min_length=1)
+    multidev: Literal['default', 'remap', 'forbid', 'warn'] | None = Field(default=None)
     readonly: bool = Field(default=False)
     src_type: str | None = Field(default=None, min_length=1)
 
@@ -789,9 +800,9 @@ class NetworkIPInfo(BaseModel):
 
 class NetworkInterface(BaseModel):
     '''Model representing a network interface in domain configuration.'''
-    type: str = Field(min_length=1)
+    type: Literal['network', 'bridge', 'direct', 'user']
     src: str | None = Field(default=None, min_length=1)
-    mode: str | None = Field(default=None, min_length=1)
+    mode: Literal['vepa', 'bridge', 'private', 'passthrough'] | None = Field(default=None)
     target: str | None = Field(default=None, min_length=1)
     mac: str | None = Field(default=None, pattern='^([0-9a-f]{2}:){5}[0-9a-f]{2}$')
     boot: int | None = Field(default=None, gt=0)
@@ -803,15 +814,15 @@ class NetworkInterface(BaseModel):
 class InputSource(BaseModel):
     '''Model representing an input device source.'''
     dev: str = Field(min_length=1)
-    grab: str | None = Field(default=None, pattern='^all$')
-    repeat: str | None = Field(default=None, pattern='^(on|off)$')
+    grab: Literal['all'] | None = Field(default=None)
+    repeat: ON_OFF | None = Field(default=None)
     grabToggle: str | None = Field(default=None, min_length=1)
 
 
 class InputDevice(BaseModel):
     '''Model representing an input device in domain configuration.'''
-    type: str = Field(min_length=1)
-    bus: str | None = Field(default=None, min_length=1)
+    type: Literal['keyboard', 'mouse', 'tablet', 'passthrough', 'evdev']
+    bus: Literal['usb', 'ps2', 'virtio', 'xen'] | None = Field(default=None)
     model: str | None = Field(default=None, min_length=1)
     src: InputSource | None = Field(default=None)
 
@@ -825,7 +836,7 @@ class InputDevice(BaseModel):
 
 class GraphicsListener(BaseModel):
     '''Model for listener entries in graphics elements.'''
-    type: str = Field(pattern='^(address|network|socket|none)$')
+    type: Literal['address', 'network', 'socket', 'none']
     address: str | None = Field(default=None, min_length=1)
     network: str | None = Field(default=None, min_length=1)
     socket: str | None = Field(default=None, min_length=1)
@@ -862,32 +873,39 @@ class GraphicsListener(BaseModel):
 
 class GraphicsDevice(BaseModel):
     '''Model representing a graphics output interface in domain configuration.'''
-    type: str = Field(min_length=1)
+    type: Literal['vnc', 'spice', 'rdb']
     listeners: Sequence[GraphicsListener] = Field(default_factory=list)
     port: int | None = Field(default=None, gt=0, lt=65536)
     tlsPort: int | None = Field(default=None, gt=0, lt=65536)
-    autoport: str | None = Field(default=None, pattern='^(yes|no)$')
+    autoport: YES_NO | None = Field(default=None)
     socket: str | None = Field(default=None, min_length=1)
     passwd: str | None = Field(default=None, min_length=1)
     passwdValidTo: str | None = Field(default=None, min_length=1)
     keymap: str | None = Field(default=None, min_length=1)
-    connected: str | None = Field(default=None, pattern='^(keep|disconnect|fail)$')
-    sharePolicy: str | None = Field(default=None, pattern='^(allow-exclusive|force-shared|ignore)$')
+    connected: Literal['keep', 'disconnect', 'fail'] | None = Field(default=None)
+    sharePolicy: Literal['allow-exclusive', 'force-shared', 'ignore'] | None = Field(default=None)
     powerControl: str | None = Field(default=None, min_length=1)
     websocket: int | None = Field(default=None, gt=0, lt=65536)
     audio: str | None = Field(default=None, min_length=1)
-    defaultMode: str | None = Field(default=None, pattern='^(secure|insecure|any)$')
+    defaultMode: Literal['secure', 'insecure', 'any'] | None = Field(default=None)
     channels: Mapping[str, str] = Field(default_factory=dict)
-    multiUser: str | None = Field(default=None, pattern='^(yes|no)$')
-    replaceUser: str | None = Field(default=None, pattern='^(yes|no)$')
+    multiUser: YES_NO | None = Field(default=None)
+    replaceUser: YES_NO | None = Field(default=None)
 
 
 class VideoDevice(BaseModel):
     '''Model representing a GPU device in domain configuration.'''
-    type: str = Field(min_length=1)
-    vram: int | None = Field(default=None, gt=1024)
+    type: Literal['vga', 'cirrus', 'vmvga', 'xen', 'vbox', 'virtio', 'gop', 'bochs', 'ramfb', 'none']
+    vram: int | None = Field(default=None, ge=1024)
     heads: int | None = Field(default=None, gt=0)
-    blob: str | None = Field(default=None, pattern='^(on|off)$')
+    blob: ON_OFF | None = Field(default=None)
+
+    @model_validator(mode='after')
+    def check_vram(self: Self) -> Self:
+        if self.vram is not None and (self.vram & (self.vram-1) != 0):
+            raise ValueError('VRAM amount must be a power of 2')
+
+        return self
 
 
 class CharDevSource(BaseModel):
@@ -897,7 +915,7 @@ class CharDevSource(BaseModel):
     mode: str | None = Field(default=None, min_length=1)
     host: str | None = Field(default=None, min_length=1)
     service: int | None = Field(default=None, gt=0, lt=65536)
-    tls: str | None = Field(default=None, pattern='^(yes|no)$')
+    tls: YES_NO | None = Field(default=None)
 
 
 class CharDevTarget(BaseModel):
@@ -912,13 +930,13 @@ class CharDevTarget(BaseModel):
 class CharDevLog(BaseModel):
     '''Model representing log config for a character device.'''
     file: str = Field(min_length=1)
-    append: str | None = Field(default=None, pattern='^(on|off)$')
+    append: ON_OFF | None = Field(default=None)
 
 
 class CharacterDevice(BaseModel):
     '''Model representing a character device in domain configuration.'''
-    category: str = Field(pattern='^(parallel|serial|console|channel)$')
-    type: str = Field(pattern='^(stdio|file|vc|null|pty|dev|pipe|tcp|unix|spiceport)$')
+    category: Literal['parallel', 'serial', 'console', 'channel']
+    type: CHARDEV_SRC_TYPE
     target: CharDevTarget
     src: CharDevSource | None = Field(default=None)
     log: CharDevLog | None = Field(default=None)
@@ -927,13 +945,13 @@ class CharacterDevice(BaseModel):
 class WatchdogDevice(BaseModel):
     '''Model representing a watchdog device in domain configuration.'''
     model: str = Field(min_length=1)
-    action: str | None = Field(default=None, pattern='^(reset|shutdown|poweroff|pause|none|dump|inject-nmi)$')
+    action: Literal['reset', 'shutdown', 'poweroff', 'pause', 'none', 'dump', 'inject-nmi'] | None = Field(default=None)
 
 
 class RNGBackend(CharDevSource):
     '''Model representing a backend for an RNG device in domain configuration.'''
-    model: str = Field(default='builtin', pattern='^(random|builtin|egd)$')
-    type: str | None = Field(default=None, pattern='^(stdio|file|vc|null|pty|dev|pipe|tcp|unix|spiceport)$')
+    model: Literal['random', 'builtin', 'egd'] = Field(default='builtin')
+    type: CHARDEV_SRC_TYPE | None = Field(default=None)
 
 
 class RNGDevice(BaseModel):
@@ -945,12 +963,12 @@ class RNGDevice(BaseModel):
 
 class TPMDevice(BaseModel):
     '''Model representing a TPM device in domain configuration.'''
-    type: str = Field(pattern='^(passthrough|emulator)$')
-    model: str | None = Field(default=None, min_length=1)
+    type: Literal['passthrough', 'emulator']
+    model: Literal['tpm-tis', 'tpm-crb', 'tpm-spapr', 'tpm-spapr-proxy'] | None = Field(default=None)
     dev: str | None = Field(default=None, min_length=1)
     encryption: str | None = Field(default=None, min_length=1)
-    version: str | None = Field(default=None, min_length=1)
-    persistent_state: str | None = Field(default=None, min_length=1)
+    version: Literal['1.2', '2.0'] | None = Field(default=None)
+    persistent_state: YES_NO | None = Field(default=None)
     active_pcr_banks: Sequence[str] = Field(default_factory=list)
 
     @model_validator(mode='after')

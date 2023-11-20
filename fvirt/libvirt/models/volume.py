@@ -65,7 +65,7 @@ class VolumeInfo(BaseModel):
     pool_type: str = Field(min_length=1)
     allocation: int | None = Field(default=None, ge=0)
     uuid: UUID | None = Field(default=None)
-    format: str | None = Field(default=None)
+    format: str | None = Field(default=None, pattern=f'^({"|".join(FORMATS.keys())})')
     nocow: bool = Field(default=False)
     target: bool = Field(default=True)
 
