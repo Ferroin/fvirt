@@ -1,6 +1,6 @@
 {# vim: set ft=jinja : #}
-{% extends 'domains/_base.xml' %}
-{% import 'domains/_macros.xml' %}
+{% extends 'domain/_base.xml' %}
+{% import 'domain/_macros.xml' as macros %}
 {% block type %}test{% endblock %}
 {% block os %}
     <os>
@@ -9,10 +9,10 @@
 {% endblock %}
 {% block devices %}
     {% for disk in disks %}
-        {{ disk(disk) }}
+        {{ macros.disk(disk) }}
     {% endfor %}
     {% for interface in networks %}
-        {{ network(interface) }}
+        {{ macros.network(interface) }}
     {% endfor %}
-    {{ memballoon({'model': 'virtio'}) }}
+    {{ macros.memballoon({'model': 'virtio'}) }}
 {% endblock %}

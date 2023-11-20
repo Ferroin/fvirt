@@ -506,51 +506,63 @@ def test_domain_access_mapping(test_hv: Hypervisor, p: str, k: Sequence[Any], c:
     check_entity_access_mapping(test_hv.domains, p, k, c, Domain)
 
 
-@pytest.mark.parametrize('t, d', (
-    ('test', DomainInfo.model_validate({
+@pytest.mark.parametrize('data', (
+    DomainInfo.model_validate({
         'name': 'test',
-        'memory': 64,
+        'type': 'test',
+        'memory': 65536,
         'os': {
             'variant': 'test',
             'arch': 'i686',
         },
-    })),
-    ('lxc', DomainInfo.model_validate({
+    }),
+    DomainInfo.model_validate({
         'name': 'test',
-        'memory': 64,
+        'type': 'lxc',
+        'memory': 65536,
         'os': {
             'variant': 'container',
+            'init': '/sbin/init',
         },
-    })),
-    ('openvz', DomainInfo.model_validate({
+    }),
+    DomainInfo.model_validate({
         'name': '100',
-        'memory': 64,
+        'type': 'vz',
+        'memory': 65536,
         'os': {
             'variant': 'container',
+            'init': '/sbin/init',
         },
-    })),
-    ('kvm', DomainInfo.model_validate({
+    }),
+    DomainInfo.model_validate({
         'name': 'test',
-        'memory': 64,
+        'type': 'kvm',
+        'memory': 65536,
         'vcpu': 4,
+        'cpu': {},
         'os': {
             'variant': 'firmware',
             'firmware': 'efi',
             'arch': 'x86_64',
         },
-    })),
-    ('xen', DomainInfo.model_validate({
+    }),
+    DomainInfo.model_validate({
         'name': 'test',
-        'memory': 64,
+        'type': 'xen',
+        'memory': 65536,
         'vcpu': 4,
+        'cpu': {},
         'os': {
             'variant': 'host',
-            'bootloader': 'test_loader',
-            'arch': 'x86_64',
-            'machine': 'xenpv',
+            'bootloader': '/usr/bin/test_loader',
             'type': 'linux',
         },
-    })),
+    }),
 ))
-def test_new_config(t: str, d: DomainInfo, virt_xml_validate: Callable[[str], None]) -> None:
+def test_new_config(data: DomainInfo, virt_xml_validate: Callable[[str], None]) -> None:
     '''Test domain templating.'''
+    doc = Domain.new_config(config=data)
+
+    assert isinstance(doc, str)
+
+    virt_xml_validate(doc)

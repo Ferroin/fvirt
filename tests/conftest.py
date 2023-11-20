@@ -251,7 +251,11 @@ def virt_xml_validate(tmp_path: Path) -> Callable[[str], None]:
         path = tmp_path / 'test.xml'
         path.write_text(doc)
 
-        xml = etree.XML(doc)
+        try:
+            xml = etree.XML(doc)
+        except Exception as err:
+            assert False, f'{"".join(format_exception(err))}\n\n{doc}'
+
         e = xml.find('.')
         assert e is not None
         schema = e.tag

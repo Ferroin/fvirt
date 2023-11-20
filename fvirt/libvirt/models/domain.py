@@ -386,6 +386,9 @@ class OSInfo(BaseModel):
                     'idmap',
                 }
             case 'container':
+                if self.init is None or not self.init:
+                    raise ValueError('"init" properrty must be defined for variant "container".')
+
                 invalid_props = {
                     'loader',
                     'nvram',
@@ -1010,7 +1013,7 @@ class DomainInfo(BaseModel):
        if possible, otherwise a default value should be used.'''
     name: str = Field(min_length=1)
     type: Literal['hvf', 'kvm', 'lxc', 'vz', 'qemu', 'test', 'xen']
-    template_name: str | None = Field(default=None)
+    sub_template: str | None = Field(default=None)
     uuid: UUID | None = Field(default=None)
     genid: UUID | None = Field(default=None)
     vcpu: int = Field(default=0, ge=0)
@@ -1023,17 +1026,17 @@ class DomainInfo(BaseModel):
     devices: Devices = Field(default_factory=Devices)
 
     @model_validator(mode='after')
-    def set_template_name(self: Self) -> Self:
-        self.template_name = f'domain/{ self.type }.xml'
+    def set_sub_template(self: Self) -> Self:
+        self.sub_template = f'domain/{ self.type }.xml'
         return self
 
     @model_validator(mode='after')
     def fixup_vcpus(self: Self) -> Self:
         if self.cpu is not None:
             if self.vcpu == 0:
-                self.vcpus = self.cpu.topology.total_cpus
+                self.vcpu = self.cpu.topology.total_cpus
             else:
-                self.cpu.topology.check(self.vcpus)
+                self.cpu.topology.check(self.vcpu)
         elif self.vcpu == 0:
             self.vcpu = 1
 

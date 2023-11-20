@@ -30,15 +30,31 @@ def get_environment(importer: Callable[..., ModuleType] = import_module) -> jinj
        it’s more efficient to call this once and cache the result
        yourself.'''
     try:
-        jinja2 = importer('jinja2')
-
-        # Check other mandatory deps
+        importer('jinja2')
         importer('psutil')
         importer('pydantic')
     except ImportError:
         return None
 
-    return jinja2.Environment(  # type: ignore
+    import jinja2
+
+    return jinja2.Environment(
         loader=jinja2.PackageLoader('fvirt', 'templates'),
         autoescape=jinja2.select_autoescape(),
+        trim_blocks=True,
+        lstrip_blocks=True,
     )
+
+
+def template_filter(name: str) -> bool:
+    '''Filter for use with list_templates and compile_templates.'''
+    if name.startswith('__') or \
+       name.startswith('.') or \
+       name.endswith('.py') or \
+       name.endswith('.pyc') or \
+       name.endswith('.pyo') or \
+       name.endswith('.swp') or \
+       name.endswith('~'):
+        return False
+
+    return True

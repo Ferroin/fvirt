@@ -1,5 +1,6 @@
 <?xml version='1.0'?>
 <domain type='{% block type required %}{% endblock %}' {% block xmlns %}{% endblock %}>
+{% import 'domain/_macros.xml' as macros %}
     <name>{{ name }}</name>
     {% if uuid %}<uuid>{{ uuid }}</uuid>{% endif %}
     {% if genid %}<genid>{{ genid }}</genid>{% else %}<genid />{% endif %}
@@ -15,27 +16,27 @@
         {% if 'min' in memtune and memtune.min %}<min_guarantee unit='bytes'>{{ memtune.min }}</min_guarantee>{% endif %}
     </memtune>
     {% endif %}
-    {% block os required %}
+    {% block os required %}{% endblock %}
     {% if on_poweroff %}<on_poweroff>{{ on_poweroff }}</on_poweroff>{% endif %}
     {% if on_reboot %}<on_reboot>{{ on_reboot }}</on_reboot>{% endif %}
     {% if on_crash %}<on_crash>{{ on_crash }}</on_crash>{% endif %}
     {% if on_lockfailure %}<on_lockfailure>{{ on_lockfailure }}</on_lockfailure>{% endif %}
-    {% block cpu %}
+    {% block cpu %}{% endblock %}
     {% if clock is defined %}
-        <clock offset='{{ clock.offset }}' {{ add_attrs(clock, 'timezone', 'basis', 'adjustment', 'start') }}>
+        <clock offset='{{ clock.offset }}' {{ macros.add_attrs(clock, ('timezone', 'basis', 'adjustment', 'start')) }}>
             {% for timer in clock.timers %}
-                <timer {{ add_attrs(timer, {'name', 'tickpolicy', 'track', 'present'}) }} />
+                <timer {{ macros.add_attrs(timer, ('name', 'tickpolicy', 'track', 'present')) }} />
             {% endfor %}
         </clock>
     {% else %}
         <clock offset='utc' />
     {% endif %}
     <features>
-        {% block features %}
+        {% block features %}{% endblock %}
     </features>
     <devices>
-        {% block devices required %}
+        {% block devices required %}{% endblock %}
     </devices>
-    {% block extra %}
+    {% block extra %}{% endblock %}
 {# vim: set ft=jinja : #}
 </domain>
