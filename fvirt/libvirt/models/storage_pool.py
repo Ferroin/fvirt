@@ -8,7 +8,7 @@ from __future__ import annotations
 import functools
 
 from collections.abc import Sequence
-from typing import Final, Self
+from typing import Final, Literal, Self
 from uuid import UUID
 
 from pydantic import BaseModel, Field, model_validator
@@ -123,15 +123,17 @@ TYPES: Final = {
     'multipath',
 } | SOURCE_TYPES | TARGET_TYPES
 
+YES_NO = Literal['yes', 'no']
+
 
 class PoolFeatures(BaseModel):
     '''Model representing features for a storage pool.'''
-    cow: str | None = Field(default=None, pattern='^(yes|no)$')
+    cow: YES_NO | None = Field(default=None)
 
 
 class PoolSource(BaseModel):
     '''Model representing the source for a storage pool.'''
-    format: str | None = Field(default=None, min_length=1)
+    format: str | None = Field(default=None, pattern=f'^({"|".join(FORMATS.keys())})$')
     dir: str | None = Field(default=None, min_length=1)
     devices: Sequence[str] | None = Field(default=None, min_length=1)
     hosts: Sequence[str] | None = Field(default=None, min_length=1)

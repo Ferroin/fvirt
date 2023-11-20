@@ -199,6 +199,8 @@
         <source mode='{{ src.mode }}' path='{{ src.path }}' />
     {% elif type == 'tcp' %}
         <source {{ add_attrs(src, ('mode', 'host', 'service', 'tls')) }} />
+    {% elif type == 'nmdm' %}
+        <source master='{{ src.path }}A' slave='{{ src.path }}B' />
     {% endif %}
 {% endmacro %}
 

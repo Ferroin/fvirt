@@ -44,7 +44,7 @@ def test_PoolFeatures_invalid(d: dict) -> None:
 
 @pytest.mark.parametrize('d', (
     {
-        'format': 'test',
+        'format': 'auto',
     },
     {
         'dir': 'test',
