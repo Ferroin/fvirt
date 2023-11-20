@@ -1,6 +1,5 @@
 {# vim: set ft=jinja : #}
-{% extends 'domains/_vm.xml' %}
-{% import 'domains/_macros.xml' %}
+{% extends 'domain/_vm.xml' %}
 {% block xmlns %}xmlns:qemu='http://libvirt.org/schemas/domain/qemu/1.0'{% endblock %}
 {% block extra %}
     {% if extra %}

@@ -1,0 +1,12 @@
+{# vim: set ft=jinja : #}
+{% extends 'domain/_container.xml' %}
+{% import 'domain/_macros.xml' as macros %}
+{% block type %}vz{% endblock %}
+{% block devices %}
+    {% for fs in filesystems %}
+        {{ macros.filesystem(fs) }}
+    {% endfor %}
+    {% for interface in networks %}
+        {{ macros.network(interface) }}
+    {% endfor %}
+{% endblock %}

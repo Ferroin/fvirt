@@ -1,5 +1,5 @@
 {# vim: set ft=jinja : #}
-{% extends 'domains/_base.xml' %}
+{% extends 'domain/_base.xml' %}
 {% block os %}
     <os>
         <type{% if 'arch' in os %} arch='{{ os.arch }}'{% endif %}>exe</type>
@@ -14,7 +14,7 @@
                 <initenv name='{{ k }}'>{{ v }}</initenv>
             {% endfor %}
         {% endif %}
-        {% for elem in ['initdir', 'inituser', 'initgroup'] %}
+        {% for elem in ('initdir', 'inituser', 'initgroup') %}
             {% if elem in os %}
                 <{{ elem }}>{{ os[elem] }}</{{ elem }}>
             {% endif %}

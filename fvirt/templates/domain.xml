@@ -3,4 +3,4 @@
    on the type property of the Domain model passed to the templating
    function.
 #}
-{% include template_name %}
+{% include sub_template %}

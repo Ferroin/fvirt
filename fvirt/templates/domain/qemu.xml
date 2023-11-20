@@ -1,5 +1,5 @@
 {# vim: set ft=jinja : #}
-{% extends 'domains/_base_qemu.xml' %}
+{% extends 'domain/_base_qemu.xml' %}
 {% block type %}qemu{% endblock %}
 {% block features %}
     {% if 'tcg' in features %}

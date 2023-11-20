@@ -414,7 +414,7 @@ class Entity(ABC):
         else:
             tmpl = env.from_string(template)
 
-        return tmpl.render(**kwargs)
+        return tmpl.render(**kwargs).lstrip().rstrip()
 
 
 class RunnableEntity(Entity):

@@ -1,6 +1,6 @@
 {# vim: set ft=jinja : #}
-{% extends 'domains/_vm.xml' %}
-{% import 'domains/_macros.xml' %}
+{% extends 'domain/_vm.xml' %}
+{% import 'domain/_macros.xml' as macros %}
 {% block type %}xen{% endblock %}
 {% block xmlns %}xmlns:xen="http://libvirt.org/schemas/domain/xen/1.0"{% endblock %}
 {% block features %}
@@ -10,7 +10,7 @@
                 <e820_host state='{{ features.xen.e820_host }}' />
             {% endif %}
             {% if 'passthrough' in features.xen and features.xen.passthrough %}
-                <passthrough state='{{ features.xen.passthrough.state }}'{{ add_attrs(features.xen.passthrough, {'mode'}) }} />
+                <passthrough state='{{ features.xen.passthrough.state }}'{{ macros.add_attrs(features.xen.passthrough, ('mode',)) }} />
             {% endif %}
         </xen>
     {% endif %}
