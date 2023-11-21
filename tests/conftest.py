@@ -35,11 +35,12 @@ if TYPE_CHECKING:
 if not sys.warnoptions:
     import warnings
 
-    warnings.simplefilter('default', category=DeprecationWarning)
-    warnings.simplefilter('default', category=SyntaxWarning)
-    warnings.simplefilter('default', category=RuntimeWarning)
-    warnings.simplefilter('default', category=PendingDeprecationWarning)
-    os.environ['PYTHONWARNINGS'] = 'default::DeprecationWarning,default::SyntaxWarning,default::RuntimeWarning,default::PendingDeprecationWarning'
+    warnings.filterwarnings('default', category=DeprecationWarning, module='^fvirt')
+    warnings.filterwarnings('default', category=SyntaxWarning)
+    warnings.filterwarnings('default', category=RuntimeWarning)
+    warnings.filterwarnings('default', category=PendingDeprecationWarning, module='^fvirt')
+    os.environ['PYTHONWARNINGS'] = \
+        'default::DeprecationWarning:fvirt,default::SyntaxWarning,default::RuntimeWarning,default::PendingDeprecationWarning:fvirt'
 
 
 FAIL_NON_RUNNABLE = os.environ.get('FVIRT_FAIL_NON_RUNNABLE_TESTS', 0)

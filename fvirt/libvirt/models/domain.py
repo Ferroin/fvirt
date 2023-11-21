@@ -13,41 +13,18 @@
 
 from __future__ import annotations
 
-import re
-
 from collections.abc import Mapping, Sequence
+from ipaddress import IPv4Address, IPv6Address
 from typing import Literal, Self
 from uuid import UUID
 
 from psutil import cpu_count
 from pydantic import BaseModel, Field, ValidationInfo, field_validator, model_validator
-
-IPV4_PATTERN = re.compile(
-    r'^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$'
-)
-
-IPV6_PATTERN = re.compile(
-    r'^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$'
-)
+from pydantic_extra_types.mac_address import MacAddress
 
 YES_NO = Literal['yes', 'no']
 ON_OFF = Literal['on', 'off']
 CHARDEV_SRC_TYPE = Literal['stdio', 'file', 'vc', 'null', 'pty', 'dev', 'pipe', 'tcp', 'unix', 'spiceport', 'nmdm']
-
-
-def is_valid_ipv4(ip: str) -> bool:
-    match = IPV4_PATTERN.match(ip)
-    if match:
-        octets = [int(match.group(i)) for i in range(1, 5)]
-
-        if all(0 <= octet <= 255 for octet in octets):
-            return True
-
-    return False
-
-
-def is_valid_ipv6(ip: str) -> bool:
-    return bool(IPV6_PATTERN.match(ip))
 
 
 class PCIAddress(BaseModel):
@@ -805,19 +782,20 @@ class NetworkVPort(BaseModel):
 
 class NetworkIPInfo(BaseModel):
     '''Model representing IP config for a user network driver.'''
-    address: str
+    address: IPv4Address | IPv6Address
     prefix: int
 
     @model_validator(mode='after')
     def check_model(self: Self) -> Self:
-        if is_valid_ipv4(self.address):
-            if self.prefix not in range(1, 32):
-                raise ValueError('Prefix must be an integer between 1 and 31 inclusive for an IPv4 address.')
-        elif is_valid_ipv6(self.address):
-            if self.prefix not in range(1, 128):
-                raise ValueError('Prefix must be an integer between 1 and 127 inclusive for an IPv6 address.')
-        else:
-            raise ValueError(f'"{ self.address }" does not appear to be a valid IPv4 or IPv6 address.')
+        match self.address:
+            case IPv4Address():
+                if self.prefix not in range(1, 32):
+                    raise ValueError('Prefix must be an integer between 1 and 31 inclusive for an IPv4 address.')
+            case IPv6Address():
+                if self.prefix not in range(1, 128):
+                    raise ValueError('Prefix must be an integer between 1 and 127 inclusive for an IPv6 address.')
+            case _:
+                raise RuntimeError
 
         return self
 
@@ -828,7 +806,7 @@ class NetworkInterface(BaseModel):
     src: str | None = Field(default=None, min_length=1)
     mode: Literal['vepa', 'bridge', 'private', 'passthrough'] | None = Field(default=None)
     target: str | None = Field(default=None, min_length=1)
-    mac: str | None = Field(default=None, pattern='^([0-9a-f]{2}:){5}[0-9a-f]{2}$')
+    mac: MacAddress | None = Field(default=None)
     boot: int | None = Field(default=None, gt=0)
     virtualport: NetworkVPort | None = Field(default=None)
     ipv4: NetworkIPInfo | None = Field(default=None)
