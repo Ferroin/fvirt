@@ -358,6 +358,9 @@ class OSInfo(BaseModel):
                     'idmap',
                 }
             case 'host':
+                if self.bootloader is None:
+                    raise ValueError('Bootloader must be specified for variant "host".')
+
                 invalid_props = {
                     'loader',
                     'nvram',
@@ -376,6 +379,9 @@ class OSInfo(BaseModel):
             case 'direct':
                 if isinstance(self.loader, OSFWLoaderInfo):
                     raise ValueError('Loader must be a string for variant "direct".')
+
+                if self.kernel is None:
+                    raise ValueError('Kernel must be specified for variant "direct".')
 
                 invalid_props = {
                     'nvram',
@@ -439,9 +445,9 @@ class ClockTimerInfo(BaseModel):
 
        All properties correspond directly to the attributes of the same
        name for the resultant <timer /> element.'''
-    name: str
-    track: str | None = Field(default=None, min_length=1)
-    tickpolicy: str | None = Field(default=None, min_length=1)
+    name: Literal['platform', 'hpet', 'kvmclock', 'pit', 'rtc', 'tsc', 'hypervclock', 'armvtimer']
+    track: Literal['boot', 'guest', 'wall', 'realtime'] | None = Field(default=None)
+    tickpolicy: Literal['delay', 'catchup', 'merge', 'discard'] | None = Field(default=None)
     present: YES_NO | None = Field(default=None)
 
 
@@ -461,6 +467,24 @@ class ClockInfo(BaseModel):
     start: int | None = Field(default=None)
     timers: Sequence[ClockTimerInfo] = Field(default_factory=list)
 
+    @model_validator(mode='after')
+    def check_required_attrs(self: Self) -> Self:
+        match self.offset:
+            case 'timezone':
+                if self.tz is None:
+                    raise ValueError('A timezone must be specified using the "tz" property if offset is set to "timezone".')
+            case 'variable':
+                if self.basis is None:
+                    raise ValueError('The "basis" property must be specified if offset is set to "variable".')
+
+                if self.adjustment is None:
+                    raise ValueError('The "adjustment" property must be specified if offset is set to "variable".')
+            case 'absolute':
+                if self.start is None:
+                    raise ValueError('The "start" property must be specified if offset is set to "absolute".')
+
+        return self
+
 
 class FeaturesHyperVSpinlocks(BaseModel):
     '''Model representing Hyper-V spinlock config for domain features.
@@ -468,14 +492,14 @@ class FeaturesHyperVSpinlocks(BaseModel):
        The `state` and `retries` properties correspond to the attributes
        of the same name on the <spinlocks /> element.'''
     state: ON_OFF
-    retries: int | None = Field(default=None, gt=4095)
+    retries: int | None = Field(default=None, ge=4096)
 
 
 class FeaturesHyperVSTimer(BaseModel):
     '''Model representing Hyper-V stimer config for domain features.
 
        The `state` and `direct` properties correspond to the attributes
-       of the same name on the <stime /> element.'''
+       of the same name on the <stimer /> element.'''
     state: ON_OFF
     direct: ON_OFF | None = Field(default=None)
 
@@ -598,7 +622,7 @@ class FeaturesGICInfo(BaseModel):
        name on the <gic /> element in the domain configuration. A value
        of None for that property indicates that an <gic /> element should
        be present, but should not have any attributes.'''
-    version: Literal['2', '3', 'host'] | None = Field(default=None)
+    version: Literal[2, '2', 3, '3', 'host'] | None = Field(default=None)
 
 
 class FeaturesIOAPICInfo(BaseModel):

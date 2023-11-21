@@ -12,7 +12,10 @@ import pytest
 from psutil import cpu_count
 from pydantic import ValidationError
 
-from fvirt.libvirt.models.domain import (CPUInfo, CPUModelInfo, CPUTopology, DataRate, DriveAddress, MemtuneInfo, OSContainerIDMapEntry,
+from fvirt.libvirt.models.domain import (ClockInfo, ClockTimerInfo, CPUInfo, CPUModelInfo, CPUTopology, DataRate, DriveAddress, FeaturesAPICInfo,
+                                         FeaturesCapabilities, FeaturesGICInfo, FeaturesHyperVInfo, FeaturesHyperVSpinlocks, FeaturesHyperVSTimer,
+                                         FeaturesHyperVVendorID, FeaturesInfo, FeaturesIOAPICInfo, FeaturesKVMDirtyRing, FeaturesKVMInfo,
+                                         FeaturesTCGInfo, FeaturesXenInfo, FeaturesXenPassthrough, MemtuneInfo, OSContainerIDMapEntry,
                                          OSContainerIDMapInfo, OSFWLoaderInfo, OSFWNVRAMInfo, OSInfo, PCIAddress)
 
 
@@ -679,6 +682,77 @@ def test_OSContainerIDMapInfo_invalid(d: dict) -> None:
             'template': '/nonexistent3',
         },
     },
+    {
+        'variant': 'host',
+        'bootloader': '/usr/bin/boot',
+    },
+    {
+        'variant': 'host',
+        'bootloader': '/usr/bin/boot',
+        'bootloader_args': 'test',
+    },
+    {
+        'variant': 'direct',
+        'kernel': 'test',
+    },
+    {
+        'variant': 'direct',
+        'kernel': 'test',
+        'initrd': 'test',
+    },
+    {
+        'variant': 'direct',
+        'kernel': 'test',
+        'cmdline': 'test',
+    },
+    {
+        'variant': 'direct',
+        'kernel': 'test',
+        'dtb': 'test',
+    },
+    {
+        'variant': 'direct',
+        'kernel': 'test',
+        'loader': 'test',
+    },
+    {
+        'variant': 'direct',
+        'kernel': 'test',
+        'initrd': 'test',
+        'loader': 'test',
+        'dtb': 'test',
+    },
+    {
+        'variant': 'container',
+        'init': '/sbin/init',
+    },
+    {
+        'variant': 'container',
+        'init': '/sbin/init',
+        'initargs': [
+            'test',
+        ],
+        'initenv': {
+            'TEST': '1',
+        },
+        'initdir': '/',
+        'inituser': 'root',
+        'initgroup': 'root',
+        'idmap': {
+            'uid': {
+                'target': 0,
+                'count': 65536,
+            },
+            'gid': {
+                'target': 0,
+                'count': 65536,
+            },
+        },
+    },
+    {
+        'variant': 'test',
+        'arch': 'x86_64',
+    },
 ))
 def test_OSInfo_valid(d: dict) -> None:
     '''Check validation of known-good OSInfo dicts.'''
@@ -706,8 +780,788 @@ def test_OSInfo_valid(d: dict) -> None:
         'variant': 'firmware',
         'init': '/nonexistent',
     },
+    {
+        'variant': 'host',
+    },
+    {
+        'variant': 'host',
+        'bootloader': '',
+    },
+    {
+        'variant': 'host',
+        'loader': '/nonexistent',
+    },
+    {
+        'variant': 'host',
+        'init': '/nonexistent',
+    },
+    {
+        'variant': 'direct',
+        'kernel': '',
+    },
+    {
+        'variant': 'direct',
+    },
+    {
+        'variant': 'direct',
+        'init': '/nonexistent',
+    },
+    {
+        'variant': 'container',
+    },
+    {
+        'variant': 'container',
+        'init': '',
+    },
+    {
+        'variant': 'container',
+        'loader': 'test',
+    },
+    {
+        'variant': 'container',
+        'kernel': 'test',
+    },
+    {
+        'variant': 'test',
+    },
+    {
+        'variant': 'test',
+        'arch': 'x86_64',
+        'loader': 'test',
+    },
+    {
+        'variant': 'test',
+        'arch': 'x86_64',
+        'kernel': 'test',
+    },
+    {
+        'variant': 'test',
+        'arch': 'x86_64',
+        'init': '/sbin/init',
+    },
 ))
 def test_OSInfo_invalid(d: dict) -> None:
     '''Check validation of known-bad OSInfo dicts.'''
     with pytest.raises(ValidationError):
         OSInfo.model_validate(d)
+
+
+@pytest.mark.parametrize('d', (
+    {
+        'name': 'platform',
+    },
+    {
+        'name': 'rtc',
+        'track': 'boot',
+    },
+    {
+        'name': 'tsc',
+        'tickpolicy': 'delay',
+    },
+    {
+        'name': 'hpet',
+        'present': 'no',
+    },
+))
+def test_ClockTimerInfo_valid(d: dict) -> None:
+    '''Check validation of known-good ClockTimerInfo dicts.'''
+    ClockTimerInfo.model_validate(d)
+
+
+@pytest.mark.parametrize('d', (
+    dict(),
+    {
+        'name': '',
+    },
+    {
+        'name': 'rtc',
+        'track': 'utc',
+    },
+    {
+        'name': 'tsc',
+        'tickpolicy': 'skew',
+    },
+    {
+        'name': 'hpet',
+        'present': 'maybe',
+    }
+))
+def test_ClockTimerInfo_invalid(d: dict) -> None:
+    '''Check validation of known-bad ClockTimerInfo dicts.'''
+    with pytest.raises(ValidationError):
+        ClockTimerInfo.model_validate(d)
+
+
+@pytest.mark.parametrize('d', (
+    dict(),
+    {
+        'offset': 'utc',
+    },
+    {
+        'offset': 'localtime',
+    },
+    {
+        'offset': 'timezone',
+        'tz': 'America/New_York',
+    },
+    {
+        'offset': 'variable',
+        'basis': 'utc',
+        'adjustment': '0',
+    },
+    {
+        'offset': 'variable',
+        'basis': 'localtime',
+        'adjustment': '0',
+    },
+    {
+        'offset': 'absolute',
+        'start': 0,
+    },
+))
+def test_ClockInfo_valid(d: dict) -> None:
+    '''Check validation of known-good ClockInfo dicts.'''
+    ClockInfo.model_validate(d)
+
+
+@pytest.mark.parametrize('d', (
+    {
+        'offset': '',
+    },
+    {
+        'offset': 'timzeone',
+    },
+    {
+        'offset': 'timezone',
+        'tz': '',
+    },
+    {
+        'offset': 'variable',
+        'adjustment': '0',
+    },
+    {
+        'offset': 'variable',
+        'basis': 'utc',
+    },
+    {
+        'offset': 'variable',
+        'basis': '',
+        'adjustment': '0',
+    },
+    {
+        'offset': 'variable',
+        'basis': 'utc',
+        'adjustment': '',
+    },
+    {
+        'offset': 'absolute',
+    },
+))
+def test_ClockInfo_invalid(d: dict) -> None:
+    '''Check validation of known-bad ClockInfo dicts.'''
+    with pytest.raises(ValidationError):
+        ClockInfo.model_validate(d)
+
+
+@pytest.mark.parametrize('d', (
+    {
+        'state': 'on',
+    },
+    {
+        'state': 'off',
+    },
+    {
+        'state': 'on',
+        'retries': 4096,
+    },
+))
+def test_FeaturesHyperVSpinlocks_valid(d: dict) -> None:
+    '''Check validation of known-good FeaturesHyperVSpinlocks dicts.'''
+    FeaturesHyperVSpinlocks.model_validate(d)
+
+
+@pytest.mark.parametrize('d', (
+    dict(),
+    {
+        'retries': 4096,
+    },
+    {
+        'state': 'on',
+        'retries': 0,
+    },
+    {
+        'state': '',
+    },
+))
+def test_FeaturesHyperVSpinlocks_invalid(d: dict) -> None:
+    '''Check validation of known-bad FeaturesHyperVSpinlocks dicts.'''
+    with pytest.raises(ValidationError):
+        FeaturesHyperVSpinlocks.model_validate(d)
+
+
+@pytest.mark.parametrize('d', (
+    {
+        'state': 'on',
+    },
+    {
+        'state': 'off',
+    },
+    {
+        'state': 'on',
+        'direct': 'on',
+    },
+    {
+        'state': 'on',
+        'direct': 'off',
+    },
+))
+def test_FeaturesHyperVSTimer_valid(d: dict) -> None:
+    '''Check validation of known-good FeaturesHyperVSTimer dicts.'''
+    FeaturesHyperVSTimer.model_validate(d)
+
+
+@pytest.mark.parametrize('d', (
+    dict(),
+    {
+        'state': '',
+    },
+    {
+        'state': 'on',
+        'direct': '',
+    },
+))
+def test_FeaturesHyperVSTimer_invalid(d: dict) -> None:
+    '''Check validation of known-bad FeaturesHyperVSTimer dicts.'''
+    with pytest.raises(ValidationError):
+        FeaturesHyperVSTimer.model_validate(d)
+
+
+@pytest.mark.parametrize('d', (
+    {
+        'state': 'on',
+    },
+    {
+        'state': 'off',
+    },
+    {
+        'state': 'on',
+        'value': 'test',
+    },
+))
+def test_FeaturesHyperVVendorID_valid(d: dict) -> None:
+    '''Check validation of known-good FeaturesHyperVVendorID dicts.'''
+    FeaturesHyperVVendorID.model_validate(d)
+
+
+@pytest.mark.parametrize('d', (
+    dict(),
+    {
+        'state': '',
+    },
+    {
+        'state': 'on',
+        'value': '',
+    },
+    {
+        'state': 'on',
+        'value': 'verylongvendorid',
+    },
+))
+def test_FeaturesHyperVVendorID_invalid(d: dict) -> None:
+    '''Check validation of known-bad FeaturesHyperVVendorID dicts.'''
+    with pytest.raises(ValidationError):
+        FeaturesHyperVVendorID.model_validate(d)
+
+
+@pytest.mark.parametrize('d', (
+    dict(),
+    {
+        'mode': 'passthrough',
+    },
+    {
+        'mode': 'custom',
+    },
+    {
+        'avic': 'on',
+        'evmcs': 'on',
+        'frequencies': 'on',
+        'ipi': 'on',
+        'reenlightenment': 'on',
+        'relaxed': 'on',
+        'reset': 'on',
+        'runtime': 'on',
+        'synic': 'on',
+        'tlbflush': 'on',
+        'vapic': 'on',
+        'vpindex': 'on',
+        'spinlocks': {
+            'state': 'on',
+        },
+        'stimer': {
+            'state': 'on',
+        },
+        'vendor_id': {
+            'state': 'on',
+            'value': 'test',
+        },
+    },
+    {
+        'avic': 'off',
+        'evmcs': 'off',
+        'frequencies': 'off',
+        'ipi': 'off',
+        'reenlightenment': 'off',
+        'relaxed': 'off',
+        'reset': 'off',
+        'runtime': 'off',
+        'synic': 'off',
+        'tlbflush': 'off',
+        'vapic': 'off',
+        'vpindex': 'off',
+        'spinlocks': {
+            'state': 'off',
+        },
+        'stimer': {
+            'state': 'off',
+        },
+        'vendor_id': {
+            'state': 'off',
+        },
+    },
+))
+def test_FeaturesHyperVInfo_valid(d: dict) -> None:
+    '''Check validation of known-good FeaturesHyperVInfo dicts.'''
+    FeaturesHyperVInfo.model_validate(d)
+
+
+@pytest.mark.parametrize('d', (
+    {
+        'mode': '',
+    },
+))
+def test_FeaturesHyperVInfo_invalid(d: dict) -> None:
+    '''Check validation of known-bad FeaturesHyperVInfo dicts.'''
+    with pytest.raises(ValidationError):
+        FeaturesHyperVInfo.model_validate(d)
+
+
+@pytest.mark.parametrize('d', (
+    {
+        'state': 'on',
+    },
+    {
+        'state': 'off',
+    },
+    {
+        'state': 'on',
+        'size': 1024,
+    },
+    {
+        'state': 'on',
+        'size': 65536,
+    },
+))
+def test_FeaturesKVMDirtyRing_valid(d: dict) -> None:
+    '''Check validation of known-good FeaturesKVMDirtyRing dicts.'''
+    FeaturesKVMDirtyRing.model_validate(d)
+
+
+@pytest.mark.parametrize('d', (
+    dict(),
+    {
+        'state': '',
+    },
+    {
+        'state': 'on',
+        'size': 0,
+    },
+    {
+        'state': 'on',
+        'size': 256,
+    },
+    {
+        'state': 'on',
+        'size': 131072,
+    },
+    {
+        'state': 'on',
+        'size': 5000,
+    },
+))
+def test_FeaturesKVMDirtyRing_invalid(d: dict) -> None:
+    '''Check validation of known-bad FeaturesKVMDirtyRing dicts.'''
+    with pytest.raises(ValidationError):
+        FeaturesKVMDirtyRing.model_validate(d)
+
+
+@pytest.mark.parametrize('d', (
+    dict(),
+    {
+        'dirty_ring': {
+            'state': 'on',
+        },
+        'hidden': 'on',
+        'hint_dedicated': 'on',
+        'poll_control': 'on',
+        'pv_ipi': 'on',
+    },
+    {
+        'dirty_ring': {
+            'state': 'off',
+        },
+        'hidden': 'off',
+        'hint_dedicated': 'off',
+        'poll_control': 'off',
+        'pv_ipi': 'off',
+    },
+))
+def test_FeaturesKVMInfo_valid(d: dict) -> None:
+    '''Check validation of known-good FeaturesKVMInfo dicts.'''
+    FeaturesKVMInfo.model_validate(d)
+
+
+@pytest.mark.parametrize('d', (
+    {
+        'hidden': '',
+    },
+    {
+        'hint_dedicated': '',
+    },
+    {
+        'poll_control': '',
+    },
+    {
+        'pv_ipi': '',
+    },
+))
+def test_FeaturesKVMInfo_invalid(d: dict) -> None:
+    '''Check validation of known-bad FeaturesKVMInfo dicts.'''
+    with pytest.raises(ValidationError):
+        FeaturesKVMInfo.model_validate(d)
+
+
+@pytest.mark.parametrize('d', (
+    {
+        'state': 'on',
+    },
+    {
+        'state': 'off',
+    },
+    {
+        'state': 'on',
+        'mode': 'sync_pt',
+    },
+    {
+        'state': 'on',
+        'mode': 'share_pt',
+    },
+))
+def test_FeaturesXenPassthrough_valid(d: dict) -> None:
+    '''Check validation of known-good FeaturesXenPassthrough dicts.'''
+    FeaturesXenPassthrough.model_validate(d)
+
+
+@pytest.mark.parametrize('d', (
+    dict(),
+    {
+        'state': '',
+    },
+    {
+        'state': 'on',
+        'mode': '',
+    },
+))
+def test_FeaturesXenPassthrough_invalid(d: dict) -> None:
+    '''Check validation of known-bad FeaturesXenPassthrough dicts.'''
+    with pytest.raises(ValidationError):
+        FeaturesXenPassthrough.model_validate(d)
+
+
+@pytest.mark.parametrize('d', (
+    dict(),
+    {
+        'e820_host': 'on',
+        'passthrough': {
+            'state': 'on',
+        },
+    },
+    {
+        'e820_host': 'off',
+        'passthrough': {
+            'state': 'off',
+        },
+    },
+))
+def test_FeaturesXenInfo_valid(d: dict) -> None:
+    '''Check validation of known-good FeaturesXenInfo dicts.'''
+    FeaturesXenInfo.model_validate(d)
+
+
+@pytest.mark.parametrize('d', (
+    {
+        'e820_host': '',
+    },
+))
+def test_FeaturesXenInfo_invalid(d: dict) -> None:
+    '''Check validation of known-bad FeaturesXenInfo dicts.'''
+    with pytest.raises(ValidationError):
+        FeaturesXenInfo.model_validate(d)
+
+
+@pytest.mark.parametrize('d', (
+    dict(),
+    {
+        'tb_cache': 128,
+    },
+))
+def test_FeaturesTCGInfo_valid(d: dict) -> None:
+    '''Check validation of known-good FeaturesTCGInfo dicts.'''
+    FeaturesTCGInfo.model_validate(d)
+
+
+@pytest.mark.parametrize('d', (
+    {
+        'tb_cache': 0,
+    },
+))
+def test_FeaturesTCGInfo_invalid(d: dict) -> None:
+    '''Check validation of known-bad FeaturesTCGInfo dicts.'''
+    with pytest.raises(ValidationError):
+        FeaturesTCGInfo.model_validate(d)
+
+
+@pytest.mark.parametrize('d', (
+    dict(),
+    {
+        'eoi': 'on',
+    },
+    {
+        'eoi': 'off',
+    },
+))
+def test_FeaturesAPICInfo_valid(d: dict) -> None:
+    '''Check validation of known-good FeaturesAPICInfo dicts.'''
+    FeaturesAPICInfo.model_validate(d)
+
+
+@pytest.mark.parametrize('d', (
+    {
+        'eoi': '',
+    },
+))
+def test_FeaturesAPICInfo_invalid(d: dict) -> None:
+    '''Check validation of known-bad FeaturesAPICInfo dicts.'''
+    with pytest.raises(ValidationError):
+        FeaturesAPICInfo.model_validate(d)
+
+
+@pytest.mark.parametrize('d', (
+    dict(),
+    {
+        'version': '2',
+    },
+    {
+        'version': '3',
+    },
+    {
+        'version': 'host',
+    },
+    {
+        'version': 2,
+    },
+    {
+        'version': 3,
+    },
+))
+def test_FeaturesGICInfo_valid(d: dict) -> None:
+    '''Check validation of known-good FeaturesGICInfo dicts.'''
+    FeaturesGICInfo.model_validate(d)
+
+
+@pytest.mark.parametrize('d', (
+    {
+        'version': '',
+    },
+    {
+        'version': 0,
+    },
+))
+def test_FeaturesGICInfo_invalid(d: dict) -> None:
+    '''Check validation of known-bad FeaturesGICInfo dicts.'''
+    with pytest.raises(ValidationError):
+        FeaturesGICInfo.model_validate(d)
+
+
+@pytest.mark.parametrize('d', (
+    dict(),
+    {
+        'driver': 'kvm',
+    },
+    {
+        'driver': 'qemu',
+    },
+))
+def test_FeaturesIOAPICInfo_valid(d: dict) -> None:
+    '''Check validation of known-good FeaturesIOAPICInfo dicts.'''
+    FeaturesIOAPICInfo.model_validate(d)
+
+
+@pytest.mark.parametrize('d', (
+    {
+        'driver': '',
+    },
+))
+def test_FeaturesIOAPICInfo_invalid(d: dict) -> None:
+    '''Check validation of known-bad FeaturesIOAPICInfo dicts.'''
+    with pytest.raises(ValidationError):
+        FeaturesIOAPICInfo.model_validate(d)
+
+
+@pytest.mark.parametrize('d', (
+    {
+        'policy': 'allow',
+    },
+    {
+        'policy': 'deny',
+    },
+    {
+        'policy': 'default',
+    },
+    {
+        'policy': 'deny',
+        'modify': dict(),
+    },
+    {
+        'policy': 'default',
+        'modify': {
+            'mknod': 'on',
+            'dac_override': 'off',
+        },
+    },
+))
+def test_FeaturesCapabilities_valid(d: dict) -> None:
+    '''Check validation of known-good FeaturesCapabilities dicts.'''
+    FeaturesCapabilities.model_validate(d)
+
+
+@pytest.mark.parametrize('d', (
+    dict(),
+    {
+        'policy': '',
+    },
+    {
+        'policy': 'none',
+    },
+    {
+        'policy': 'deny',
+        'modify': {
+            'mknod': '',
+        },
+    },
+))
+def test_FeaturesCapabilities_invalid(d: dict) -> None:
+    '''Check validation of known-bad FeaturesCapabilities dicts.'''
+    with pytest.raises(ValidationError):
+        FeaturesCapabilities.model_validate(d)
+
+
+@pytest.mark.parametrize('d', (
+    dict(),
+    {
+        'acpi': True,
+        'apic': dict(),
+        'async_teardown': 'on',
+        'caps': {
+            'policy': 'allow',
+        },
+        'gic': dict(),
+        'hap': 'on',
+        'htm': 'on',
+        'hyperv': dict(),
+        'kvm': dict(),
+        'pae': True,
+        'pmu': 'on',
+        'pvspinlock': 'on',
+        'smm': 'on',
+        'tcg': dict(),
+        'vmcoreinfo': 'on',
+        'vmport': 'on',
+        'xen': dict(),
+    },
+    {
+        'acpi': False,
+        'apic': {
+            'eoi': 'off',
+        },
+        'async_teardown': 'off',
+        'caps': {
+            'policy': 'allow',
+        },
+        'gic': {
+            'version': 'host',
+        },
+        'hap': 'off',
+        'htm': 'off',
+        'hyperv': {
+            'mode': 'passthrough',
+        },
+        'kvm': {
+            'hidden': 'on',
+        },
+        'pae': False,
+        'pmu': 'off',
+        'pvspinlock': 'off',
+        'smm': 'off',
+        'tcg': {
+            'tb_cache': 256,
+        },
+        'vmcoreinfo': 'off',
+        'vmport': 'off',
+        'xen': {
+            'passthrough': {
+                'state': 'off',
+            },
+        },
+    },
+))
+def test_FeaturesInfo_valid(d: dict) -> None:
+    '''Check validation of known-good FeaturesInfo dicts.'''
+    FeaturesInfo.model_validate(d)
+
+
+@pytest.mark.parametrize('d', (
+    {
+        'acpi': '',
+    },
+    {
+        'pae': '',
+    },
+    {
+        'async_teardown': '',
+    },
+    {
+        'hap': '',
+    },
+    {
+        'htm': '',
+    },
+    {
+        'pmu': '',
+    },
+    {
+        'pvspinlock': '',
+    },
+    {
+        'smm': '',
+    },
+    {
+        'vmcoreinfo': '',
+    },
+    {
+        'vmport': '',
+    },
+))
+def test_FeaturesInfo_invalid(d: dict) -> None:
+    '''Check validation of known-bad FeaturesInfo dicts.'''
+    with pytest.raises(ValidationError):
+        FeaturesInfo.model_validate(d)
