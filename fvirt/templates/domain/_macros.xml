@@ -24,9 +24,7 @@
 {% endmacro %}
 
 {% macro controller(c) %}
-    {% if c.type == 'ide' %}
-        <controller type='ide' {{ add_attrs(c, ('index', 'model')) }} />
-    {% elif c.type == 'scsi' %}
+    {% if c.type == 'scsi' %}
         <controller type='scsi' {{ add_attrs(c, ('index', 'model')) }}>
             {% if 'driver' in c %}
                 <driver {{ add_attrs(c.driver, ('queues', 'cmd_per_lun', 'max_sectors')) }} />
@@ -39,7 +37,7 @@
     {% elif c.type == 'xenbus' %}
         <controller type='xenbus' {{ add_attrs(c, ('index', 'maxGrantFrames', 'maxEventChannels')) }} />
     {% else %}
-        <controller type='{{ c.type }}' {{ add_attrs(c, ('index')) }} />
+        <controller type='{{ c.type }}' {{ add_attrs(c, ('index', 'model')) }} />
     {% endif %}
 {% endmacro %}
 
@@ -206,7 +204,7 @@
 
 {% macro chardev(cdev) %}
     <{{ cdev.category }} type='{{ cdev.type }}'>
-        <target {{ add_attrs(cdev.target, ('target', 'address', 'port', 'name', 'state')) }} />
+        <target {{ add_attrs(cdev.target, ('type', 'address', 'port', 'name', 'state')) }} />
         {{ charsrc(cdev.type, cdev.source) }}
         {% if 'log' in cdev %}
             <log file='{{ cdev.log.file }}'{% if 'append' in cdev.log %} append='{{ cdev.log.append }}'{% endif %} />

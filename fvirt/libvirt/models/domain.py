@@ -27,6 +27,45 @@ ON_OFF = Literal['on', 'off']
 CHARDEV_SRC_TYPE = Literal['stdio', 'file', 'vc', 'null', 'pty', 'dev', 'pipe', 'tcp', 'unix', 'spiceport', 'nmdm']
 
 
+def _check_char_dev_src(src_type: CHARDEV_SRC_TYPE, src: CharDevSource | None) -> None:
+    require_attrs = set()
+
+    match src_type:
+        case 'stdio' | 'vc' | 'null':
+            if src is not None:
+                raise ValueError(f'Source may not be specified for a type of "{ src_type }".')
+        case 'pty':
+            if src is not None:
+                require_attrs = {
+                    'path',
+                }
+        case 'file' | 'dev' | 'pipe' | 'nmdm':
+            require_attrs = {
+                'path',
+            }
+        case 'tcp':
+            require_attrs = {
+                'host',
+                'service',
+            }
+        case 'unix':
+            require_attrs = {
+                'path',
+                'mode',
+            }
+        case 'spiceport':
+            require_attrs = {
+                'channel',
+            }
+
+    if require_attrs and src is None:
+        raise ValueError(f'Source must be specified for a type of "{ src_type }".')
+
+    for attr in require_attrs:
+        if getattr(src, attr) is None:
+            raise ValueError(f'Source attribute "{ attr }" must be specified for a type of "{ src_type }".')
+
+
 class PCIAddress(BaseModel):
     '''Model representing a PCI address.'''
     bus: str = Field(pattern='^0x[0-9a-f]{2}$')
@@ -677,6 +716,13 @@ class ControllerDevice(BaseModel):
     ports: int | None = Field(default=None, gt=0)
     vectors: int | None = Field(default=None, gt=0)
 
+    @model_validator(mode='after')
+    def check_driver(self: Self) -> Self:
+        if self.type != 'scsi' and self.driver is not None:
+            raise ValueError('Driver config is only supported for "scsi" controllers.')
+
+        return self
+
 
 class DiskVolumeSrcInfo(BaseModel):
     '''Model representing a disk device volume source.'''
@@ -703,16 +749,15 @@ class DiskTargetInfo(BaseModel):
             match self.addr:
                 case PCIAddress():
                     valid_bus = {'virtio', 'xen'}
-
-                    if self.bus not in valid_bus:
-                        raise ValueError(f'PCI addresses for disk targets are only supported for a bus of "{joiner.join(valid_bus)}".')
+                    addr_type = 'PCI'
                 case DriveAddress():
                     valid_bus = {'scsi', 'ide', 'usb', 'sata', 'sd'}
-
-                    if self.bus not in valid_bus:
-                        raise ValueError(f'Drive addresses for disk targets are only supported for a bus of "{joiner.join(valid_bus)}".')
+                    addr_type = 'Drive'
                 case _:
                     raise RuntimeError
+
+            if self.bus not in valid_bus:
+                raise ValueError(f'{addr_type} addresses for disk targets are only supported for a bus of "{joiner.join(valid_bus)}".')
 
         return self
 
@@ -735,12 +780,29 @@ class DiskDevice(BaseModel):
 
         return self
 
+    @model_validator(mode='after')
+    def check_src(self: Self) -> Self:
+        match self.type:
+            case 'volume':
+                if not isinstance(self.src, DiskVolumeSrcInfo):
+                    raise ValueError('"src" property must be a DiskVolumeSrcInfo instance for "volume" type disk devices.')
+            case 'file' | 'block':
+                if not isinstance(self.src, str):
+                    raise ValueError(f'"src" property must be a string for "{self.type}" type disk devices.')
+
+                if len(self.src) < 1:
+                    raise ValueError('"src" property must be a non-empty string.')
+            case _:
+                raise RuntimeError
+
+        return self
+
 
 class FilesystemDriverInfo(BaseModel):
     '''Model representing a filesystem device driver in domain config.'''
     type: str = Field(min_length=1)
     format: str | None = Field(default=None, min_length=1)
-    queues: str | None = Field(default=None, min_length=1)
+    queues: int | None = Field(default=None, gt=0)
     wrpolicy: str | None = Field(default=None, min_length=1)
 
 
@@ -772,6 +834,7 @@ class Filesystem(BaseModel):
 
 class NetworkVPort(BaseModel):
     '''Model representing a virtualport element for a network interface.'''
+    type: str | None = Field(default=None, min_length=1)
     instanceid: str | None = Field(default=None, min_length=1)
     interfaceid: str | None = Field(default=None, min_length=1)
     managerid: str | None = Field(default=None, min_length=1)
@@ -812,6 +875,27 @@ class NetworkInterface(BaseModel):
     ipv4: NetworkIPInfo | None = Field(default=None)
     ipv6: NetworkIPInfo | None = Field(default=None)
 
+    @model_validator(mode='after')
+    def check_mode(self: Self) -> Self:
+        if self.type == 'direct':
+            if self.mode is None:
+                raise ValueError('Mode must be specified for "direct" type network interfaces.')
+        elif self.mode is not None:
+            raise ValueError('Mode may only be specified for "direct" type network interfaces.')
+
+        return self
+
+    @model_validator(mode='after')
+    def check_addrs(self: Self) -> Self:
+        if self.type != 'user':
+            if self.ipv4 is not None:
+                raise ValueError('IPv4 address config may only be specified for "user" type network interfaces.')
+
+            if self.ipv6 is not None:
+                raise ValueError('IPv6 address config may only be specified for "user" type network interfaces.')
+
+        return self
+
 
 class InputSource(BaseModel):
     '''Model representing an input device source.'''
@@ -830,8 +914,11 @@ class InputDevice(BaseModel):
 
     @model_validator(mode='after')
     def check_src(self: Self) -> Self:
-        if self.type in {'passthrough', 'evdev'} and self.src is None:
-            raise ValueError(f'Input source must be specified for type "{ self.type }".')
+        if self.type in {'passthrough', 'evdev'}:
+            if self.src is None:
+                raise ValueError(f'Input source must be specified for type "{ self.type }".')
+        elif self.src is not None:
+            raise ValueError(f'Input source may not be specified for type "{ self.type }".')
 
         return self
 
@@ -839,7 +926,7 @@ class InputDevice(BaseModel):
 class GraphicsListener(BaseModel):
     '''Model for listener entries in graphics elements.'''
     type: Literal['address', 'network', 'socket', 'none']
-    address: str | None = Field(default=None, min_length=1)
+    address: IPv4Address | IPv6Address | None = Field(default=None)
     network: str | None = Field(default=None, min_length=1)
     socket: str | None = Field(default=None, min_length=1)
 
@@ -847,7 +934,7 @@ class GraphicsListener(BaseModel):
     def check_model(self: Self) -> Self:
         match self.type:
             case 'address':
-                none_props: tuple[str, ...] = ('network', 'address')
+                none_props: tuple[str, ...] = ('network', 'socket')
 
                 if self.address is None:
                     raise ValueError('"address" property must be specified for a listener of type "address".')
@@ -875,29 +962,53 @@ class GraphicsListener(BaseModel):
 
 class GraphicsDevice(BaseModel):
     '''Model representing a graphics output interface in domain configuration.'''
-    type: Literal['vnc', 'spice', 'rdb']
+    type: Literal['vnc', 'spice', 'rdp']
     listeners: Sequence[GraphicsListener] = Field(default_factory=list)
     port: int | None = Field(default=None, gt=0, lt=65536)
     tlsPort: int | None = Field(default=None, gt=0, lt=65536)
     autoport: YES_NO | None = Field(default=None)
     socket: str | None = Field(default=None, min_length=1)
-    passwd: str | None = Field(default=None, min_length=1)
+    passwd: str | None = Field(default=None)
     passwdValidTo: str | None = Field(default=None, min_length=1)
     keymap: str | None = Field(default=None, min_length=1)
     connected: Literal['keep', 'disconnect', 'fail'] | None = Field(default=None)
     sharePolicy: Literal['allow-exclusive', 'force-shared', 'ignore'] | None = Field(default=None)
-    powerControl: str | None = Field(default=None, min_length=1)
-    websocket: int | None = Field(default=None, gt=0, lt=65536)
-    audio: str | None = Field(default=None, min_length=1)
+    powerControl: YES_NO | None = Field(default=None)
+    websocket: int | None = Field(default=None, ge=-1, lt=65536)
     defaultMode: Literal['secure', 'insecure', 'any'] | None = Field(default=None)
-    channels: Mapping[str, str] = Field(default_factory=dict)
+    channels: Mapping[str, Literal['secure', 'insecure']] = Field(default_factory=dict)
     multiUser: YES_NO | None = Field(default=None)
     replaceUser: YES_NO | None = Field(default=None)
+
+    @model_validator(mode='after')
+    def check_passwd_valid(self: Self) -> Self:
+        if self.passwdValidTo is not None and self.passwd is None:
+            raise ValueError('Password validity limit may only be specified if a password is also specified.')
+
+        return self
+
+    @model_validator(mode='after')
+    def check_connected(self: Self) -> Self:
+        if self.connected is not None and self.passwd is None:
+            raise ValueError('Password change handling may only be specified if a password is also specified.')
+
+        return self
+
+    @model_validator(mode='after')
+    def check_user(self: Self) -> Self:
+        if self.multiUser is not None:
+            if self.type != 'rdp':
+                raise ValueError('"multiUser" property is only supported for "rdp" type graphics devices.')
+        else:
+            if self.replaceUser is not None:
+                raise ValueError('"replaceUser" property is only supported if the "multiUser" property is also specified.')
+
+        return self
 
 
 class VideoDevice(BaseModel):
     '''Model representing a GPU device in domain configuration.'''
-    type: Literal['vga', 'cirrus', 'vmvga', 'xen', 'vbox', 'virtio', 'gop', 'bochs', 'ramfb', 'none']
+    type: Literal['vga', 'cirrus', 'vmvga', 'xen', 'vbox', 'virtio', 'qxl', 'gop', 'bochs', 'ramfb', 'none']
     vram: int | None = Field(default=None, ge=1024)
     heads: int | None = Field(default=None, gt=0)
     blob: ON_OFF | None = Field(default=None)
@@ -909,24 +1020,101 @@ class VideoDevice(BaseModel):
 
         return self
 
+    @model_validator(mode='after')
+    def check_blob(self: Self) -> Self:
+        if self.blob is not None and self.type != 'virtio':
+            raise ValueError('"blob" property is only supported on "virtio" type video devices.')
+
+        return self
+
 
 class CharDevSource(BaseModel):
     '''Model representing a character device source.'''
     path: str | None = Field(default=None, min_length=1)
     channel: str | None = Field(default=None, min_length=1)
-    mode: str | None = Field(default=None, min_length=1)
+    mode: Literal['bind', 'connect'] | None = Field(default=None)
     host: str | None = Field(default=None, min_length=1)
     service: int | None = Field(default=None, gt=0, lt=65536)
     tls: YES_NO | None = Field(default=None)
 
+    @model_validator(mode='after')
+    def check_model(self: Self) -> Self:
+        return self._check_attrs()
+
+    def _check_attrs(self: Self) -> Self:
+        if self.path is None and self.channel is None and self.host is None:
+            raise ValueError('Must specify at least one of "path", "channel", or "host".')
+
+        if len({self.path, self.channel, self.host} - {None}) > 1:
+            raise ValueError('Only one of "path", "channel", or "host" may be specified.')
+
+        if self.host is not None:
+            if self.service is None:
+                raise ValueError('"service" must be specified if "host" is specified.')
+
+            if self.mode is None:
+                raise ValueError('"mode" must be specified if "host" is specified.')
+        else:
+            if self.service is not None:
+                raise ValueError('"service" may only be specified if "host" is specified.')
+
+            if self.tls is not None:
+                raise ValueError('"tls" may only be specified if "host" is specified.')
+
+        if self.host is None and self.path is None and self.mode is not None:
+            raise ValueError('"mode" may only be specified if "path" or "host" is specified.')
+
+        return self
+
 
 class CharDevTarget(BaseModel):
     '''Model representing a character device target.'''
-    type: str = Field(min_length=1)
-    port: int | None = Field(default=None, ge=0)
-    address: str | None = Field(default=None, min_length=1)
+    port: int | None = Field(default=None, ge=0, lt=65536)
+    address: IPv4Address | IPv6Address | None = Field(default=None)
+    type: str | None = Field(default=None, min_length=1)
     name: str | None = Field(default=None, min_length=1)
     state: str | None = Field(default=None, min_length=1)
+
+    @model_validator(mode='after')
+    def check_model(self: Self) -> Self:
+        match self:
+            case CharDevTarget(port=None, address=None, name=None):
+                raise ValueError('One of "port", "address", or "name" must be specified.')
+
+        bad_attrs = set()
+
+        if self.address is not None:
+            if self.type != 'guestfwd':
+                raise ValueError('Type must be "guestfwd" if an address is specified.')
+
+            if self.port is None:
+                raise ValueError('"port" must be specified if an address is specified.')
+            elif self.port not in range(1, 65536):
+                raise ValueError('"port" must be between 1 and 65535 inclusive if an address is specified.')
+
+            key_attr = 'address'
+            bad_attrs = {
+                'name',
+                'state',
+            }
+        elif self.port is not None:
+            key_attr = 'port'
+            bad_attrs = {
+                'name',
+                'state',
+            }
+        elif self.name is not None:
+            key_attr = 'name'
+            bad_attrs = {
+                'port',
+                'address',
+            }
+
+        for attr in bad_attrs:
+            if getattr(self, attr, None) is not None:
+                raise ValueError(f'"{attr}" may not be specified if "{key_attr}" is specified.')
+
+        return self
 
 
 class CharDevLog(BaseModel):
@@ -943,6 +1131,12 @@ class CharacterDevice(BaseModel):
     src: CharDevSource | None = Field(default=None)
     log: CharDevLog | None = Field(default=None)
 
+    @model_validator(mode='after')
+    def check_source(self: Self) -> Self:
+        _check_char_dev_src(src_type=self.type, src=self.src)
+
+        return self
+
 
 class WatchdogDevice(BaseModel):
     '''Model representing a watchdog device in domain configuration.'''
@@ -954,6 +1148,29 @@ class RNGBackend(CharDevSource):
     '''Model representing a backend for an RNG device in domain configuration.'''
     model: Literal['random', 'builtin', 'egd'] = Field(default='builtin')
     type: CHARDEV_SRC_TYPE | None = Field(default=None)
+
+    @model_validator(mode='after')
+    def check_model(self: Self) -> Self:
+        match self:
+            case RNGBackend(model='builtin'):
+                return self
+            case RNGBackend(model='random'):
+                self._check_attrs()
+
+                _check_char_dev_src(src_type='dev', src=self)
+
+                return self
+            case RNGBackend(model='egd'):
+                if self.type is None:
+                    raise ValueError('Type must be specified for model "egd".')
+
+                self._check_attrs()
+
+                _check_char_dev_src(src_type=self.type, src=self)
+
+                return self
+            case _:
+                raise RuntimeError
 
 
 class RNGDevice(BaseModel):
