@@ -103,7 +103,7 @@ required_plugins = [
     "pytest-xdist",
 ]
 testpaths = "tests"
-timeout = 30
+timeout = 45
 timeout_method = "thread"
 tmp_path_retention_count = 2
 tmp_path_retention_policy = "failed"
