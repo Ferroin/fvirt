@@ -210,7 +210,7 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends libvirt-daemon libvirt-daemon-driver-qemu qemu-kvm qemu-utils
+          sudo apt-get install -y --no-install-recommends libxml2-utils libvirt-clients libvirt-daemon libvirt-daemon-driver-qemu qemu-kvm qemu-utils
           sudo apt-get install -y libvirt-dev build-essential
       - name: Install python dependencies
         run: poetry install --sync --all-extras
