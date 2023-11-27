@@ -479,7 +479,7 @@ class ClockInfo(BaseModel):
     offset: Literal['utc', 'localtime', 'timezone', 'variable', 'absolute'] = Field(default='utc')
     tz: str | None = Field(default=None, min_length=1)
     basis: Literal['utc', 'localtime'] | None = Field(default=None)
-    adjustment: str | None = Field(default=None, min_length=1)
+    adjustment: int | None = Field(default=None)
     start: int | None = Field(default=None)
     timers: Sequence[ClockTimerInfo] = Field(default_factory=list)
 
@@ -840,7 +840,7 @@ class NetworkVPort(BaseModel):
     managerid: str | None = Field(default=None, min_length=1)
     profileid: str | None = Field(default=None, min_length=1)
     typeid: str | None = Field(default=None, min_length=1)
-    typeidversion: str | None = Field(default=None, min_length=1)
+    typeidversion: int | None = Field(default=None, gt=0)
 
 
 class NetworkIPInfo(BaseModel):
