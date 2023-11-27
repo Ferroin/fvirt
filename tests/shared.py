@@ -5,9 +5,22 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
+from pathlib import Path
+from typing import Any, cast
+
 import pytest
 
 from lxml import etree
+from ruamel.yaml import YAML as Yaml
+
+YAML = Yaml(typ='safe')
+CASE_DATA_PREFIX = Path(__file__).parent / 'data' / 'cases'
+
+
+def get_test_cases(group: str) -> Mapping[str, Any]:
+    '''Load test cases for the specified group.'''
+    return cast(Mapping[str, Any], YAML.load(CASE_DATA_PREFIX / f'{group}.yaml'))
 
 
 def compare_xml_trees(e1: etree._Element | etree._ElementTree, e2: etree._Element | etree._ElementTree) -> None:

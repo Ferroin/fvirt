@@ -1,0 +1,1803 @@
+%YAML 1.2
+---
+PCIAddress:
+  valid:
+    - &pci_address
+      bus: '0x00'
+      slot: '0x00'
+      function: '0x0'
+    - bus: '0x00'
+      slot: '0x00'
+    - bus: '0xf8'
+      slot: '0x21'
+      function: '0xc'
+    - bus: '0x00'
+      slot: '0x00'
+      function: '0x0'
+      domain: '0x0000'
+    - bus: '0x00'
+      slot: '0x00'
+      function: '0x0'
+      multifunction: 'on'
+    - bus: '0x00'
+      slot: '0x00'
+      function: '0x0'
+      domain: '0x0000'
+      multifunction: 'off'
+    - bus: '0x00'
+      slot: '0x00'
+      function: '0x0'
+      domain: null
+      multifunction: null
+  invalid:
+    - {}
+    - bus: ''
+      slot: '0x00'
+      function: '0x0'
+    - bus: '0x00'
+      slot: ''
+      function: '0x0'
+    - bus: '0x00'
+      slot: '0x00'
+      function: ''
+    - slot: '0x00'
+      function: '0x0'
+    - bus: '0x00'
+      function: '0x0'
+    - bus: '0x00'
+      slot: '0x00'
+      function: null
+    - bus: '0x00'
+      slot: '0x00'
+      function: '0x0'
+      domain: ''
+    - bus: '0x00'
+      slot: '0x00'
+      function: '0x0'
+      multifunction: foo
+DriveAddress:
+  valid:
+    - target: 0
+    - bus: 0
+    - unit: 0
+    - controller: 0
+    - target: 0
+      bus: 0
+    - target: 0
+      unit: 0
+    - target: 0
+      controller: 0
+    - bus: 0
+      unit: 0
+    - bus: 0
+      controller: 0
+    - unit: 0
+      controller: 0
+    - target: 0
+      bus: 0
+      unit: 0
+    - target: 0
+      bus: 0
+      controller: 0
+    - target: 0
+      unit: 0
+      controller: 0
+    - bus: 0
+      unit: 0
+      controller: 0
+    - &drive_address
+      target: 0
+      bus: 0
+      unit: 0
+      controller: 0
+  invalid:
+    - target: null
+    - bus: null
+    - unit: null
+    - target: -1
+    - bus: -1
+    - unit: -1
+    - controller: -1
+DataRate:
+  valid:
+    - bytes: 1
+    - bytes: 1_000_000_000
+    - bytes: 1
+      period: null
+    - &data_rate
+      bytes: 1
+      period: 1
+    - bytes: 1_000_000_000
+      period: 1_000_000_000
+  invalid:
+    - {}
+    - bytes: 0
+    - bytes: -1
+    - bytes: ''
+    - bytes: 1
+      period: 0
+    - bytes: 1
+      period: -1
+    - bytes: 1
+      period: ''
+    - period: 1
+MemtuneInfo:
+  valid:
+    - hard: 1024
+    - soft: 1024
+    - swap: 1024
+    - min: 1024
+    - soft: 1024
+      hard: 1024
+      swap: 1024
+      min: 1024
+  invalid:
+    - {}
+    - hard: ''
+    - soft: 0
+    - min: -1
+CPUModelInfo:
+  valid:
+    - name: test
+    - name: test
+      fallback: null
+    - name: test
+      fallback: test
+  invalid:
+    - {}
+    - name: ''
+    - name: test
+      fallback: ''
+CPUTopology:
+  valid:
+    - {}
+    - &topology
+      sockets: 2
+      dies: 2
+      cores: 2
+      threads: 2
+    - infer: threads
+    - coalesce: sockets
+  invalid:
+    - sockets: 0
+    - dies: 0
+    - cores: 0
+    - threads: 0
+    - infer: ''
+    - coalesce: ''
+  total_cpus:
+    - - {}
+      - 1
+    - - cores: 4
+      - 4
+    - - sockets: 2
+        cores: 2
+        threads: 2
+      - 8
+    - - dies: 2
+      - 2
+  check:
+    - - {}
+      - 1
+      - null
+    - - {}
+      - 2
+      - null
+    - - coalesce: cores
+      - 8
+      - cores
+    - - coalesce: sockets
+        sockets: 8
+        dies: 12
+        cores: 2
+        threads: 2
+      - 4
+      - sockets
+    - - sockets: 8
+        dies: 2
+        cores: 2
+        threads: 2
+      - 8
+      - null
+CPUInfo:
+  valid:
+    - {}
+    - mode: host
+      model:
+        name: test
+    - mode: null
+      model:
+        name: test
+    - mode: null
+      model:
+        name: test
+      topology: *topology
+  invalid:
+    - mode: ''
+OSFWLoaderInfo:
+  valid:
+    - {}
+    - &fwloader
+      path: /nonexistent
+      type: pflash
+      readonly: 'yes'
+    - path: /nonexistent
+    - path: /nonexistent
+      secure: 'yes'
+    - secure: 'yes'
+      stateless: 'yes'
+  invalid:
+    - path: ''
+    - readonly: 'foo'
+    - secure: 'foo'
+    - stateless: 'foo'
+    - type: ''
+OSFWNVRAMInfo:
+  valid:
+    - &fwnvram
+      path: /nonexistent
+      template: /nonexistent2
+  invalid:
+    - {}
+    - path: ''
+      template: /nonexistent2
+    - path: /nonexistent
+      template: ''
+    - path: ''
+      template: ''
+    - path: /nonexistent
+      template: null
+OSContainerIDMapEntry:
+  valid:
+    - &idmap_entry
+      target: 0
+      count: 1
+    - target: 65536
+      count: 65536
+  invalid:
+    - {}
+    - target: 0
+    - count: 1
+    - target: -1
+      count: 1
+    - target: 0
+      count: 0
+OSContainerIDMapInfo:
+  valid:
+    - &idmap
+      uid: *idmap_entry
+      gid: *idmap_entry
+    - uid:
+        target: 0
+        count: 65536
+      gid:
+        target: 65536
+        count: 1
+  invalid:
+    - uid: null
+      gid: *idmap_entry
+    - uid: *idmap_entry
+      gid: null
+    - uid: *idmap_entry
+    - gid: *idmap_entry
+OSInfo:
+  valid:
+    - variant: firmware
+    - variant: firmware
+      arch: x86_64
+    - variant: firmware
+      machine: q35
+    - variant: firmware
+      type: linux
+    - variant: firmware
+      firmware: efi
+      loader:
+        secure: 'yes'
+    - variant: firmware
+      loader: *fwloader
+    - variant: firmware
+      loader: *fwloader
+      nvram: *fwnvram
+    - variant: host
+      bootloader: /usr/bin/boot
+    - variant: host
+      bootloader: /usr/bin/boot
+      bootloader_args: test
+    - variant: direct
+      kernel: test
+    - variant: direct
+      kernel: test
+      initrd: test
+    - variant: direct
+      kernel: test
+      cmdline: test
+    - variant: direct
+      kernel: test
+      dtb: test
+    - variant: direct
+      kernel: test
+      loader: test
+    - variant: direct
+      kernel: test
+      initrd: test
+      cmdline: test
+      dtb: test
+      loader: test
+    - &container_osinfo
+      variant: container
+      init: /sbin/init
+    - <<: *container_osinfo
+      initargs:
+        - test
+      initenv:
+        TEST: '1'
+      initdir: /
+      inituser: root
+      initgroup: root
+      idmap: *idmap
+    - &test_osinfo
+      variant: test
+      arch: x86_64
+  invalid:
+    - {}
+    - variant: ''
+    - variant: firmware
+      loader: /nonexistent
+    - variant: firmware
+      nvram: *fwnvram
+    - variant: firmware
+      bootloader: /usr/bin/boot
+    - variant: firmware
+      kernel: test
+    - variant: firmware
+      init: /sbin/init
+    - variant: host
+    - variant: host
+      bootloader: ''
+    - variant: host
+      loader: /nonexistent
+    - variant: host
+      loader: *fwloader
+    - variant: host
+      init: /sbin/init
+    - variant: direct
+    - variant: direct
+      kernel: ''
+    - variant: direct
+      kernel: test
+      bootloader: /usr/bin/boot
+    - variant: direct
+      kernel: test
+      init: /sbin/init
+    - variant: direct
+      kernel: test
+      loader: *fwloader
+    - variant: container
+    - variant: container
+      init: ''
+    - variant: container
+      loader: /nonexistent
+    - variant: container
+      loader: *fwloader
+    - variant: test
+    - variant: test
+      arch: ''
+    - <<: *test_osinfo
+      loader: /nonexistent
+    - <<: *test_osinfo
+      loader: *fwloader
+    - <<: *test_osinfo
+      bootloader: /usr/bin/boot
+    - <<: *test_osinfo
+      kernel: test
+    - <<: *test_osinfo
+      init: /sbin/init
+ClockTimerInfo:
+  valid:
+    - name: platform
+    - name: hpet
+    - name: kvmclock
+    - name: pit
+    - name: rtc
+    - name: tsc
+    - name: hypervclock
+    - name: armvtimer
+    - name: platform
+      track: boot
+    - name: platform
+      track: guest
+    - name: platform
+      track: wall
+    - name: platform
+      track: realtime
+    - name: platform
+      tickpolicy: delay
+    - name: platform
+      tickpolicy: catchup
+    - name: platform
+      tickpolicy: merge
+    - name: platform
+      tickpolicy: discard
+    - &clock_timer
+      name: hpet
+      present: 'no'
+    - name: hpet
+      present: 'yes'
+  invalid:
+    - {}
+    - name: ''
+    - name: rtc
+      track: ''
+    - name: tsc
+      tickpolicy: ''
+    - name: hpet
+      present: ''
+ClockInfo:
+  valid:
+    - {}
+    - offset: utc
+    - offset: localtime
+    - offset: timezone
+      tz: America/New_York
+    - offset: variable
+      basis: utc
+      adjustment: 0
+    - offset: variable
+      basis: localtime
+      adjustment: 0
+    - offset: absolute
+      start: 0
+    - offset: utc
+      timers:
+        - *clock_timer
+  invalid:
+    - offset: ''
+    - offset: timezone
+    - offset: timezone
+      tz: ''
+    - offset: variable
+      adjustment: 0
+    - offset: variable
+      basis: utc
+    - offset: variable
+      basis: ''
+      adjustment: 0
+    - offset: variable
+      basis: utc
+      adjustment: ''
+    - offset: absolute
+FeaturesHyperVSpinlocks:
+  valid:
+    - state: 'on'
+    - state: 'off'
+    - &hyperv_spinlocks
+      state: 'on'
+      retries: 4096
+    - state: 'on'
+      retries: 65536
+  invalid:
+    - {}
+    - state: ''
+    - state: 'on'
+      retries: 0
+    - retries: 4096
+FeaturesHyperVSTimer:
+  valid:
+    - state: 'on'
+    - state: 'off'
+    - &hyperv_stimer
+      state: 'on'
+      direct: 'on'
+    - state: 'on'
+      direct: 'off'
+  invalid:
+    - {}
+    - state: ''
+    - state: 'on'
+      direct: ''
+FeaturesHyperVVendorID:
+  valid:
+    - state: 'on'
+    - state: 'off'
+    - &hyperv_vendorid
+      state: 'on'
+      value: test
+  invalid:
+    - {}
+    - state: ''
+    - state: 'on'
+      value: ''
+    - state: 'on'
+      value: verylongvendorid
+FeaturesHyperVInfo:
+  valid:
+    - {}
+    - mode: 'passthrough'
+    - mode: 'custom'
+    - &features_hyperv
+      avic: 'on'
+      evmcs: 'on'
+      frequencies: 'on'
+      reenlightenment: 'on'
+      relaxed: 'on'
+      reset: 'on'
+      runtime: 'on'
+      spinlocks: *hyperv_spinlocks
+      stimer: *hyperv_stimer
+      synic: 'on'
+      tlbflush: 'on'
+      vapic: 'on'
+      vendor_id: *hyperv_vendorid
+      vpindex: 'on'
+    - avic: 'off'
+      evmcs: 'off'
+      frequencies: 'off'
+      reenlightenment: 'off'
+      relaxed: 'off'
+      reset: 'off'
+      runtime: 'off'
+      spinlocks: *hyperv_spinlocks
+      stimer: *hyperv_stimer
+      synic: 'off'
+      tlbflush: 'off'
+      vapic: 'off'
+      vendor_id: *hyperv_vendorid
+      vpindex: 'off'
+  invalid:
+    - mode: ''
+    - avic: ''
+    - evmcs: ''
+    - frequencies: ''
+    - reenlightenment: ''
+    - relaxed: ''
+    - reset: ''
+    - runtime: ''
+    - spinlocks: 'on'
+    - stimer: 'on'
+    - synic: ''
+    - tlbflush: ''
+    - vapic: ''
+    - vendor_id: 'on'
+    - vpindex: ''
+FeaturesKVMDirtyRing:
+  valid:
+    - state: 'on'
+    - state: 'off'
+    - &kvm_dirty_ring
+      state: 'on'
+      size: 1024
+    - state: 'on'
+      size: 65536
+  invalid:
+    - {}
+    - state: ''
+    - state: 'on'
+      size: 0
+    - state: 'on'
+      size: 256
+    - state: 'on'
+      size: 131072
+    - state: 'on'
+      size: 5000
+FeaturesKVMInfo:
+  valid:
+    - {}
+    - &features_kvm
+      dirty_ring: *kvm_dirty_ring
+      hidden: 'on'
+      hint_dedicated: 'on'
+      poll_control: 'on'
+      pv_ipi: 'on'
+    - dirty_ring: *kvm_dirty_ring
+      hidden: 'off'
+      hint_dedicated: 'off'
+      poll_cofftrol: 'off'
+      pv_ipi: 'off'
+  invalid:
+    - dirty_ring: 'on'
+    - hidden: ''
+    - hint_dedicated: ''
+    - poll_control: ''
+    - pv_ipi: ''
+FeaturesXenPassthrough:
+  valid:
+    - state: 'on'
+    - state: 'off'
+    - &xen_passthrough
+      state: 'on'
+      mode: 'sync_pt'
+    - state: 'off'
+      mode: 'share_pt'
+  invalid:
+    - {}
+    - state: ''
+    - state: 'on'
+      mode: ''
+FeaturesXenInfo:
+  valid:
+    - {}
+    - &features_xen
+      e820_host: 'on'
+      passthrough: *xen_passthrough
+    - e820_host: 'off'
+      passthrough: *xen_passthrough
+  invalid:
+    - e820_host: ''
+    - passthrough: 'on'
+FeaturesTCGInfo:
+  valid:
+    - {}
+    - &features_tcg
+      tb_cache: 128
+    - tb_cache: 1024
+  invalid:
+    - tb_cache: 0
+FeaturesAPICInfo:
+  valid:
+    - {}
+    - &features_apic
+      eoi: 'on'
+    - eoi: 'off'
+  invalid:
+    - eoi: ''
+FeaturesGICInfo:
+  valid:
+    - {}
+    - version: '2'
+    - &features_gic
+      version: '3'
+    - version: 'host'
+    - version: 2
+    - version: 3
+  invalid:
+    - version: ''
+    - version: 0
+FeaturesIOAPICInfo:
+  valid:
+    - {}
+    - &features_ioapic
+      driver: 'kvm'
+    - driver: 'qemu'
+  invalid:
+    - driver: ''
+FeaturesCapabilities:
+  valid:
+    - policy: allow
+    - policy: deny
+    - policy: default
+    - policy: deny
+      modify: {}
+    - &features_capabilities
+      policy: default
+      modify:
+        mknod: 'on'
+        dac_override: 'off'
+  invalid:
+    - {}
+    - policy: ''
+    - policy: none
+    - policy: deny
+      modify:
+        mknod: ''
+FeaturesInfo:
+  valid:
+    - {}
+    - acpi: true
+      apic: *features_apic
+      async_teardown: 'on'
+      caps: *features_capabilities
+      gic: *features_gic
+      hap: 'on'
+      htm: 'on'
+      hyperv: *features_hyperv
+      kvm: *features_kvm
+      pae: true
+      pmu: 'on'
+      pvspinlock: 'on'
+      smm: 'on'
+      tcg: *features_tcg
+      vmcoreinfo: 'on'
+      vmport: 'on'
+      xen: *features_xen
+    - acpi: false
+      apic: {}
+      async_teardown: 'off'
+      gic: {}
+      hap: 'off'
+      htm: 'off'
+      hyperv: {}
+      kvm: {}
+      pae: false
+      pmu: 'off'
+      pvspinlock: 'off'
+      smm: 'off'
+      tcg: {}
+      vmcoreinfo: 'off'
+      vmport: 'off'
+      xen: {}
+  invalid:
+    - acpi: ''
+    - async_teardown: ''
+    - gic: 'host'
+    - hap: ''
+    - htm: ''
+    - pae: ''
+    - pmu: ''
+    - pvspinlock: ''
+    - smm: ''
+    - vmcoreinfo: ''
+    - vmport: ''
+ControllerDriverInfo:
+  valid:
+    - {}
+    - &controller_driver
+      queues: 8
+    - cmd_per_lun: 8
+    - max_sectors: 64
+  invalid:
+    - queues: ''
+    - cmd_per_lun: ''
+    - max_sectors: ''
+    - queues: 0
+    - cmd_per_lun: 0
+    - max_sectors: 0
+ControllerDevice:
+  valid:
+    - type: scsi
+    - type: scsi
+      index: 0
+    - type: scsi
+      model: virtio
+    - &controller_device
+      type: usb
+      modeL: qemu-xhci
+      ports: 4
+    - type: virtio-serial
+      ports: 4
+      vectors: 4
+    - type: xenbus
+      maxGrantFrames: 64
+      maxEventChannels: 64
+    - type: scsi
+      driver: *controller_driver
+  invalid:
+    - {}
+    - type: ''
+    - type: scsi
+      index: -1
+    - type: scsi
+      model: ''
+    - type: usb
+      ports: -1
+    - type: virtio-serial
+      ports: 1
+      vectors: -1
+    - type: xenbus
+      maxGrantFrames: -1
+    - type: xenbus
+      maxEventChannels: -1
+    - type: scsi
+      driver: ''
+DiskVolumeSrcInfo:
+  valid:
+    - &disk_pool_src
+      pool: test
+      volume: test
+  invalid:
+    - {}
+    - pool: test
+    - volume: test
+    - pool: ''
+      volume: test
+    - pool: test
+      volume: ''
+DiskTargetInfo:
+  valid:
+    - &disk_target
+      dev: /dev/sda
+    - dev: /dev/sda
+      bus: scsi
+      addr: *drive_address
+    - dev: /dev/sda
+      bus: virtio
+      addr: *pci_address
+    - dev: /dev/sda
+      removable: 'on'
+    - dev: /dev/sda
+      removable: 'off'
+    - dev: /dev/sda
+      rotation_rate: 1
+    - dev: /dev/sda
+      rotation_rate: 1025
+    - dev: /dev/sda
+      rotation_rate: 65534
+  invalid:
+    - {}
+    - dev: ''
+    - dev: /dev/sda
+      bus: virtio
+      addr: *drive_address
+    - dev: /dev/sda
+      bus: scsi
+      addr: *pci_address
+    - dev: /dev/sda
+      removable: ''
+    - dev: /dev/sda
+      rotation_rate: 0
+    - dev: /dev/sda
+      rotation_rate: 65536
+DiskDevice:
+  valid:
+    - &disk_device
+      type: file
+      src: /nonexistent
+      target: *disk_target
+    - type: volume
+      src: *disk_pool_src
+      target: *disk_target
+    - type: block
+      src: /dev/sda
+      target: *disk_target
+    - <<: *disk_device
+      boot: 1
+    - <<: *disk_device
+      device: disk
+    - <<: *disk_device
+      device: cdrom
+    - <<: *disk_device
+      device: floppy
+    - <<: *disk_device
+      device: lun
+    - <<: *disk_device
+      readonly: true
+    - <<: *disk_device
+      readonly: false
+    - <<: *disk_device
+      snapshot: internal
+    - <<: *disk_device
+      snapshot: external
+    - <<: *disk_device
+      snapshot: manual
+    - <<: *disk_device
+      snapshot: 'no'
+    - <<: *disk_device
+      startup: mandatory
+    - <<: *disk_device
+      startup: requisite
+    - <<: *disk_device
+      startup: optional
+  invalid:
+    - {}
+    - type: ''
+      src: /nonexistent
+      target: *disk_target
+    - type: file
+      src: ''
+      target: *disk_target
+    - type: file
+      target: *disk_target
+    - type: file
+      src: /nonexistent
+    - src: /nonexistent
+      target: *disk_target
+    - type: file
+      src: *disk_pool_src
+      target: *disk_target
+    - type: volume
+      src: /nonexistent
+      target: *disk_target
+    - <<: *disk_device
+      boot: 0
+    - <<: *disk_device
+      readonly: ''
+    - <<: *disk_device
+      device: ''
+    - <<: *disk_device
+      snapshot: ''
+    - <<: *disk_device
+      startup: ''
+    - type: block
+      src: /dev/sda
+      target: *disk_target
+      startup: requisite
+FilesystemDriverInfo:
+  valid:
+    - &filesystem_driver
+      type: path
+    - type: path
+      wrpolicy: immediate
+    - type: loop
+      format: raw
+    - type: virtiofs
+      queues: 8
+  invalid:
+    - {}
+    - type: ''
+    - type: path
+      wrpolicy: ''
+    - type: loop
+      format: ''
+    - type: virtiofs
+      queues: 0
+Filesystem:
+  valid:
+    - &filesystem
+      type: mount
+      source: /nonexistent
+      target: /
+    - type: template
+      source: test
+      target: /
+    - type: file
+      source: /nonexistent
+      target: /
+    - type: block
+      source: /dev/sda
+      target: /
+    - type: ram
+      source: '65536'
+      target: /nonexistent
+    - type: bind
+      source: /nonexistent1
+      target: /nonexistent2
+    - <<: *filesystem
+      accessmode: mapped
+    - <<: *filesystem
+      accessmode: passthrough
+    - <<: *filesystem
+      accessmode: squash
+    - <<: *filesystem
+      dmode: '0755'
+      fmode: '0644'
+    - <<: *filesystem
+      driver: *filesystem_driver
+    - <<: *filesystem
+      multidev: default
+    - <<: *filesystem
+      multidev: remap
+    - <<: *filesystem
+      multidev: forbid
+    - <<: *filesystem
+      multidev: warn
+    - <<: *filesystem
+      readonly: true
+    - <<: *filesystem
+      readonly: false
+    - <<: *filesystem
+      src_type: socket
+  invalid:
+    - {}
+    - <<: *filesystem
+      type: ''
+    - <<: *filesystem
+      source: ''
+    - <<: *filesystem
+      target: ''
+    - <<: *filesystem
+      accessmode: ''
+    - <<: *filesystem
+      dmode: ''
+      fmode: '0644'
+    - <<: *filesystem
+      dmode: '0755'
+      fmode: ''
+    - <<: *filesystem
+      driver: ''
+    - <<: *filesystem
+      multidev: ''
+    - <<: *filesystem
+      readonly: ''
+    - <<: *filesystem
+      src_type: ''
+NetworkVPort:
+  valid:
+    - {}
+    - &vport_basic
+      instanceid: test
+    - &vport_ovs
+      type: openvswitch
+      interfaceid: test
+      profileid: test
+    - &vport_vepa
+      type: '802.1Qbg'
+      managerid: test
+      instanceid: test
+      typeid: test
+      typeidversion: 2
+    - type: '802.1Qbh'
+      profileid: test
+  invalid:
+    - instanceid: ''
+    - type: ''
+    - type: openvswitch
+      interfaceid: ''
+      profileid: test
+    - type: openvswitch
+      interfaceid: test
+      profileid: ''
+    - type: '802.1Qbg'
+      managerid: ''
+      instanceid: test
+      typeid: test
+      typeidversion: 2
+    - type: '802.1Qbg'
+      managerid: test
+      instanceid: ''
+      typeid: test
+      typeidversion: 2
+    - type: '802.1Qbg'
+      managerid: test
+      instanceid: test
+      typeid: ''
+      typeidversion: 2
+    - type: '802.1Qbg'
+      managerid: test
+      instanceid: test
+      typeid: test
+      typeidversion: 0
+    - type: '802.1Qbh'
+      profileid: ''
+NetworkIPInfo:
+  valid:
+    - &ipv4_address_info
+      address: &ipv4_address '192.0.2.1'
+      prefix: 24
+    - &ipv6_address_info
+      address: &ipv6_address '2001::db8:1'
+      prefix: 64
+  invalid:
+    - {}
+    - address: *ipv4_address
+    - address: *ipv6_address
+    - prefix: 24
+    - address: ''
+      prefix: 24
+    - <<: *ipv4_address_info
+      prefix: 0
+    - <<: *ipv4_address_info
+      prefix: 32
+    - <<: *ipv6_address_info
+      prefix: 0
+    - <<: *ipv6_address_info
+      prefix: 128
+NetworkInterface:
+  valid:
+    - type: network
+    - type: network
+      src: test
+    - type: network
+      target: eth0
+    - type: network
+      mac: '02:00:00:00:00:01'
+    - type: network
+      boot: 1
+    - type: network
+      virtualport: *vport_basic
+    - type: bridge
+    - type: bridge
+      virtualport: *vport_ovs
+    - type: direct
+      mode: vepa
+    - type: direct
+      mode: bridge
+    - type: direct
+      mode: private
+    - type: direct
+      mode: passthrough
+    - type: user
+      ipv4: *ipv4_address_info
+    - type: user
+      ipv6: *ipv6_address_info
+    - type: user
+      ipv4: *ipv4_address_info
+      ipv6: *ipv6_address_info
+  invalid:
+    - {}
+    - type: ''
+    - type: network
+      src: ''
+    - type: network
+      target: ''
+    - type: network
+      mac: ''
+    - type: network
+      mac: '02:00:00:00:00:0z'
+    - type: network
+      boot: 0
+    - type: network
+      mode: passthrough
+    - type: direct
+    - type: direct
+      mode: ''
+    - type: direct
+      ipv4: *ipv4_address_info
+    - type: direct
+      ipv6: *ipv6_address_info
+    - type: user
+      ipv4: ''
+    - type: user
+      ipv6: ''
+    - type: user
+      ipv4: {}
+    - type: user
+      ipv6: {}
+    - type: user
+      mode: passthrough
+InputSource:
+  valid:
+    - &input_source
+      dev: /dev/input/event1
+    - <<: *input_source
+      grab: all
+    - <<: *input_source
+      repeat: 'on'
+    - <<: *input_source
+      repeat: 'off'
+    - <<: *input_source
+      grabToggle: ctrl-ctrl
+  invalid:
+    - {}
+    - dev: ''
+    - <<: *input_source
+      grab: ''
+    - <<: *input_source
+      repeat: ''
+    - <<: *input_source
+      grabToggle: ''
+InputDevice:
+  valid:
+    - type: keyboard
+    - type: mouse
+    - type: tablet
+    - type: keyboard
+      bus: usb
+    - type: keyboard
+      bus: ps2
+    - &input_device
+      type: keyboard
+      bus: virtio
+    - type: keyboard
+      bus: xen
+    - type: keyboard
+      bus: virtio
+      model: virtio
+    - type: passthrough
+      src: *input_source
+    - type: evdev
+      src: *input_source
+  invalid:
+    - {}
+    - type: ''
+    - type: keyboard
+      bus: ''
+    - type: keyboard
+      bus: virtio
+      model: ''
+    - type: keyboard
+      src: *input_source
+    - type: passthrough
+    - type: evdev
+GraphicsListener:
+  valid:
+    - &graphics_listener
+      type: none
+    - type: address
+      address: *ipv4_address
+    - type: address
+      address: *ipv6_address
+    - type: network
+      network: test
+    - type: socket
+      socket: /tmp/test.sock
+  invalid:
+    - {}
+    - type: ''
+    - type: none
+      address: *ipv4_address
+    - type: none
+      network: test
+    - type: none
+      socket: /tmp/test.sock
+    - type: address
+      address: ''
+    - type: address
+    - type: address
+      network: test
+    - type: address
+      socket: /tmp/test.sock
+    - type: network
+      network: ''
+    - type: network
+    - type: network
+      address: *ipv4_address
+    - type: network
+      socket: /tmp/test.sock
+    - type: socket
+      socket: ''
+    - type: socket
+    - type: socket
+      address: *ipv4_address
+    - type: socket
+      network: test
+GraphicsDevice:
+  valid:
+    - type: vnc
+    - type: spice
+    - type: rdp
+    - &gd_case0
+      type: vnc
+      listeners:
+        - *graphics_listener
+    - <<: *gd_case0
+      type: spice
+    - <<: *gd_case0
+      type: rdp
+    - &gd_case1
+      type: vnc
+      port: 5900
+    - <<: *gd_case1
+      type: spice
+    - <<: *gd_case1
+      type: rdp
+    - &gd_case2
+      type: vnc
+      autoport: 'yes'
+    - <<: *gd_case2
+      type: spice
+    - <<: *gd_case2
+      type: rdp
+    - &gd_case3
+      type: vnc
+      port: 5900
+      autoport: 'no'
+    - <<: *gd_case3
+      type: spice
+    - <<: *gd_case3
+      type: rdp
+    - &gd_case4
+      type: vnc
+      socket: /run/vnc.sock
+    - <<: *gd_case4
+      type: spice
+    - <<: *gd_case4
+      type: rdp
+    - type: vnc
+      websocket: 5900
+    - &gd_case5
+      type: vnc
+      passwd: secret
+    - <<: *gd_case5
+      type: spice
+    - <<: *gd_case5
+      type: rdp
+    - &gd_case6
+      type: vnc
+      passwd: secret
+      passwdValidTo: '2023-12-31T00:00:00'
+    - <<: *gd_case6
+      type: spice
+    - <<: *gd_case6
+      type: rdp
+    - &gd_case7
+      type: vnc
+      passwd: secret
+      connected: keep
+    - <<: *gd_case7
+      type: spice
+    - <<: *gd_case7
+      type: rdp
+    - &gd_case8
+      type: vnc
+      passwd: secret
+      connected: disconnect
+    - <<: *gd_case8
+      type: spice
+    - <<: *gd_case8
+      type: rdp
+    - &gd_case9
+      type: vnc
+      passwd: secret
+      connected: fail
+    - <<: *gd_case9
+      type: spice
+    - <<: *gd_case9
+      type: rdp
+    - &gd_case10
+      type: vnc
+      keymap: us
+    - <<: *gd_case10
+      type: spice
+    - <<: *gd_case10
+      type: rdp
+    - type: vnc
+      sharePolicy: allow-exclusive
+    - type: vnc
+      sharePolicy: force-shared
+    - type: vnc
+      sharePolicy: ignore
+    - type: spice
+      tlsPort: 5900
+    - type: spice
+      defaultMode: secure
+    - type: spice
+      defaultMode: insecure
+    - type: spice
+      defaultMode: any
+    - type: spice
+      channels: {}
+    - type: spice
+      channels:
+        main: secure
+        record: insecure
+    - type: rdp
+      multiUser: 'yes'
+    - type: rdp
+      multiUser: 'no'
+    - type: rdp
+      multiUser: 'yes'
+      replaceUser: 'yes'
+    - type: rdp
+      multiUser: 'yes'
+      replaceUser: 'no'
+  invalid:
+    - {}
+    - type: ''
+    - type: vnc
+      port: 0
+    - type: vnc
+      port: -1
+    - type: vnc
+      port: 65536
+    - type: vnc
+      autoport: ''
+    - type: vnc
+      socket: ''
+    - type: vnc
+      websocket: -2
+    - type: vnc
+      websocket: 65536
+    - type: vnc
+      passwd: secret
+      passwdValidTo: ''
+    - type: vnc
+      passwdValidTo: '2023-12-31T00:00:00'
+    - type: vnc
+      keymap: ''
+    - type: vnc
+      connected: keep
+    - type: vnc
+      passwd: secret
+      connected: ''
+    - type: vnc
+      sharePolicy: ''
+    - type: vnc
+      powerControl: ''
+    - type: spice
+      tlsPort: 0
+    - type: spice
+      tlsPort: 65536
+    - type: spice
+      defaultMode: ''
+    - type: spice
+      channels: []
+    - type: spice
+      channels:
+        main: ''
+    - type: rdp
+      multiUser: ''
+    - type: rdp
+      replaceUser: 'yes'
+    - type: rdp
+      multiUser: 'yes'
+      replaceUser: ''
+VideoDevice:
+  valid:
+    - type: vga
+    - type: cirrus
+    - type: vmvga
+    - type: xen
+    - type: vbox
+    - type: virtio
+    - type: qxl
+    - type: gop
+    - type: bochs
+    - type: ramfb
+    - type: none
+    - &video_device
+      type: vga
+      vram: 1024
+    - type: vga
+      vram: 65536
+    - type: vga
+      vram: 4194304
+    - type: vga
+      heads: 4
+    - type: virtio
+      blob: 'on'
+    - type: virtio
+      blob: 'off'
+  invalid:
+    - {}
+    - type: ''
+    - type: vga
+      vram: 0
+    - type: vga
+      vram: 2000
+    - type: vga
+      heads: 0
+    - type: vga
+      blob: 'on'
+    - type: virtio
+      blob: ''
+CharDevSource:
+  valid:
+    - &char_dev_path_source
+      path: /nonexistent
+    - &char_dev_socket_source
+      path: /run/char.sock
+      mode: bind
+    - path: /run/char.sock
+      mode: connect
+    - &char_dev_channel_source
+      channel: org.qemu.console.serial.0
+    - &char_dev_net_source
+      host: console.example.com
+      mode: connect
+      service: 23
+    - host: console.example.com
+      mode: bind
+      service: 23
+    - <<: *char_dev_net_source
+      tls: 'no'
+    - <<: *char_dev_net_source
+      tls: 'yes'
+  invalid:
+    - {}
+    - path: ''
+    - path: '/run/char.sock'
+      mode: ''
+    - path: /nonexistent
+      channel: org.qemu.console.serial.0
+    - path: /nonexistent
+      service: 23
+    - path: /nonexistent
+      tls: 'yes'
+    - host: console.example.com
+      service: 23
+    - host: console.example.com
+      mode: connect
+    - host: console.example.com
+      mode: connect
+      service: 0
+    - host: console.example.com
+      mode: connect
+      service: 65536
+    - host: console.example.com
+      mode: ''
+      service: 23
+    - <<: *char_dev_net_source
+      tls: ''
+    - <<: *char_dev_channel_source
+      mode: connect
+    - <<: *char_dev_channel_source
+      service: 23
+    - <<: *char_dev_channel_source
+      tls: 'yes'
+CharDevTarget:
+  valid:
+    - &char_dev_target_simple
+      port: 0
+    - port: 0
+      type: virtio
+    - &char_dev_target_guestfwd
+      type: guestfwd
+      address: *ipv4_address
+      port: 80
+    - <<: *char_dev_target_guestfwd
+      address: *ipv6_address
+    - &char_dev_target_channel
+      name: org.qemu.guest_agent.0
+    - <<: *char_dev_target_channel
+      type: virtio
+  invalid:
+    - {}
+    - port: -1
+    - port: 0
+      name: org.qemu.guest_agent.0
+    - type: guestfwd
+      address: *ipv4_address
+    - address: *ipv4_address
+      port: 80
+    - type: virtio
+      address: *ipv4_address
+      port: 80
+    - type: guestfwd
+      address: *ipv4_address
+      port: 0
+    - type: guestfwd
+      address: *ipv4_address
+      port: 65536
+    - <<: *char_dev_target_guestfwd
+      name: org.qemu.guest_agent.0
+    - name: ''
+CharDevLog:
+  valid:
+    - &char_dev_log
+      file: /var/log/domain.log
+    - <<: *char_dev_log
+      append: 'on'
+    - <<: *char_dev_log
+      append: 'off'
+  invalid:
+    - {}
+    - file: ''
+    - <<: *char_dev_log
+      append: ''
+CharacterDevice:
+  valid:
+    - &serial_dev
+      category: serial
+      type: 'null'
+      target: *char_dev_target_simple
+    - &parallel_dev
+      <<: *serial_dev
+      category: parallel
+    - &console_dev
+      <<: *serial_dev
+      category: console
+    - &channel_dev
+      category: channel
+      type: 'null'
+      target: *char_dev_target_channel
+    - <<: *serial_dev
+      log: *char_dev_log
+    - <<: *serial_dev
+      type: stdio
+    - <<: *serial_dev
+      type: vc
+    - <<: *serial_dev
+      type: pty
+    - <<: *serial_dev
+      type: file
+      src: *char_dev_path_source
+    - <<: *serial_dev
+      type: dev
+      src: *char_dev_path_source
+    - <<: *serial_dev
+      type: pipe
+      src: *char_dev_path_source
+    - <<: *serial_dev
+      type: nmdm
+      src: *char_dev_path_source
+    - <<: *serial_dev
+      type: pty
+      src: *char_dev_path_source
+    - <<: *serial_dev
+      type: tcp
+      src: *char_dev_net_source
+    - <<: *serial_dev
+      type: unix
+      src: *char_dev_socket_source
+    - <<: *serial_dev
+      type: spiceport
+      src: *char_dev_channel_source
+  invalid:
+    - {}
+    - <<: *serial_dev
+      category: ''
+    - <<: *serial_dev
+      type: ''
+    - <<: *serial_dev
+      target: {}
+    - <<: *serial_dev
+      log: {}
+    - <<: *serial_dev
+      src: *char_dev_path_source
+    - <<: *serial_dev
+      type: stdio
+      src: *char_dev_path_source
+    - <<: *serial_dev
+      type: vc
+      src: *char_dev_path_source
+    - <<: *serial_dev
+      type: pty
+      src: *char_dev_net_source
+    - <<: *serial_dev
+      type: pty
+      src: *char_dev_channel_source
+    - <<: *serial_dev
+      type: file
+    - <<: *serial_dev
+      type: file
+      src: *char_dev_net_source
+    - <<: *serial_dev
+      type: file
+      src: *char_dev_channel_source
+    - <<: *serial_dev
+      type: pipe
+    - <<: *serial_dev
+      type: pipe
+      src: *char_dev_net_source
+    - <<: *serial_dev
+      type: pipe
+      src: *char_dev_channel_source
+    - <<: *serial_dev
+      type: dev
+    - <<: *serial_dev
+      type: dev
+      src: *char_dev_net_source
+    - <<: *serial_dev
+      type: dev
+      src: *char_dev_channel_source
+    - <<: *serial_dev
+      type: nmdm
+    - <<: *serial_dev
+      type: nmdm
+      src: *char_dev_net_source
+    - <<: *serial_dev
+      type: nmdm
+      src: *char_dev_channel_source
+    - <<: *serial_dev
+      type: tcp
+    - <<: *serial_dev
+      type: tcp
+      src: *char_dev_path_source
+    - <<: *serial_dev
+      type: tcp
+      src: *char_dev_socket_source
+    - <<: *serial_dev
+      type: tcp
+      src: *char_dev_channel_source
+    - <<: *serial_dev
+      type: unix
+    - <<: *serial_dev
+      type: unix
+      src: *char_dev_path_source
+    - <<: *serial_dev
+      type: unix
+      src: *char_dev_net_source
+    - <<: *serial_dev
+      type: unix
+      src: *char_dev_channel_source
+    - <<: *serial_dev
+      type: spiceport
+    - <<: *serial_dev
+      type: spiceport
+      src: *char_dev_path_source
+    - <<: *serial_dev
+      type: spiceport
+      src: *char_dev_net_source
+    - <<: *serial_dev
+      type: spiceport
+      src: *char_dev_socket_source
+WatchdogDevice:
+  valid:
+    - model: itco
+    - &watchdog
+      model: i6300esb
+    - model: ib700
+    - model: diag288
+    - <<: *watchdog
+      action: reset
+    - <<: *watchdog
+      action: shutdown
+    - <<: *watchdog
+      action: poweroff
+    - <<: *watchdog
+      action: pause
+    - <<: *watchdog
+      action: none
+    - <<: *watchdog
+      action: dump
+    - <<: *watchdog
+      action: inject-nmi
+  invalid:
+    - {}
+    - model: ''
+    - <<: *watchdog
+      action: ''
+RNGBackend:
+  valid:
+    - {}
+    - model: builtin
+    - &rng_backend
+      model: random
+      path: /dev/urandom
+    - model: egd
+      type: unix
+      path: /run/egd.sock
+      mode: connect
+    - model: egd
+      type: tcp
+      host: *ipv4_address
+      service: 1000
+      mode: connect
+  invalid:
+    - model: ''
+    - model: random
+    - model: egd
+RNGDevice:
+  valid:
+    - &rng_device
+      model: virtio
+    - <<: *rng_device
+      rate: *data_rate
+    - <<: *rng_device
+      backend: *rng_backend
+  invalid:
+    - {}
+    - model: ''
+    - <<: *rng_device
+      rate: {}
+    - <<: *rng_device
+      backend: ''
+TPMDevice:
+  valid:
+    - &tpm_emu
+      type: emulator
+    - <<: *tpm_emu
+      model: tpm-tis
+    - <<: *tpm_emu
+      model: tpm-crb
+    - <<: *tpm_emu
+      model: tpm-spapr
+    - <<: *tpm_emu
+      model: tpm-spapr-proxy
+    - type: passthrough
+      dev: /dev/tpm0
+    - <<: *tpm_emu
+      encryption: 65267a83-2c8c-42e3-95e2-ae9a1fe522a7
+    - <<: *tpm_emu
+      version: '1.2'
+    - <<: *tpm_emu
+      version: '2.0'
+    - <<: *tpm_emu
+      persistent_state: 'yes'
+    - <<: *tpm_emu
+      persistent_state: 'no'
+    - <<: *tpm_emu
+      active_pcr_banks: []
+    - <<: *tpm_emu
+      active_pcr_banks:
+        - sha256
+        - sha512
+  invalid:
+    - {}
+    - type: ''
+    - type: passthrough
+    - <<: *tpm_emu
+      model: ''
+    - type: passthrough
+      dev: ''
+    - <<: *tpm_emu
+      encryption: ''
+    - <<: *tpm_emu
+      version: ''
+    - <<: *tpm_emu
+      persistent_state: ''
+SimpleDevice:
+  valid:
+    - &simple_dev
+      model: virtio
+  invalid:
+    - {}
+    - model: ''
+Devices:
+  valid:
+    - {}
+  invalid:
+    - controllers:
+        - type: usb
+          index: 0
+        - type: usb
+          index: 0
+DomainInfo:
+  valid:
+    - name: test
+      type: test
+      memory: 65536
+      os:
+        variant: test
+        arch: x86_64
+  invalid:
+    - {}

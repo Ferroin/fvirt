@@ -1,0 +1,154 @@
+%YAML 1.2
+---
+PoolFeatures:
+  valid:
+    - {}
+    - cow: 'yes'
+    - cow: 'no'
+    - cow: null
+  invalid:
+    - cow: ''
+PoolSource:
+  valid:
+    - format: auto
+    - dir: /nonexistent
+    - initiator: test
+    - adapter: test
+    - name: test
+    - hosts:
+        - pool.example.com
+    - devices:
+        - /dev/sda
+  invalid:
+    - {}
+    - format: ''
+    - dir: ''
+    - initiator: ''
+    - adapter: ''
+    - name: ''
+    - hosts: []
+    - devices: []
+PoolTarget:
+  valid:
+    - &pool_target
+      path: /nonexistent
+  invalid:
+    - {}
+    - path: null
+    - path: ''
+PoolInfo:
+  valid:
+    - &dir_pool
+      type: dir
+      name: test
+      target: *pool_target
+    - <<: *dir_pool
+      uuid: 4c9fda91-dda5-428f-8057-c678c46f85a3
+    - <<: *dir_pool
+      features:
+        cow: 'no'
+    - &fs_pool
+      type: fs
+      name: test
+      source:
+        format: auto
+        devices:
+          - /dev/sda1
+      target: *pool_target
+    - &netfs_pool
+      type: netfs
+      name: test
+      source:
+        format: nfs
+        hosts:
+          - nfs.example.com
+        dir: /pool
+      target: *pool_target
+    - &iscsi_direct_pool
+      type: iscsi-direct
+      name: test
+      source:
+        hosts:
+          - iscsi.example.com
+        devices:
+          - iqn.2013-06.com.example:iscsi-pool
+        initiator: iqn.2013-06.com.example:iscsi-initiator
+    - &multipath_pool
+      type: multipath
+      name: test
+    - &zfs_pool
+      type: zfs
+      name: test
+      source:
+        name: test
+    - <<: *zfs_pool
+      source:
+        name: test
+        devices:
+          - /dev/sda1
+          - /dev/sdb1
+  invalid:
+    - {}
+    - type: ''
+      name: test
+    - type: dir
+      name: test
+    - type: multipath
+      name: ''
+    - <<: *dir_pool
+      uuid: ''
+    - <<: *dir_pool
+      features: ''
+    - <<: *fs_pool
+      source:
+        format: ''
+        devices:
+          - /dev/sda1
+    - <<: *fs_pool
+      source:
+        format: none
+        devices:
+          - /dev/sda1
+    - <<: *fs_pool
+      source:
+        format: auto
+        devices:
+          - /dev/sda1
+          - /dev/sdb1
+    - <<: *netfs_pool
+      source:
+        format: nfs
+        hosts:
+          - nfs.example.com
+    - <<: *iscsi_direct_pool
+      source:
+        hosts:
+          - iscsi.example.com
+          - iscsi2.example.com
+        devices:
+          - iqn.2013-06.com.example:iscsi-pool
+        initiator: iqn.2013-06.com.example:iscsi-initiator
+    - <<: *iscsi_direct_pool
+      source:
+        hosts:
+          - iscsi.example.com
+        devices:
+          - iqn.2013-06.com.example:iscsi-pool
+    - type: scsi
+      name: test
+      source:
+        devices:
+          - /dev/sda1
+    - <<: *multipath_pool
+      features:
+        cow: 'no'
+    - <<: *multipath_pool
+      target: *pool_target
+    - <<: *multipath_pool
+      source:
+        name: test
+    - <<: *zfs_pool
+      source:
+        devices:
+          - /dev/sda1
+          - /dev/sdb1

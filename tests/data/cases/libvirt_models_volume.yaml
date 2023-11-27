@@ -1,0 +1,36 @@
+%YAML 1.2
+---
+VolumeInfo:
+  valid:
+    - &dir_volume
+      name: test
+      capacity: 65536
+      pool_type: dir
+      format: raw
+    - <<: *dir_volume
+      allocation: 0
+    - <<: *dir_volume
+      nocow: true
+    - <<: *dir_volume
+      uuid: 4c9fda91-dda5-428f-8057-c678c46f85a3
+    - &iscsi_volume
+      name: test
+      capacity: 65536
+      pool_type: iscsi
+  invalid:
+    - <<: *dir_volume
+      capacity: 0
+      allocation: 65536
+    - <<: *dir_volume
+      format: ''
+    - <<: *dir_volume
+      format: none
+    - name: test
+      capacity: 65536
+      pool_type: dir
+    - <<: *dir_volume
+      uuid: ''
+    - <<: *iscsi_volume
+      format: raw
+    - <<: *iscsi_volume
+      nocow: true
