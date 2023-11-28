@@ -19,7 +19,6 @@ import pytest
 from lxml import etree
 
 from fvirt.libvirt import Hypervisor, InvalidOperation, LifecycleResult, StoragePool
-from fvirt.libvirt.models.volume import VolumeInfo
 from fvirt.libvirt.volume import MATCH_ALIASES, Volume
 from fvirt.util.match import MatchTarget
 
@@ -27,7 +26,7 @@ from .shared import (check_entity_access_get, check_entity_access_iterable, chec
                      check_entity_access_match, check_entity_format, check_match_aliases, check_undefine)
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Mapping
 
 
 def test_check_match_aliases(live_volume: tuple[Volume, StoragePool, Hypervisor]) -> None:
@@ -419,21 +418,21 @@ def test_volume_sparse_upload(live_volume: tuple[Volume, StoragePool, Hypervisor
 
 
 @pytest.mark.parametrize('data', (
-    VolumeInfo.model_validate({
+    {
         'name': 'vol',
         'pool_type': 'dir',
         'capacity': 65536,
         'format': 'raw',
-    }),
-    VolumeInfo.model_validate({
+    },
+    {
         'name': 'vol',
         'pool_type': 'dir',
         'capacity': 65536,
         'allocation': 0,
         'format': 'raw',
-    }),
+    },
 ))
-def test_new_config(data: VolumeInfo, virt_xml_validate: Callable[[str], None]) -> None:
+def test_new_config(data: Mapping, virt_xml_validate: Callable[[str], None]) -> None:
     '''Test the new_config class method.'''
     doc = Volume.new_config(config=data)
 

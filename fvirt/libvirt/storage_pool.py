@@ -13,12 +13,12 @@ import libvirt
 from .descriptors import ConfigProperty
 from .entity import LifecycleResult, RunnableEntity
 from .entity_access import BaseEntityAccess, EntityAccess, NameMap, UUIDMap
-from .exceptions import EntityRunning, InsufficientPrivileges, InvalidConfig, NotConnected
+from .exceptions import EntityRunning, FeatureNotSupported, InsufficientPrivileges, InvalidConfig, NotConnected
 from .volume import Volume, VolumeAccess
 from ..util.match import MatchAlias
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Iterable, Mapping
 
     from .hypervisor import Hypervisor
     from .models.storage_pool import PoolInfo
@@ -259,17 +259,32 @@ class StoragePool(RunnableEntity):
     def new_config(
         cls: type[StoragePool],
         /, *,
-        config: PoolInfo,
+        config: PoolInfo | Mapping,
         template: str | None = None,
     ) -> str:
         '''Create a new storage pool configuration from a template.
 
            If templating is not supported, a FeatureNotSupported error
-           will be raised.'''
+           will be raised.
+
+           If a mapping is passed in for the config, it will be converted
+           automatically to a PoolInfo instance.'''
+        # The below check is almost but not quite equivalent to isinstance().
+        # We can't use isinstance() here, because that requires
+        # PoolInfo to be available at runtime, which may not be the case
+        # if templating is not supported.
+        if config.__class__.__name__ != 'PoolInfo':
+            try:
+                from .models.storage_pool import PoolInfo
+            except ImportError:
+                raise FeatureNotSupported
+            else:
+                config = PoolInfo.model_validate(config)
+
         return cls._render_config(
             template_name='pool.xml',
             template=template,
-            **config.model_dump(exclude_none=True),
+            **config.model_dump(exclude_none=True),  # type: ignore
         )
 
 

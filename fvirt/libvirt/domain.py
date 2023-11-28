@@ -15,12 +15,12 @@ import libvirt
 from .descriptors import ConfigAttributeProperty, ConfigElementProperty, MethodProperty
 from .entity import LifecycleResult, RunnableEntity
 from .entity_access import BaseEntityAccess, EntityAccess, EntityMap, NameMap, UUIDMap
-from .exceptions import EntityNotRunning, InvalidOperation
+from .exceptions import EntityNotRunning, FeatureNotSupported, InvalidOperation
 from .stream import Stream
 from ..util.match import MatchAlias
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Iterable, Mapping
 
     from .hypervisor import Hypervisor
     from .models.domain import DomainInfo
@@ -413,17 +413,32 @@ class Domain(RunnableEntity):
     def new_config(
         cls: type[Domain],
         /, *,
-        config: DomainInfo,
+        config: DomainInfo | Mapping,
         template: str | None = None,
     ) -> str:
         '''Create a new domain configuration from a template.
 
            If templating is not supported, a FeatureNotSupported error
-           will be raised.'''
+           will be raised.
+
+           If a mapping is passed in for the config, it will be converted
+           automatically to a DomainInfo instance.'''
+        # The below check is almost but not quite equivalent to isinstance().
+        # We can't use isinstance() here, because that requires
+        # DomainInfo to be available at runtime, which may not be the case
+        # if templating is not supported.
+        if config.__class__.__name__ != 'DomainInfo':
+            try:
+                from .models.domain import DomainInfo
+            except ImportError:
+                raise FeatureNotSupported
+            else:
+                config = DomainInfo.model_validate(config)
+
         return cls._render_config(
             template_name='domain.xml',
             template=template,
-            **config.model_dump(exclude_none=True),
+            **config.model_dump(exclude_none=True),  # type: ignore
         )
 
 
