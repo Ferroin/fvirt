@@ -16,7 +16,6 @@ from lxml import etree
 
 from fvirt.libvirt import EntityRunning, Hypervisor, InvalidConfig, LifecycleResult, Volume
 from fvirt.libvirt.entity_access import EntityAccess
-from fvirt.libvirt.models.storage_pool import PoolInfo
 from fvirt.libvirt.storage_pool import MATCH_ALIASES, StoragePool, StoragePoolState
 from fvirt.util.match import MatchArgument, MatchTarget
 
@@ -24,7 +23,7 @@ from .shared import (check_entity_access_get, check_entity_access_iterable, chec
                      check_entity_format, check_match_aliases, check_runnable_destroy, check_runnable_start, check_undefine, check_xslt)
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Sequence
+    from collections.abc import Callable, Mapping, Sequence
     from contextlib import _GeneratorContextManager
     from pathlib import Path
 
@@ -386,14 +385,14 @@ def test_entities(test_pool: tuple[StoragePool, Hypervisor], t: str) -> None:
 
 
 @pytest.mark.parametrize('data', (
-    PoolInfo.model_validate({
+    {
         'type': 'dir',
         'name': 'pool',
         'target': {
             'path': '/nonexistent',
         },
-    }),
-    PoolInfo.model_validate({
+    },
+    {
         'type': 'fs',
         'name': 'pool',
         'source': {
@@ -405,8 +404,8 @@ def test_entities(test_pool: tuple[StoragePool, Hypervisor], t: str) -> None:
         'target': {
             'path': '/nonexistent',
         },
-    }),
-    PoolInfo.model_validate({
+    },
+    {
         'type': 'netfs',
         'name': 'pool',
         'source': {
@@ -420,8 +419,8 @@ def test_entities(test_pool: tuple[StoragePool, Hypervisor], t: str) -> None:
         'target': {
             'path': '/nonexistent',
         },
-    }),
-    PoolInfo.model_validate({
+    },
+    {
         'type': 'logical',
         'name': 'pool',
         'source': {
@@ -434,8 +433,8 @@ def test_entities(test_pool: tuple[StoragePool, Hypervisor], t: str) -> None:
         'target': {
             'path': '/dev/HostVG',
         },
-    }),
-    PoolInfo.model_validate({
+    },
+    {
         'type': 'disk',
         'name': 'pool',
         'source': {
@@ -447,8 +446,8 @@ def test_entities(test_pool: tuple[StoragePool, Hypervisor], t: str) -> None:
         'target': {
             'path': '/dev',
         },
-    }),
-    PoolInfo.model_validate({
+    },
+    {
         'type': 'iscsi',
         'name': 'pool',
         'source': {
@@ -462,8 +461,8 @@ def test_entities(test_pool: tuple[StoragePool, Hypervisor], t: str) -> None:
         'target': {
             'path': '/dev/disk/by-path',
         }
-    }),
-    PoolInfo.model_validate({
+    },
+    {
         'type': 'iscsi-direct',
         'name': 'pool',
         'source': {
@@ -475,8 +474,8 @@ def test_entities(test_pool: tuple[StoragePool, Hypervisor], t: str) -> None:
             ],
             'initiator': 'iqn.2013-06.com.example:iscsi-initiator',
         },
-    }),
-    PoolInfo.model_validate({
+    },
+    {
         'type': 'scsi',
         'name': 'pool',
         'source': {
@@ -485,8 +484,8 @@ def test_entities(test_pool: tuple[StoragePool, Hypervisor], t: str) -> None:
         'target': {
             'path': '/dev/disk/by-path',
         },
-    }),
-    PoolInfo.model_validate({
+    },
+    {
         'type': 'rbd',
         'name': 'pool',
         'source': {
@@ -497,8 +496,8 @@ def test_entities(test_pool: tuple[StoragePool, Hypervisor], t: str) -> None:
                 'mon3.example.com',
             ],
         },
-    }),
-    PoolInfo.model_validate({
+    },
+    {
         'type': 'gluster',
         'name': 'pool',
         'source': {
@@ -508,15 +507,15 @@ def test_entities(test_pool: tuple[StoragePool, Hypervisor], t: str) -> None:
             ],
             'dir': '/pool',
         },
-    }),
-    PoolInfo.model_validate({
+    },
+    {
         'type': 'zfs',
         'name': 'pool',
         'source': {
             'name': 'pool',
         },
-    }),
-    PoolInfo.model_validate({
+    },
+    {
         'type': 'vstorage',
         'name': 'pool',
         'target': {
@@ -525,9 +524,9 @@ def test_entities(test_pool: tuple[StoragePool, Hypervisor], t: str) -> None:
         'source': {
             'name': 'pool',
         },
-    }),
+    },
 ))
-def test_new_config(data: PoolInfo, virt_xml_validate: Callable[[str], None]) -> None:
+def test_new_config(data: Mapping, virt_xml_validate: Callable[[str], None]) -> None:
     '''Test the new_config class method.'''
     doc = StoragePool.new_config(config=data)
 

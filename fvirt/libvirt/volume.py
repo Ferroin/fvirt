@@ -15,12 +15,12 @@ import libvirt
 from .descriptors import ConfigProperty, MethodProperty
 from .entity import Entity, LifecycleResult
 from .entity_access import BaseEntityAccess, EntityAccess, EntityMap, NameMap
-from .exceptions import InvalidOperation, SubOperationFailed
+from .exceptions import FeatureNotSupported, InvalidOperation, SubOperationFailed
 from .stream import Stream
 from ..util.match import MatchAlias
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Iterable, Mapping
 
     from .models.volume import VolumeInfo
     from .storage_pool import StoragePool
@@ -339,17 +339,32 @@ class Volume(Entity):
     def new_config(
         cls: type[Volume],
         /, *,
-        config: VolumeInfo,
+        config: VolumeInfo | Mapping,
         template: str | None = None,
     ) -> str:
         '''Create a new volume configuration from a template.
 
            If templating is not supported, a FeatureNotSupported error
-           will be raised.'''
+           will be raised.
+
+           If a mapping is passed in for the config, it will be converted
+           automatically to a VolumeInfo instance.'''
+        # The below check is almost but not quite equivalent to isinstance().
+        # We can't use isinstance() here, because that requires
+        # VolumeInfo to be available at runtime, which may not be the case
+        # if templating is not supported.
+        if config.__class__.__name__ != 'VolumeInfo':
+            try:
+                from .models.volume import VolumeInfo
+            except ImportError:
+                raise FeatureNotSupported
+            else:
+                config = VolumeInfo.model_validate(config)
+
         return cls._render_config(
             template_name='volume.xml',
             template=template,
-            **config.model_dump(exclude_none=True),
+            **config.model_dump(exclude_none=True),  # type: ignore
         )
 
 

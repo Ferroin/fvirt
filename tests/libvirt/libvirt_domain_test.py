@@ -17,7 +17,6 @@ from lxml import etree
 
 from fvirt.libvirt import EntityNotRunning, Hypervisor, InvalidConfig, LifecycleResult
 from fvirt.libvirt.domain import MATCH_ALIASES, Domain, DomainState
-from fvirt.libvirt.models.domain import DomainInfo
 from fvirt.util.match import MatchArgument, MatchTarget
 
 from .shared import (check_entity_access_get, check_entity_access_iterable, check_entity_access_mapping, check_entity_access_match,
@@ -507,7 +506,7 @@ def test_domain_access_mapping(test_hv: Hypervisor, p: str, k: Sequence[Any], c:
 
 
 @pytest.mark.parametrize('data', (
-    DomainInfo.model_validate({
+    {
         'name': 'test',
         'type': 'test',
         'memory': 65536,
@@ -515,8 +514,8 @@ def test_domain_access_mapping(test_hv: Hypervisor, p: str, k: Sequence[Any], c:
             'variant': 'test',
             'arch': 'i686',
         },
-    }),
-    DomainInfo.model_validate({
+    },
+    {
         'name': 'test',
         'type': 'lxc',
         'memory': 65536,
@@ -524,8 +523,8 @@ def test_domain_access_mapping(test_hv: Hypervisor, p: str, k: Sequence[Any], c:
             'variant': 'container',
             'init': '/sbin/init',
         },
-    }),
-    DomainInfo.model_validate({
+    },
+    {
         'name': '100',
         'type': 'vz',
         'memory': 65536,
@@ -533,8 +532,8 @@ def test_domain_access_mapping(test_hv: Hypervisor, p: str, k: Sequence[Any], c:
             'variant': 'container',
             'init': '/sbin/init',
         },
-    }),
-    DomainInfo.model_validate({
+    },
+    {
         'name': 'test',
         'type': 'kvm',
         'memory': 65536,
@@ -545,8 +544,8 @@ def test_domain_access_mapping(test_hv: Hypervisor, p: str, k: Sequence[Any], c:
             'firmware': 'efi',
             'arch': 'x86_64',
         },
-    }),
-    DomainInfo.model_validate({
+    },
+    {
         'name': 'test',
         'type': 'xen',
         'memory': 65536,
@@ -557,9 +556,9 @@ def test_domain_access_mapping(test_hv: Hypervisor, p: str, k: Sequence[Any], c:
             'bootloader': '/usr/bin/test_loader',
             'type': 'linux',
         },
-    }),
+    },
 ))
-def test_new_config(data: DomainInfo, virt_xml_validate: Callable[[str], None]) -> None:
+def test_new_config(data: Mapping, virt_xml_validate: Callable[[str], None]) -> None:
     '''Test domain templating.'''
     doc = Domain.new_config(config=data)
 
