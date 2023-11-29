@@ -56,6 +56,9 @@
 - name: area/libvirt
   description: Issues and PRs involving the libvirt wrappers.
   color: *area
+- name: area/templating
+  description: Issues and PRs involving our templating functionality.
+  color: *area
 - name: area/util
   description: Issues and PRs involving our utility functions.
   color: *area

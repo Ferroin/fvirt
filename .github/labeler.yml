@@ -19,6 +19,13 @@ area/libvirt:
   - fvirt/libvirt/**
   - tests/libvirt/**
 
+area/templating:
+  - fvirt/templates/**
+  - tests/templates_test.py
+  - fvirt/libvirt/models/**
+  - tests/libvirt/models/**
+  - tests/data/cases/libvirt_models_*.yaml
+
 area/util:
   - fvirt/util/**
   - tests/util/**
@@ -32,20 +39,28 @@ component/host:
 component/domain:
   - fvirt/commands/domain/**
   - fvirt/libvirt/domain.py
+  - fvirt/libvirt/models/domain.py
+  - fvirt/templates/domain.xml
+  - fvirt/templates/domain/**
   - tests/commands/domain/**
-  - tests/libvirt/libvirt_domain_test.py
+  - tests/libvirt/**_domain_test.py
+  - tests/data/cases/libvirt*_domain_test.yaml
 
 component/storage/pool:
   - fvirt/commands/pool/**
   - fvirt/libvirt/storage_pool.py
+  - fvirt/templates/pool.xml
   - tests/commands/pool/**
-  - tests/libvirt/libvirt_storage_pool_test.py
+  - tests/libvirt/**_storage_pool_test.py
+  - tests/data/cases/libvirt*_storage_pool_test.yaml
 
 component/storage/volume:
   - fvirt/commands/volume/**
   - fvirt/libvirt/volume.py
+  - fvirt/templates/volume.xml
   - tests/commands/volume/**
-  - tests/libvirt/libvirt_volume_test.py
+  - tests/libvirt/**_volume_test.py
+  - tests/data/cases/libvirt*_volume.yaml
 
 documentation:
   - LICENSE.md
