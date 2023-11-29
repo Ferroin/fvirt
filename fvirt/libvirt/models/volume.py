@@ -10,7 +10,7 @@ import functools
 from typing import Final, Self
 from uuid import UUID
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, computed_field, model_validator
 
 _FILE_POOL_TYPES: Final = {
     'dir',
@@ -56,18 +56,46 @@ TARGET_POOL_TYPES: Final = FORMAT_POOL_TYPES | NOCOW_POOL_TYPES
 
 
 class VolumeInfo(BaseModel):
-    '''Model representing a volume for templating.
+    '''Model representing a volume for templating.'''
+    name: str = Field(
+        min_length=1,
+        description='Name of the volume.',
+    )
+    capacity: int = Field(
+        gt=0,
+        description='Capacity of the volume in bytes.',
+    )
+    pool_type: str = Field(
+        min_length=1,
+        description='Type of pool the volume will be created in. Will be handled automaticlaly by CLI commands.',
+    )
+    allocation: int | None = Field(
+        default=None,
+        ge=0,
+        description='Amount of space allocated to the volume in bytes. Must be less than or equal to the volume capacity.',
+    )
+    uuid: UUID | None = Field(
+        default=None,
+        description='UUID of the volume. If not specified, libvirt will automatically assign a newly generated UUID.',
+    )
+    format: str | None = Field(
+        default=None,
+        pattern=f'^({"|".join(FORMATS.keys())})$',
+        description='Format of the volume. Valid values depend on the pool type. See https://libvirt.org/storage.html for more information.',
+    )
+    nocow: bool = Field(
+        default=False,
+        description='Status of the NOCOW flag for the volume. ' +
+                    f'Only supported for volumes in pools with one of the following types: {", ".join(NOCOW_POOL_TYPES)}',
+    )
 
-       The `pool_type` property should match the type of storage pool
-       the volume will be defined in.'''
-    name: str = Field(min_length=1)
-    capacity: int = Field(gt=0)
-    pool_type: str = Field(min_length=1)
-    allocation: int | None = Field(default=None, ge=0)
-    uuid: UUID | None = Field(default=None)
-    format: str | None = Field(default=None, pattern=f'^({"|".join(FORMATS.keys())})')
-    nocow: bool = Field(default=False)
-    target: bool = Field(default=True)
+    @computed_field  # type: ignore[misc]
+    @property
+    def target(self: Self) -> bool:
+        if self.pool_type in TARGET_POOL_TYPES:
+            return True
+
+        return False
 
     @model_validator(mode='after')
     def check_allocation(self: Self) -> Self:
@@ -97,12 +125,5 @@ class VolumeInfo(BaseModel):
                     raise ValueError(f'Format "{ self.format }" is not supported for volumes in "{ self.pool_type }" type pools.')
         elif self.format is not None:
             raise ValueError(f'Format may not be specified for volumes in "{ self.pool_type }" type pools.')
-
-        return self
-
-    @model_validator(mode='after')
-    def set_target(self: Self) -> Self:
-        if self.pool_type not in TARGET_POOL_TYPES:
-            self.target = False
 
         return self
