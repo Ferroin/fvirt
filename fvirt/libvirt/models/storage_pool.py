@@ -8,10 +8,12 @@ from __future__ import annotations
 import functools
 
 from collections.abc import Sequence
-from typing import Final, Literal, Self
+from typing import Final, Self
 from uuid import UUID
 
 from pydantic import BaseModel, Field, model_validator
+
+from ._types import YesNo
 
 FORMATS: Final = {
     'auto': {'fs', 'netfs'},
@@ -41,11 +43,6 @@ FORMATS: Final = {
 }
 
 FORMAT_TYPES: Final = functools.reduce(lambda x, y: x | y, FORMATS.values())
-
-COW_TYPES: Final = {
-    'dir',
-    'fs',
-}
 
 SOURCE_DIR_TYPES: Final = {
     'netfs',
@@ -108,6 +105,15 @@ SOURCE_TYPES: Final = functools.reduce(lambda x, y: x | y, (
     SOURCE_NAME_TYPES,
 ))
 
+COW_TYPES: Final = {
+    'dir',
+    'fs',
+}
+
+FEATURES_TYPES: Final = functools.reduce(lambda x, y: x | y, (
+    COW_TYPES,
+))
+
 TARGET_TYPES: Final = {
     'dir',
     'fs',
@@ -123,23 +129,60 @@ TYPES: Final = {
     'multipath',
 } | SOURCE_TYPES | TARGET_TYPES
 
-YES_NO = Literal['yes', 'no']
-
 
 class PoolFeatures(BaseModel):
     '''Model representing features for a storage pool.'''
-    cow: YES_NO | None = Field(default=None)
+    cow: YesNo | None = Field(
+        default=None,
+        description='Whether to globally support COW semantics for the pool. ' +
+                    f'Only supported for pools of the following types: {", ".join(COW_TYPES)}',
+    )
 
 
 class PoolSource(BaseModel):
     '''Model representing the source for a storage pool.'''
-    format: str | None = Field(default=None, pattern=f'^({"|".join(FORMATS.keys())})$')
-    dir: str | None = Field(default=None, min_length=1)
-    devices: Sequence[str] | None = Field(default=None, min_length=1)
-    hosts: Sequence[str] | None = Field(default=None, min_length=1)
-    initiator: str | None = Field(default=None, min_length=1)
-    adapter: str | None = Field(default=None, min_length=1)
-    name: str | None = Field(default=None, min_length=1)
+    format: str | None = Field(
+        default=None,
+        pattern=f'^({"|".join(FORMATS.keys())})$',
+        description='Format for the storage pool source. Valid values depend on the pool type. ' +
+                    'See https://libvirt.org/storage.html for more information.',
+    )
+    dir: str | None = Field(
+        default=None,
+        min_length=1,
+        description='Directory on the remote server to use for storing volumes. ' +
+                    f'Only supported for pools of the following types: {", ".join(SOURCE_DIR_TYPES)}',
+    )
+    devices: Sequence[str] | None = Field(
+        default=None,
+        min_length=1,
+        description='A list of devices used to store pool data. ' +
+                    f'Only supported for pools of the following types: {", ".join(SOURCE_DEVICE_TYPES | OPTIONAL_SOURCE_DEVICE_TYPES)}',
+    )
+    hosts: Sequence[str] | None = Field(
+        default=None,
+        min_length=1,
+        description='A list of network hosts used to store pool data. ' +
+                    f'Only supported for pools of the following types: {", ".join(SOURCE_HOST_TYPES)}',
+    )
+    initiator: str | None = Field(
+        default=None,
+        min_length=1,
+        description='The iSCSI initiator to use for this pool. ' +
+                    f'Only supported for pools of the following types: {", ".join(SOURCE_INITIATOR_TYPES)}',
+    )
+    adapter: str | None = Field(
+        default=None,
+        min_length=1,
+        description='The host bus adapter to use for this pool.' +
+                    f'Only supported for pools of the following types: {", ".join(SOURCE_ADAPTER_TYPES)}',
+    )
+    name: str | None = Field(
+        default=None,
+        min_length=1,
+        description='The name of the source pool to use for this pool.' +
+                    f'Only supported for pools of the following types: {", ".join(SOURCE_NAME_TYPES)}',
+    )
 
     @model_validator(mode='after')
     def check_props(self: Self) -> Self:
@@ -151,17 +194,41 @@ class PoolSource(BaseModel):
 
 class PoolTarget(BaseModel):
     '''Model representing the target for a storage pool.'''
-    path: str = Field(min_length=1)
+    path: str = Field(
+        min_length=1,
+        description='The path to the directory to use as the target for this pool.'
+    )
 
 
 class PoolInfo(BaseModel):
     '''Model representing a storage pool for templating.'''
-    type: str = Field(pattern=f'^({"|".join(TYPES)})$')
-    name: str = Field(min_length=1)
-    uuid: UUID | None = Field(default=None)
-    features: PoolFeatures | None = Field(default=None)
-    source: PoolSource | None = Field(default=None)
-    target: PoolTarget | None = Field(default=None)
+    type: str = Field(
+        pattern=f'^({"|".join(TYPES)})$',
+        description='The type of storage pool.'
+    )
+    name: str = Field(
+        min_length=1,
+        description='The name of the storage pool.',
+    )
+    uuid: UUID | None = Field(
+        default=None,
+        description='UUID of the storage pool. If not specified, libvirt will automatically assign a newly generated UUID.',
+    )
+    features: PoolFeatures | None = Field(
+        default=None,
+        description='Features configuration for the storage pool. ' +
+                    f'Only supported for pools of the following types: {", ".join(FEATURES_TYPES)}',
+    )
+    source: PoolSource | None = Field(
+        default=None,
+        description='Source configuration for the storage pool. ' +
+                    f'Only supported for pools of the following types: {", ".join(SOURCE_TYPES)}',
+    )
+    target: PoolTarget | None = Field(
+        default=None,
+        description='Target configuration for the storage pool. ' +
+                    f'Only supported for pools of the following types: {", ".join(TARGET_TYPES)}',
+    )
 
     @model_validator(mode='after')
     def check_features(self: Self) -> Self:
