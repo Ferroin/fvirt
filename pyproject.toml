@@ -14,7 +14,7 @@ fvirt = "fvirt.cli:cli"
 python = "^3.11"
 blessed = "^1.20.0"
 click = "^8.1.7"
-frozendict = "^2.3.9"
+frozendict = "^2.3.10"
 jinja2 = {version = "^3.1.2", optional = true}
 libvirt-python = "^9.9.0"
 lxml = "^4.9.3"
