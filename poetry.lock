@@ -452,12 +452,12 @@ ansicon = {version = "*", markers = "platform_system == \"Windows\""}
 
 [[package]]
 name = "libvirt-python"
-version = "9.9.0"
+version = "9.10.0"
 description = "The libvirt virtualization API python binding"
 optional = false
 python-versions = ">=3.6"
 files = [
-    {file = "libvirt-python-9.9.0.tar.gz", hash = "sha256:a97327417851b72aa24e24cdfe10765df0037b9775564cd19bcee25e22b341ea"},
+    {file = "libvirt-python-9.10.0.tar.gz", hash = "sha256:60b4a32200093d1287de544cdd310f01a1066dbff4cee62d45fa504141aa7577"},
 ]
 
 [[package]]
@@ -1410,4 +1410,4 @@ templates = ["jinja2", "psutil", "pydantic", "pydantic-extra-types", "ruamel-yam
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "cf86be4b7a94bd2ab15c39c152bc61fa485aacce3ec69409ff618bb2b24df14d"
+content-hash = "fe36cbd6c9b61a877647b313ce68adc601e4649103d219af4ae3e817f5868269"
