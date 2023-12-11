@@ -1,6 +1,10 @@
+%YAML 1.1
 ---
 
 extends: default
+
+ignore: |
+  .cache/
 
 rules:
   colons:

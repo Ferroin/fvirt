@@ -128,7 +128,7 @@ jobs:
       - name: Install dependencies
         run: poetry install --no-root --only=dev --sync
       - name: Run yamllint
-        run: poetry run yamllint fvirt tests .github
+        run: poetry run yamllint .
 
   flake8:
     name: flake8
@@ -186,7 +186,7 @@ jobs:
       - name: Install python dependencies
         run: poetry install --no-root --sync --all-extras
       - name: Run mypy
-        run: poetry run mypy fvirt tests
+        run: poetry run mypy .
 
   pytest:
     name: pytest
@@ -239,4 +239,4 @@ jobs:
       - name: Install python dependencies
         run: poetry install --no-root --only=dev --sync
       - name: Run bandit
-        run: poetry run bandit -r fvirt tests
+        run: poetry run bandit -r .
