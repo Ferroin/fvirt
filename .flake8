@@ -1,4 +1,5 @@
 [flake8]
+exclude=.git/,.cache/
 max-line-length=150
 extend-ignore=SFS301
 
