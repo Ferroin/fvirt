@@ -8,12 +8,13 @@ from __future__ import annotations
 import functools
 
 from collections.abc import Sequence
-from typing import Final, Self
+from ipaddress import IPv4Address, IPv6Address
+from typing import Annotated, Final, Self
 from uuid import UUID
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import Field, model_validator
 
-from ._types import YesNo
+from ._types import FilePath, Hostname, Model, NonEmptyString, V_YesNo
 
 FORMATS: Final = {
     'auto': {'fs', 'netfs'},
@@ -130,56 +131,51 @@ TYPES: Final = {
 } | SOURCE_TYPES | TARGET_TYPES
 
 
-class PoolFeatures(BaseModel):
+class PoolFeatures(Model):
     '''Model representing features for a storage pool.'''
-    cow: YesNo | None = Field(
+    cow: V_YesNo | None = Field(
         default=None,
         description='Whether to globally support COW semantics for the pool. ' +
                     f'Only supported for pools of the following types: {", ".join(COW_TYPES)}',
     )
 
 
-class PoolSource(BaseModel):
+class PoolSource(Model):
     '''Model representing the source for a storage pool.'''
-    format: str | None = Field(
+    format: Annotated[str, Field(pattern=f'^({"|".join(FORMATS.keys())})$')] | None = Field(
         default=None,
-        pattern=f'^({"|".join(FORMATS.keys())})$',
         description='Format for the storage pool source. Valid values depend on the pool type. ' +
                     'See https://libvirt.org/storage.html for more information.',
     )
-    dir: str | None = Field(
+    dir: Annotated[str, Field(pattern='^/.*$')] | None = Field(
         default=None,
-        min_length=1,
         description='Directory on the remote server to use for storing volumes. ' +
                     f'Only supported for pools of the following types: {", ".join(SOURCE_DIR_TYPES)}',
     )
-    devices: Sequence[str] | None = Field(
+    devices: Sequence[NonEmptyString] | None = Field(
         default=None,
         min_length=1,
         description='A list of devices used to store pool data. ' +
                     f'Only supported for pools of the following types: {", ".join(SOURCE_DEVICE_TYPES | OPTIONAL_SOURCE_DEVICE_TYPES)}',
     )
-    hosts: Sequence[str] | None = Field(
+    hosts: Sequence[Hostname | IPv4Address | IPv6Address] | None = Field(
         default=None,
         min_length=1,
         description='A list of network hosts used to store pool data. ' +
                     f'Only supported for pools of the following types: {", ".join(SOURCE_HOST_TYPES)}',
     )
-    initiator: str | None = Field(
+    initiator: NonEmptyString | None = Field(
         default=None,
-        min_length=1,
         description='The iSCSI initiator to use for this pool. ' +
                     f'Only supported for pools of the following types: {", ".join(SOURCE_INITIATOR_TYPES)}',
     )
-    adapter: str | None = Field(
+    adapter: NonEmptyString | None = Field(
         default=None,
-        min_length=1,
         description='The host bus adapter to use for this pool.' +
                     f'Only supported for pools of the following types: {", ".join(SOURCE_ADAPTER_TYPES)}',
     )
-    name: str | None = Field(
+    name: NonEmptyString | None = Field(
         default=None,
-        min_length=1,
         description='The name of the source pool to use for this pool.' +
                     f'Only supported for pools of the following types: {", ".join(SOURCE_NAME_TYPES)}',
     )
@@ -192,22 +188,20 @@ class PoolSource(BaseModel):
         return self
 
 
-class PoolTarget(BaseModel):
+class PoolTarget(Model):
     '''Model representing the target for a storage pool.'''
-    path: str = Field(
-        min_length=1,
+    path: FilePath = Field(
         description='The path to the directory to use as the target for this pool.'
     )
 
 
-class PoolInfo(BaseModel):
+class PoolInfo(Model):
     '''Model representing a storage pool for templating.'''
     type: str = Field(
         pattern=f'^({"|".join(TYPES)})$',
         description='The type of storage pool.'
     )
-    name: str = Field(
-        min_length=1,
+    name: NonEmptyString = Field(
         description='The name of the storage pool.',
     )
     uuid: UUID | None = Field(

@@ -127,7 +127,7 @@
 {% macro input(idev) %}
     {% if idev.type == 'passthrough' %}
         <input type='{{ idev.type }}' {{ add_attrs(idev, ('bus', 'model')) }}>
-            <source evdev='{{ idev.src.dev }}' />
+            <source evdev='{{ idev.src }}' />
         </input>
     {% elif idev.type == 'evdev' %}
         <input type='{{ idev.type }}' {{ add_attrs(idev, ('bus', 'model')) }}>
@@ -142,11 +142,11 @@
     {% if 'listeners' in gdev %}
         {% for listen in gdev.listeners %}
             {% if listen.type == 'address' %}
-                <listen type='address' address='{{ listen.address }}' />
+                <listen type='address' address='{{ listen.listen }}' />
             {% elif listen.type == 'network' %}
-                <listen type='network' network='{{ listen.network }}' />
+                <listen type='network' network='{{ listen.listen }}' />
             {% elif listen.type == 'socket' %}
-                <listen type='socket' socket='{{ listen.socket }}' />
+                <listen type='socket' socket='{{ listen.listen }}' />
             {% elif listen.type == 'none' %}
                 <listen type='none' />
             {% endif %}
@@ -184,32 +184,32 @@
     </video>
 {% endmacro %}
 
-{% macro charsrc(type, src) %}
-    {% if type == 'pty' %}
+{% macro charsrc(src) %}
+    {% if src.type == 'pty' %}
         {% if 'path' in src %}
             <source path='{{ src.path }}' />
         {% endif %}
-    {% elif type in ('file', 'dev', 'pipe') %}
+    {% elif src.type in ('file', 'dev', 'pipe') %}
         <source path='{{ src.path }}' />
-    {% elif type == 'spiceport' %}
+    {% elif src.type == 'spiceport' %}
         <source channel='{{ src.channel }}' />
-    {% elif type == 'unix' %}
+    {% elif src.type == 'unix' %}
         <source mode='{{ src.mode }}' path='{{ src.path }}' />
-    {% elif type == 'tcp' %}
+    {% elif src.type == 'tcp' %}
         <source {{ add_attrs(src, ('mode', 'host', 'service', 'tls')) }} />
-    {% elif type == 'nmdm' %}
+    {% elif src.type == 'nmdm' %}
         <source master='{{ src.path }}A' slave='{{ src.path }}B' />
     {% endif %}
 {% endmacro %}
 
 {% macro chardev(cdev) %}
-    <{{ cdev.category }} type='{{ cdev.type }}'>
+    <{{ cdev.target.category }} type='{{ cdev.source.type }}'>
         <target {{ add_attrs(cdev.target, ('type', 'address', 'port', 'name', 'state')) }} />
-        {{ charsrc(cdev.type, cdev.source) }}
+        {{ charsrc(cdev.source) }}
         {% if 'log' in cdev %}
             <log file='{{ cdev.log.file }}'{% if 'append' in cdev.log %} append='{{ cdev.log.append }}'{% endif %} />
         {% endif %}
-    </{{ cdev.category }}>
+    </{{ cdev.target.category }}>
 {% endmacro %}
 
 {% macro watchdog(wdev) %}

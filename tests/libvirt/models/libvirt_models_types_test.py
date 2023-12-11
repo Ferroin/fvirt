@@ -5,11 +5,13 @@
 
 from __future__ import annotations
 
+import datetime
+
 from typing import Type
 
 import pytest
 
-from fvirt.libvirt.models._types import CustomBool, OnOff, YesNo
+from fvirt.libvirt.models._types import CustomBool, OnOff, Timestamp, YesNo
 
 
 @pytest.mark.parametrize('t, true_str, false_str', (
@@ -32,3 +34,18 @@ def test_custom_bools(t: Type[CustomBool], true_str: str, false_str: str) -> Non
     assert hash(t(false_str)) == hash(False)
     assert hash(t(True)) == hash(True)
     assert hash(t(False)) == hash(False)
+
+
+@pytest.mark.parametrize('v, t, e', (
+    (0, int, 0),
+    (0, float, 0.0),
+    (0, str, '1970-01-01T00:00:00'),
+    ('1970-01-01T00:00:00Z', int, 0),
+    ('1970-01-01T00:00:00Z', float, 0.0),
+    ('1970-01-01T00:00:00Z', str, '1970-01-01T00:00:00'),
+))
+def test_Timestamp(v: int | str | datetime.datetime, t: Type[int | str | float], e: int | str | float) -> None:
+    '''Check conversion handling for Timestamps.'''
+    tstamp = Timestamp(v)
+
+    assert t(tstamp) == e

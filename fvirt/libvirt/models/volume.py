@@ -7,10 +7,12 @@ from __future__ import annotations
 
 import functools
 
-from typing import Final, Self
+from typing import Annotated, Final, Self
 from uuid import UUID
 
-from pydantic import BaseModel, Field, computed_field, model_validator
+from pydantic import Field, computed_field, model_validator
+
+from ._types import Model, NonEmptyString
 
 _FILE_POOL_TYPES: Final = {
     'dir',
@@ -55,32 +57,30 @@ NOCOW_POOL_TYPES: Final = {
 TARGET_POOL_TYPES: Final = FORMAT_POOL_TYPES | NOCOW_POOL_TYPES
 
 
-class VolumeInfo(BaseModel):
+class VolumeInfo(Model):
     '''Model representing a volume for templating.'''
-    name: str = Field(
-        min_length=1,
+    name: NonEmptyString = Field(
         description='Name of the volume.',
     )
     capacity: int = Field(
         gt=0,
         description='Capacity of the volume in bytes.',
     )
-    pool_type: str = Field(
-        min_length=1,
+    pool_type: NonEmptyString = Field(
         description='Type of pool the volume will be created in. Will be handled automaticlaly by CLI commands.',
     )
-    allocation: int | None = Field(
+    allocation: Annotated[int, Field(ge=0)] | None = Field(
         default=None,
-        ge=0,
-        description='Amount of space allocated to the volume in bytes. Must be less than or equal to the volume capacity.',
+        description='Amount of space allocated to the volume in bytes. Must be less than or equal to the volume capacity. ' +
+                    'If not specified, the amount of space allocated is left up to the storage backend. ' +
+                    'Some backends may not support arbitrary values for this property.',
     )
     uuid: UUID | None = Field(
         default=None,
         description='UUID of the volume. If not specified, libvirt will automatically assign a newly generated UUID.',
     )
-    format: str | None = Field(
+    format: Annotated[str, Field(pattern=f'^({"|".join(FORMATS.keys())})$')] | None = Field(
         default=None,
-        pattern=f'^({"|".join(FORMATS.keys())})$',
         description='Format of the volume. Valid values depend on the pool type. See https://libvirt.org/storage.html for more information.',
     )
     nocow: bool = Field(
