@@ -23,7 +23,7 @@
     {% if on_lockfailure %}<on_lockfailure>{{ on_lockfailure }}</on_lockfailure>{% endif %}
     {% block cpu %}{% endblock %}
     {% if clock is defined %}
-        <clock offset='{{ clock.offset }}' {{ macros.add_attrs(clock, ('timezone', 'basis', 'adjustment', 'start')) }}>
+        <clock offset='{{ clock.offset }}' {{ macros.add_attrs(clock, ('timezone', 'basis', 'adjustment')) }}{% if clock.offset == 'absolute' %}{{ int(clock.start) }}{% endif %}>
             {% for timer in clock.timers %}
                 <timer {{ macros.add_attrs(timer, ('name', 'tickpolicy', 'track', 'present')) }} />
             {% endfor %}

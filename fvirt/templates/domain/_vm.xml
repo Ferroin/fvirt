@@ -74,7 +74,14 @@
         {% endif %}
         </hyperv>
     {% endif %}
-    {% for feature in ('pvspinlock', 'hap', 'htm', 'vmcoreinfo', 'vmport', 'pmu', 'smm') %}
+    {% if 'smm' in features %}
+        <smm state='{{ features.smm.state }}'>
+            {% if 'tseg' in features.smm and features.smm.tseg %}
+                <tseg unit='bytes'>{{ features.smm.tseg }}</tseg>
+            {% endif %}
+        </smm>
+    {% endif %}
+    {% for feature in ('pvspinlock', 'hap', 'htm', 'vmcoreinfo', 'vmport', 'pmu') %}
         {% if feature in features %}
             <{{ feature }} state='{{ features[feature] }}' />
         {% endif %}
