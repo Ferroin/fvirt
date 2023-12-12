@@ -2,83 +2,125 @@
 # Configuration for the pr-labeler workflow.
 
 area/common:
-  - fvirt/__init__.py
-  - fvirt/version.py
-  - tests/version_test.py
+  - any:
+      - changed-files:
+          - any-glob-to-any-file:
+              - fvirt/__init__.py
+              - fvirt/version.py
+              - tests/version_test.py
 
 area/tests:
-  - tests/**
+  - any:
+      - changed-files:
+          - any-glob-to-any-file:
+              - tests/**
 
 area/cli:
-  - fvirt/cli.py
-  - fvirt/commands/**
-  - tests/cli_test.py
-  - tests/commands/**
+  - any:
+      - changed-files:
+          - any-glob-to-any-file:
+              - fvirt/cli.py
+              - fvirt/commands/**
+              - tests/cli_test.py
+              - tests/commands/**
 
 area/libvirt:
-  - fvirt/libvirt/**
-  - tests/libvirt/**
+  - any:
+      - changed-files:
+          - any-glob-to-any-file:
+              - fvirt/libvirt/**
+              - tests/libvirt/**
 
 area/templating:
-  - fvirt/templates/**
-  - tests/templates_test.py
-  - fvirt/libvirt/models/**
-  - tests/libvirt/models/**
-  - tests/data/cases/libvirt_models_*.yaml
+  - any:
+      - changed-files:
+          - any-glob-to-any-file:
+              - fvirt/templates/**
+              - tests/templates_test.py
+              - fvirt/libvirt/models/**
+              - tests/libvirt/models/**
+              - tests/data/cases/libvirt_models_*.yaml
 
 area/util:
-  - fvirt/util/**
-  - tests/util/**
+  - any:
+      - changed-files:
+          - any-glob-to-any-file:
+              - fvirt/util/**
+              - tests/util/**
 
 component/host:
-  - fvirt/commands/host/**
-  - fvirt/libvirt/hypervisor.py
-  - tests/commands/host/**
-  - tests/libvirt/libvirt_hypervisor_test.py
+  - any:
+      - changed-files:
+          - any-glob-to-any-file:
+              - fvirt/commands/host/**
+              - fvirt/libvirt/hypervisor.py
+              - tests/commands/host/**
+              - tests/libvirt/libvirt_hypervisor_test.py
 
 component/domain:
-  - fvirt/commands/domain/**
-  - fvirt/libvirt/domain.py
-  - fvirt/libvirt/models/domain.py
-  - fvirt/templates/domain.xml
-  - fvirt/templates/domain/**
-  - tests/commands/domain/**
-  - tests/libvirt/**_domain_test.py
-  - tests/data/cases/libvirt*_domain_test.yaml
+  - any:
+      - changed-files:
+          - any-glob-to-any-file:
+              - fvirt/commands/domain/**
+              - fvirt/libvirt/domain.py
+              - fvirt/libvirt/models/domain.py
+              - fvirt/templates/domain.xml
+              - fvirt/templates/domain/**
+              - tests/commands/domain/**
+              - tests/libvirt/**_domain_test.py
+              - tests/data/cases/libvirt*_domain_test.yaml
 
 component/storage/pool:
-  - fvirt/commands/pool/**
-  - fvirt/libvirt/storage_pool.py
-  - fvirt/templates/pool.xml
-  - tests/commands/pool/**
-  - tests/libvirt/**_storage_pool_test.py
-  - tests/data/cases/libvirt*_storage_pool_test.yaml
+  - any:
+      - changed-files:
+          - any-glob-to-any-file:
+              - fvirt/commands/pool/**
+              - fvirt/libvirt/storage_pool.py
+              - fvirt/templates/pool.xml
+              - tests/commands/pool/**
+              - tests/libvirt/**_storage_pool_test.py
+              - tests/data/cases/libvirt*_storage_pool_test.yaml
 
 component/storage/volume:
-  - fvirt/commands/volume/**
-  - fvirt/libvirt/volume.py
-  - fvirt/templates/volume.xml
-  - tests/commands/volume/**
-  - tests/libvirt/**_volume_test.py
-  - tests/data/cases/libvirt*_volume.yaml
+  - any:
+      - changed-files:
+          - any-glob-to-any-file:
+              - fvirt/commands/volume/**
+              - fvirt/libvirt/volume.py
+              - fvirt/templates/volume.xml
+              - tests/commands/volume/**
+              - tests/libvirt/**_volume_test.py
+              - tests/data/cases/libvirt*_volume.yaml
 
 documentation:
-  - LICENSE.md
-  - README.md
+  - any:
+      - changed-files:
+          - any-glob-to-any-file:
+              - LICENSE.md
+              - README.md
 
 infra:
-  - .gigignore
-  - .gitmodules
-  - .github/labeler.yml
-  - .github/labels.yml
+  - any:
+      - changed-files:
+          - any-glob-to-any-file:
+              - .gigignore
+              - .gitmodules
+              - .github/labeler.yml
+              - .github/labels.yml
 
 infra/ci:
-  - .flake8
-  - .github/dependabot.yml
-  - .github/scripts/check-labels.py
-  - .github/workflows/**
-  - .mdl-style.rb
+  - any:
+      - changed-files:
+          - any-glob-to-any-file:
+              - .flake8
+              - .github/dependabot.yml
+              - .github/scripts/check-labels.py
+              - .github/workflows/**
+              - .mdl-style.rb
 
 infra/packaging:
-  - poetry.lock
-  - pyproject.toml
+  - any:
+      - changed-files:
+          - any-glob-to-any-file:
+              - poetry.lock
+              - pyproject.toml
