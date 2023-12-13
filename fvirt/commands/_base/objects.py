@@ -6,13 +6,16 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Self, TypeGuard, cast
+from typing import TYPE_CHECKING, Any, Self, Type, TypeGuard, cast
 
 import click
 
 from .exitcode import ExitCode
+from ...libvirt.domain import Domain
 from ...libvirt.entity import Entity
 from ...libvirt.entity_access import EntityAccess
+from ...libvirt.storage_pool import StoragePool
+from ...libvirt.volume import Volume
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -61,6 +64,12 @@ class ObjectMixin(ABC):
 
     @property
     @abstractmethod
+    def CLASS(self: Self) -> Type[Entity]:
+        '''The class used to represent the object.'''
+        return NotImplemented
+
+    @property
+    @abstractmethod
     def METAVAR(self: Self) -> str:
         '''The metavar to use in help output for arguments that specify the entity.'''
         return NotImplemented
@@ -97,7 +106,7 @@ class ObjectMixin(ABC):
         '''The metavar to use in help output for arguments that specify the parent entity.'''
         return None  # pragma: no cover
 
-    def mixin_params(self: Self, required: bool = False) -> tuple[click.Argument, ...]:
+    def mixin_params(self: Self, required: bool = False) -> tuple[click.Parameter, ...]:
         '''Return a tuple of arguments for specifying the entity and possibly the parent.'''
         entity_arg = click.Argument(
             param_decls=('entity',),
@@ -111,7 +120,7 @@ class ObjectMixin(ABC):
         else:
             return (entity_arg,)
 
-    def mixin_parent_params(self: Self) -> tuple[click.Argument, ...]:
+    def mixin_parent_params(self: Self) -> tuple[click.Parameter, ...]:
         '''Return a tuple of arguments for specifying the parent.'''
         return (click.Argument(
             param_decls=('parent',),
@@ -166,6 +175,9 @@ class DomainMixin(ObjectMixin):
     def NAME(self: Self) -> str: return 'domain'
 
     @property
+    def CLASS(self: Self) -> Type[Domain]: return Domain
+
+    @property
     def METAVAR(self: Self) -> str: return 'DOMAIN'
 
     @property
@@ -179,9 +191,12 @@ class DomainMixin(ObjectMixin):
 
 
 class StoragePoolMixin(ObjectMixin):
-    '''Mixin for commands that operate on domains.'''
+    '''Mixin for commands that operate on storage pools.'''
     @property
     def NAME(self: Self) -> str: return 'storage pool'
+
+    @property
+    def CLASS(self: Self) -> Type[StoragePool]: return StoragePool
 
     @property
     def METAVAR(self: Self) -> str: return 'POOL'
@@ -199,6 +214,9 @@ class StoragePoolMixin(ObjectMixin):
 class VolumeMixin(ObjectMixin):
     @property
     def NAME(self: Self) -> str: return 'volume'
+
+    @property
+    def CLASS(self: Self) -> Type[Volume]: return Volume
 
     @property
     def METAVAR(self: Self) -> str: return 'VOLUME'
