@@ -8,7 +8,7 @@ from __future__ import annotations
 import enum
 
 from abc import ABC, abstractmethod
-from typing import Any, Literal, Self, TypeVar, cast, final
+from typing import TYPE_CHECKING, Any, Literal, Self, TypeVar, cast, final
 from uuid import UUID
 
 import libvirt
@@ -19,6 +19,11 @@ from .descriptors import MethodProperty
 from .exceptions import FeatureNotSupported, InsufficientPrivileges, InvalidEntity, NotConnected
 from .hypervisor import Hypervisor
 from ..templates import get_environment
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
+
+    from pydantic import BaseModel
 
 T = TypeVar('T')
 
@@ -385,6 +390,7 @@ class Entity(ABC):
            and then saving the config, all as one operation.'''
         self.config = xslt(self.config)
 
+    @final
     @classmethod
     def _render_config(
         cls: type[Entity],
@@ -415,6 +421,46 @@ class Entity(ABC):
             tmpl = env.from_string(template)
 
         return tmpl.render(**kwargs).lstrip().rstrip()
+
+    @staticmethod
+    def _get_template_info() -> tuple[type[BaseModel], str] | None:
+        '''Provide parameters used for templating.
+
+           If templating is not supported, this should return None.
+
+           Otherwise, it should return a tuple of the model class for
+           templating and the name of the template.
+
+           Sub-classes that support templating should override this to
+           provide the correct info. Sub-classes that do not support
+           templating don’t need to do anything, as the default will
+           unconditionally return None.'''
+        return None
+
+    @final
+    @classmethod
+    def new_config(
+        cls: type[Entity],
+        /, *,
+        config: BaseModel | Mapping,
+        template: str | None = None,
+    ) -> Any:
+        '''Generate a new configuration for this type of entity.'''
+        template_info = cls._get_template_info()
+
+        if template_info is None:
+            raise FeatureNotSupported(f'{ cls.__name__ } does not support templating.')
+
+        model, tmpl_name = template_info
+
+        if config.__class__.__name__ != model.__name__:
+            config = model.model_validate(config)
+
+        return cls._render_config(
+            template_name=tmpl_name,
+            template=template,
+            **config.model_dump(exclude_none=True),  # type: ignore
+        )
 
 
 class RunnableEntity(Entity):

@@ -335,37 +335,14 @@ class Volume(Entity):
 
         return LifecycleResult.SUCCESS
 
-    @classmethod
-    def new_config(
-        cls: type[Volume],
-        /, *,
-        config: VolumeInfo | Mapping,
-        template: str | None = None,
-    ) -> str:
-        '''Create a new volume configuration from a template.
-
-           If templating is not supported, a FeatureNotSupported error
-           will be raised.
-
-           If a mapping is passed in for the config, it will be converted
-           automatically to a VolumeInfo instance.'''
-        # The below check is almost but not quite equivalent to isinstance().
-        # We can't use isinstance() here, because that requires
-        # VolumeInfo to be available at runtime, which may not be the case
-        # if templating is not supported.
-        if config.__class__.__name__ != 'VolumeInfo':
-            try:
-                from .models.volume import VolumeInfo
-            except ImportError:
-                raise FeatureNotSupported
-            else:
-                config = VolumeInfo.model_validate(config)
-
-        return cls._render_config(
-            template_name='volume.xml',
-            template=template,
-            **config.model_dump(exclude_none=True),  # type: ignore
-        )
+    @staticmethod
+    def _get_template_info() -> tuple[type[VolumeInfo], str] | None:
+        try:
+            from .models.volume import VolumeInfo
+        except ImportError:
+            return None
+        else:
+            return (VolumeInfo, 'volume.xml')
 
 
 class Volumes(BaseEntityAccess[Volume]):
