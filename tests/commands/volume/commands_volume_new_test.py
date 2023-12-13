@@ -1,7 +1,7 @@
 # Copyright (c) 2023 Austin S. Hemmelgarn
 # SPDX-License-Identifier: MITNFA
 
-'''Tests for fvirt.commands.volume.define'''
+'''Tests for fvirt.commands.volume.new'''
 
 from __future__ import annotations
 
@@ -29,7 +29,7 @@ def test_command_run(
 
     vol_xml_path.write_text(volume_xml(pool))
 
-    result = runner(('-c', uri, 'volume', 'define', pool.name, str(vol_xml_path)), 0)
+    result = runner(('-c', uri, 'volume', 'new', pool.name, str(vol_xml_path)), 0)
 
     try:
         assert len(result.output) > 0
@@ -57,7 +57,7 @@ def test_command_bulk_run(
     for p in vol_xml_paths:
         p.write_text(volume_xml(pool))
 
-    result = runner(('-c', uri, 'volume', 'define', pool.name) + tuple(str(p) for p in vol_xml_paths), 0)
+    result = runner(('-c', uri, 'volume', 'new', pool.name) + tuple(str(p) for p in vol_xml_paths), 0)
 
     try:
         assert len(result.output) > 0
