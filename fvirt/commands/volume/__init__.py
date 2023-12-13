@@ -15,11 +15,11 @@ volume: Final = Group(
     help='Perform various operations on libvirt volumes.',
     callback=lambda x: None,
     lazy_commands={
-        'define': 'fvirt.commands.volume.define.define',
         'delete': 'fvirt.commands.volume.delete.delete',
         'download': 'fvirt.commands.volume.download.download',
         'info': 'fvirt.commands.volume.info.info',
         'list': 'fvirt.commands.volume.list.list_volumes',
+        'new': 'fvirt.commands.volume.new.new',
         'upload': 'fvirt.commands.volume.upload.upload',
         'xml': 'fvirt.commands.volume.xml.xml',
         'wipe': 'fvirt.commands.volume.wipe.wipe',

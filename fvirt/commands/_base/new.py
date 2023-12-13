@@ -1,11 +1,10 @@
 # Copyright (c) 2023 Austin S. Hemmelgarn
 # SPDX-License-Identifier: MITNFA
 
-'''Base class used for fvirt object creation commands.'''
+'''Command for creating new libvirt objects.'''
 
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
 from textwrap import dedent
 from typing import TYPE_CHECKING, Any, Self, cast
 
@@ -13,7 +12,7 @@ import click
 
 from .command import Command
 from .exitcode import ExitCode
-from .objects import ObjectMixin, is_object_mixin
+from .objects import is_object_mixin
 from ...libvirt import Hypervisor, InvalidConfig
 from ...libvirt.entity import Entity
 from ...util.report import summary
@@ -29,15 +28,16 @@ def _read_file(path: str) -> tuple[str, str]:
         return (cast(str, f.read()), path)
 
 
-class NewCommand(Command, ABC):
-    '''A class for creating a libvirt object.
+class NewCommand(Command):
+    '''Command to create or define libvirt objects.
 
        This class takes care of the callback, options, and help text
        required for such commands.'''
     def __init__(
         self: Self,
-        name: str,
         params: Sequence[click.Parameter] = [],
+        define_params: Sequence[str] = [],
+        create_params: Sequence[str] = [],
         epilog: str | None = None,
         hidden: bool = False,
         deprecated: bool = False,
@@ -49,15 +49,27 @@ class NewCommand(Command, ABC):
             state: State,
             confpath: Sequence[str],
             parent: str | None = None,
+            mode: str = 'define',
             **kwargs: Any,
         ) -> None:
             success = 0
+
+            match mode:
+                case 'define':
+                    NEW_METHOD = self.DEFINE_METHOD
+                    NEW_PARAMS = {k: kwargs[k] for k in define_params}
+                case 'create':
+                    assert self.CREATE_METHOD is not None
+                    NEW_METHOD = self.CREATE_METHOD
+                    NEW_PARAMS = {k: kwargs[k] for k in create_params}
+                case _:
+                    raise RuntimeError
 
             confdata = list(state.pool.map(_read_file, confpath))
 
             with state.hypervisor as hv:
                 if hv.read_only:
-                    ctx.fail(f'Unable to define { self.NAME }s, the hypervisor connection is read-only.')
+                    ctx.fail(f'Unable to create any { self.NAME }s, the hypervisor connection is read-only.')
 
                 for conf in confdata:
                     if self.HAS_PARENT:
@@ -69,7 +81,10 @@ class NewCommand(Command, ABC):
 
                 for c, p in confdata:
                     try:
-                        obj = getattr(define_obj, cast(NewCommand, self).NEW_METHOD)(c, **kwargs)
+                        if NEW_PARAMS:
+                            obj = getattr(define_obj, NEW_METHOD)(c, NEW_PARAMS)
+                        else:
+                            obj = getattr(define_obj, NEW_METHOD)(c)
                     except InvalidConfig:
                         click.echo(f'The configuration at { p } is not valid for a { self.NAME }.')
 
@@ -81,10 +96,10 @@ class NewCommand(Command, ABC):
                         if state.fail_fast:
                             break
                     else:
-                        click.echo(f'Successfully defined { self.NAME }: "{ obj.name }".')
+                        click.echo(f'Successfully created { self.NAME }: "{ obj.name }".')
                         success += 1
 
-            click.echo(f'Finished defining specified { self.NAME }s.')
+            click.echo(f'Finished creatng specified { self.NAME }s.')
             click.echo('')
             click.echo(summary(
                 total=len(confdata),
@@ -96,55 +111,70 @@ class NewCommand(Command, ABC):
 
         if self.HAS_PARENT:
             header = dedent(f'''
-            Define one or more new { self.NAME }s in the specified { self.PARENT_NAME }.
+            Create one or more new { self.NAME }s in the specified { self.PARENT_NAME }.
 
             The { self.PARENT_METAVAR } argument should indicate
             which { self.PARENT_NAME } to create the { self.NAME }s
             in.''').lstrip()
         else:
-            header = f'Define one or more new { self.NAME }s.'
+            header = f'Create one or more new { self.NAME }s.'
 
         trailer = dedent(f'''
         The CONFIGPATH argument should point to a valid XML configuration
         for a { self.NAME }. If more than one CONFIGPATH is specified, each
-        should correspond to a separate { self.NAME } to be defined.
+        should correspond to a separate { self.NAME } to be created.
 
         If a specified configuration describes a { self.NAME } that already
         exists, it will silently overwrite the the existing configuration
         for that { self.NAME }.
 
         All specified configuration files will be read before attempting
-        to define any { self.NAME }s. Thus, if any configuration file is
-        invalid, no { self.NAME }s will be defined.
+        to create any { self.NAME }s. Thus, if any configuration file is
+        invalid, no { self.NAME }s will be create.
 
         If more than one { self.NAME } is requested to be defined, a failure
-        defining any { self.NAME } will result in a non-zero exit code even if
-        some { self.NAME }s were defined.
+        creating any { self.NAME } will result in a non-zero exit code even if
+        some { self.NAME }s were created.
 
         This command supports fvirt's fail-fast logic. In fail-fast mode, the
-        first { self.NAME } that fails to be defined will cause the operation
+        first { self.NAME } that fails to be created will cause the operation
         to stop, and any failure will result in a non-zero exit code.
-
-        Configuration files will be read in parallel, but each { self.NAME
-        } will be created one at a time without parallelization.
 
         This command does not support fvirt's idempotent mode.''').lstrip()
 
         docstr = f'{ header }\n\n{ trailer }'
 
-        params = tuple(params)
+        params = tuple(params) + (
+            click.Option(
+                param_decls=('--define', 'mode'),
+                flag_value='define',
+                default=True,
+                help=f'Define persistent {self.NAME}s. This is the default.',
+            ),
+        )
+
+        if self.CREATE_METHOD is not None:
+            params += (
+                click.Option(
+                    param_decls=('--create', 'mode'),
+                    flag_value='create',
+                    help=f'Create and start transient {self.NAME}s instead of defining persistent {self.NAME}s.',
+                ),
+            )
 
         if self.HAS_PARENT:
             params += self.mixin_parent_params()
 
-        params += (click.Argument(
-            param_decls=('confpath',),
-            type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True, resolve_path=True),
-            nargs=-1,
-        ),)
+        params += (
+            click.Argument(
+                param_decls=('confpath',),
+                type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True, resolve_path=True),
+                nargs=-1,
+            ),
+        )
 
         super().__init__(
-            name=name,
+            name='new',
             help=docstr,
             epilog=epilog,
             callback=cb,
@@ -152,28 +182,3 @@ class NewCommand(Command, ABC):
             hidden=hidden,
             deprecated=deprecated,
         )
-
-    @property
-    @abstractmethod
-    def NEW_METHOD(self: Self) -> str:
-        '''The name of the method to be invoked to create the new object.'''
-        return NotImplemented
-
-
-class DefineCommand(NewCommand):
-    '''Command class for defining new objects.'''
-    @property
-    def NEW_METHOD(self: Self) -> str:
-        return cast(ObjectMixin, self).DEFINE_METHOD
-
-
-class CreateCommand(NewCommand):
-    '''Command class for creating new objects.'''
-    @property
-    def NEW_METHOD(self: Self) -> str:
-        method = cast(ObjectMixin, self).CREATE_METHOD
-
-        if method is None:
-            raise RuntimeError
-
-        return method
