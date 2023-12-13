@@ -255,37 +255,14 @@ class StoragePool(RunnableEntity):
 
         return Volume(vol, self)
 
-    @classmethod
-    def new_config(
-        cls: type[StoragePool],
-        /, *,
-        config: PoolInfo | Mapping,
-        template: str | None = None,
-    ) -> str:
-        '''Create a new storage pool configuration from a template.
-
-           If templating is not supported, a FeatureNotSupported error
-           will be raised.
-
-           If a mapping is passed in for the config, it will be converted
-           automatically to a PoolInfo instance.'''
-        # The below check is almost but not quite equivalent to isinstance().
-        # We can't use isinstance() here, because that requires
-        # PoolInfo to be available at runtime, which may not be the case
-        # if templating is not supported.
-        if config.__class__.__name__ != 'PoolInfo':
-            try:
-                from .models.storage_pool import PoolInfo
-            except ImportError:
-                raise FeatureNotSupported
-            else:
-                config = PoolInfo.model_validate(config)
-
-        return cls._render_config(
-            template_name='pool.xml',
-            template=template,
-            **config.model_dump(exclude_none=True),  # type: ignore
-        )
+    @staticmethod
+    def _get_template_info() -> tuple[type[PoolInfo], str] | None:
+        try:
+            from .models.storage_pool import PoolInfo
+        except ImportError:
+            return None
+        else:
+            return (PoolInfo, 'pool.xml')
 
 
 class StoragePools(BaseEntityAccess[StoragePool]):
