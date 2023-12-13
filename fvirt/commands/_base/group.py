@@ -1,5 +1,5 @@
-# copyright (c) 2023 austin s. hemmelgarn
-# spdx-license-identifier: mitnfa
+# Copyright (c) 2023 Austin S. Hemmelgarn
+# SPDX-License-Identifier: MITNFA
 
 '''Base class used for fvirt command groups.'''
 

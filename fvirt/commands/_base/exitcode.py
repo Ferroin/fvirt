@@ -18,3 +18,4 @@ class ExitCode(IntEnum):
     PARENT_NOT_FOUND = 4
     OPERATION_FAILED = 5
     PATH_NOT_VALID = 6
+    FEATURE_NOT_SUPPORTED = 7
