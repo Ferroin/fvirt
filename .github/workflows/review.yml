@@ -165,6 +165,11 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
+      - name: Handle mypy Cache
+        uses: actions/cache@v3
+        with:
+          path: .mypy_cache
+          key: mypy-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/poetry.lock') }}
       - name: Handle Poetry Cache
         uses: actions/cache@v3
         with:
