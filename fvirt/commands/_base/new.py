@@ -10,6 +10,8 @@ from typing import TYPE_CHECKING, Any, Self, cast
 
 import click
 
+from lxml import etree
+
 from .command import Command
 from .exitcode import ExitCode
 from .objects import is_object_mixin
@@ -23,9 +25,12 @@ if TYPE_CHECKING:
     from .state import State
 
 
-def _read_file(path: str) -> tuple[str, str]:
+def _read_xml_file(path: str) -> tuple[str, str]:
     with click.open_file(path, mode='r') as f:
-        return (cast(str, f.read()), path)
+        return (
+            etree.tostring(etree.fromstring(f.read()), encoding='unicode'),
+            path,
+        )
 
 
 class NewCommand(Command):
@@ -65,7 +70,7 @@ class NewCommand(Command):
                 case _:
                     raise RuntimeError
 
-            confdata = [_read_file(x) for x in confpath]
+            confdata = [_read_xml_file(x) for x in confpath]
 
             with state.hypervisor as hv:
                 if hv.read_only:
