@@ -65,7 +65,7 @@ class NewCommand(Command):
                 case _:
                     raise RuntimeError
 
-            confdata = list(state.pool.map(_read_file, confpath))
+            confdata = [_read_file(x) for x in confpath]
 
             with state.hypervisor as hv:
                 if hv.read_only:
