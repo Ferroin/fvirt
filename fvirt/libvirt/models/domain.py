@@ -1072,7 +1072,7 @@ class _BaseDisk(Model):
         description='The type of disk device to expose to the guest.',
     )
     readonly: V_YesNo = Field(
-        default=V_YesNo(False),
+        default=False,
         description='Whether the disk should be read-only.',
     )
     snapshot: Literal['internal', 'external', 'manual', 'no'] | None = Field(
@@ -1176,7 +1176,7 @@ class Filesystem(Model):
         description='Configure handling of filesystems exposing multiple device IDs. Only supported for 9P-based filesystems on QEMU domains.',
     )
     readonly: V_YesNo = Field(
-        default=V_YesNo(False),
+        default=False,
         description='Whether the filesystem should be read-only for the guest or not.',
     )
     src_type: NonEmptyString | None = Field(
