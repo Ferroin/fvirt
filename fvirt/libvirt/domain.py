@@ -15,12 +15,12 @@ import libvirt
 from .descriptors import ConfigAttributeProperty, ConfigElementProperty, MethodProperty
 from .entity import LifecycleResult, RunnableEntity
 from .entity_access import BaseEntityAccess, EntityAccess, EntityMap, NameMap, UUIDMap
-from .exceptions import EntityNotRunning, FeatureNotSupported, InvalidOperation
+from .exceptions import EntityNotRunning, InvalidOperation
 from .stream import Stream
 from ..util.match import MatchAlias
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Mapping
+    from collections.abc import Iterable
 
     from .hypervisor import Hypervisor
     from .models.domain import DomainInfo

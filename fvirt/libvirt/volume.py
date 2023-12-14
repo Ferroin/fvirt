@@ -15,12 +15,12 @@ import libvirt
 from .descriptors import ConfigProperty, MethodProperty
 from .entity import Entity, LifecycleResult
 from .entity_access import BaseEntityAccess, EntityAccess, EntityMap, NameMap
-from .exceptions import FeatureNotSupported, InvalidOperation, SubOperationFailed
+from .exceptions import InvalidOperation, SubOperationFailed
 from .stream import Stream
 from ..util.match import MatchAlias
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Mapping
+    from collections.abc import Iterable
 
     from .models.volume import VolumeInfo
     from .storage_pool import StoragePool
