@@ -13,12 +13,12 @@ import libvirt
 from .descriptors import ConfigProperty
 from .entity import LifecycleResult, RunnableEntity
 from .entity_access import BaseEntityAccess, EntityAccess, NameMap, UUIDMap
-from .exceptions import EntityRunning, FeatureNotSupported, InsufficientPrivileges, InvalidConfig, NotConnected
+from .exceptions import EntityRunning, InsufficientPrivileges, InvalidConfig, NotConnected
 from .volume import Volume, VolumeAccess
 from ..util.match import MatchAlias
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Mapping
+    from collections.abc import Iterable
 
     from .hypervisor import Hypervisor
     from .models.storage_pool import PoolInfo
