@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import platform
 import shutil
@@ -16,11 +17,12 @@ from contextlib import _GeneratorContextManager, contextmanager
 from pathlib import Path
 from textwrap import dedent
 from traceback import format_exception
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 import pytest
 
 from lxml import etree
+from ruamel.yaml import YAML
 from simple_file_lock import FileLock
 
 from fvirt.cli import cli
@@ -65,6 +67,7 @@ XSLT_DATA = '''
     </xsl:template>
 </xsl:stylesheet>
 '''.lstrip().rstrip()
+yaml = YAML()
 
 
 def skip_or_fail(msg: str) -> None:
@@ -394,6 +397,70 @@ def test_dom_xml(unique: Callable[..., Any], name_factory: Callable[[], str]) ->
 
 
 @pytest.fixture
+def test_dom_template(
+    unique: Callable[..., Any],
+    tmp_path: Path,
+) -> Callable[[str, str], Path]:
+    '''Provide a factory that produces domain template files.'''
+    def inner(name: str, tmpl_type: str) -> Path:
+        uuid = unique('uuid')
+        filepath = tmp_path / cast(str, unique('digits'))
+
+        tmpl = {
+            'type': 'test',
+            'name': name,
+            'uuid': str(uuid),
+            'memory': 1024 * 1024 * 64,
+            'vcpu': 2,
+            'os': {
+                'variant': 'test',
+                'type': 'hvm',
+                'arch': 'x86_64',
+            },
+            'clock': {
+                'offset': 'utc',
+            },
+            'devices': {
+                'disks': [
+                    {
+                        'type': 'file',
+                        'src': '/guest/diskimage1',
+                        'target': {
+                            'dev': 'vda',
+                        },
+                        'boot': 1,
+                    },
+                ],
+                'net': [
+                    {
+                        'type': 'network',
+                        'src': 'default',
+                        'target': 'testnet0',
+                        'mac': 'aa:bb:cc:dd:ee:ff',
+                    },
+                ],
+                'memballoon': [
+                    {
+                        'model': 'virtio',
+                    },
+                ],
+            },
+        }
+
+        match tmpl_type:
+            case 'json':
+                with open(filepath, 'w') as f:
+                    json.dump(tmpl, f)
+            case 'yaml':
+                with open(filepath, 'w') as f:
+                    yaml.dump(tmpl, f)
+
+        return filepath
+
+    return inner
+
+
+@pytest.fixture
 def live_dom_xml(
     sys_arch: str,
     live_hv: Hypervisor,
@@ -457,6 +524,102 @@ def live_dom_xml(
             </devices>
         </domain>
         ''').lstrip().rstrip()
+
+    return inner
+
+
+@pytest.fixture
+def live_dom_template(
+    sys_arch: str,
+    live_hv: Hypervisor,
+    require_qemu: None,
+    qemu_system: tuple[Path, str] | None,
+    vm_kernel: tuple[Path, Path],
+    unique: Callable[..., Any],
+    tmp_path: Path,
+) -> Callable[[str, str], Path]:
+    '''Provide a factory that produces domain templates.'''
+    assert qemu_system is not None
+    _, vm_arch = qemu_system
+
+    kernel, initramfs = vm_kernel
+
+    match vm_arch:
+        case 'x86_64':
+            machine = 'q35'
+            console = 'ttyS0'
+
+            if live_hv.version is not None and live_hv.version.major < 9:
+                panic = 'isa'
+            else:
+                panic = 'pvpanic'
+        case 'aarch64':
+            machine = 'virt'
+            console = 'ttyAMA0'
+            panic = 'pvpanic'
+        case _:
+            assert False, 'Unsupported VM architecture.'
+
+    if sys_arch == vm_arch and not NO_KVM:
+        dom_type = 'kvm'
+    else:
+        dom_type = 'qemu'
+
+    def inner(name: str, tmpl_type: str) -> Path:
+        uuid = unique('uuid')
+        filepath = tmp_path / cast(str, unique('digits'))
+
+        tmpl = {
+            'type': dom_type,
+            'name': name,
+            'uuid': str(uuid),
+            'vcpu': 2,
+            'memory': 96 * 1024 * 1024,
+            'os': {
+                'variant': 'direct',
+                'arch': vm_arch,
+                'machine': machine,
+                'type': 'hvm',
+                'kernel': str(kernel),
+                'initramfs': str(initramfs),
+                'cmdline': f'console={console}',
+            },
+            'on_poweroff': 'destroy',
+            'on_reboot': 'destroy',
+            'on_crash': 'destroy',
+            'clock': {
+                'offset': 'utc',
+            },
+            'devices': {
+                'chardev': [
+                    {
+                        'target': {
+                            'category': 'console',
+                            'type': 'serial',
+                            'port': 0,
+                        },
+                        'source': {
+                            'type': 'pty',
+                        },
+                    },
+                ],
+                'panic': [
+                    {
+                        'model': panic,
+                    },
+                ],
+            },
+        }
+
+        match tmpl_type:
+            case 'json':
+                with open(filepath, 'w') as f:
+                    json.dump(tmpl, f)
+            case 'yaml':
+                with open(filepath, 'w') as f:
+                    yaml.dump(tmpl, f)
+
+        return filepath
 
     return inner
 
@@ -568,6 +731,36 @@ def pool_xml(unique: Callable[..., Any], tmp_path: Path, name_factory: Callable[
 
 
 @pytest.fixture
+def pool_template(unique: Callable[..., Any], tmp_path: Path) -> Callable[[str, str], Path]:
+    '''Provide a factory function that produces storage pool templates.'''
+    def inner(name: str, tmpl_type: str) -> Path:
+        uuid = unique('uuid')
+        path = tmp_path / name
+        filepath = tmp_path / cast(str, unique('text', suffix=tmpl_type))
+
+        tmpl = {
+            'name': name,
+            'uuid': str(uuid),
+            'type': 'dir',
+            'target': {
+                'path': str(path),
+            },
+        }
+
+        match tmpl_type:
+            case 'json':
+                with open(filepath, 'w') as f:
+                    json.dump(tmpl, f)
+            case 'yaml':
+                with open(filepath, 'w') as f:
+                    yaml.dump(tmpl, f)
+
+        return filepath
+
+    return inner
+
+
+@pytest.fixture
 def live_pool(
     live_hv: Hypervisor,
     pool_xml: Callable[[], str],
@@ -665,6 +858,41 @@ def volume_xml(name_factory: Callable[[], str]) -> Callable[[StoragePool, int], 
             </target>
         </volume>
         ''').lstrip().rstrip()
+
+    return inner
+
+
+@pytest.fixture
+def volume_template(
+    name_factory: Callable[[], str],
+    tmp_path: Path,
+    unique: Callable[..., str],
+) -> Callable[[StoragePool, str, int], Path]:
+    '''Provide a function that, given a storage pool and size, will produce a template for a volume.
+
+       The storage pool used should be a directory type pool.'''
+    def inner(pool: StoragePool, tmpl_type: str, size: int = 1024 * 1024) -> Path:
+        name = name_factory()
+        filepath = tmp_path / unique('text', suffix=tmpl_type)
+
+        tmpl = {
+            'name': name,
+            'type': 'file',
+            'capacity': size,
+            'allocated': 0,
+            'format': 'raw',
+            'pool_type': 'dir',
+        }
+
+        match tmpl_type:
+            case 'json':
+                with open(filepath, 'w') as f:
+                    json.dump(tmpl, f)
+            case 'yaml':
+                with open(filepath, 'w') as f:
+                    yaml.dump(tmpl, f)
+
+        return filepath
 
     return inner
 

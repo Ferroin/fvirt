@@ -9,9 +9,7 @@
         {% endif %}
     {% endif %}
     <os{% if 'firmware' in os %} firmware='{{ os.firmware }}'{% endif %}>
-        <type {{ macros.add_attrs(os, ('arch', 'machine')) }}>
-            {% if os.type %}{{ os.type }}{% else %}hvm{% endif %}
-        </type>
+        <type {{ macros.add_attrs(os, ('arch', 'machine')) }}>{% if os.type %}{{ os.type }}{% else %}hvm{% endif %}</type>
         {% if os.variant == 'firmware' %}
             {% if 'loader' in os and os.loader %}
                 {% if 'path' in os.loader and os.loader.path %}

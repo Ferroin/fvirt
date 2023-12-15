@@ -151,3 +151,49 @@ def test_command_bulk_run_create(
 
         assert dom is not None
         assert dom.running
+
+
+def test_command_run_define_template_json(
+    runner: Callable[[Sequence[str], int], Result],
+    live_hv: Hypervisor,
+    live_dom_template: Callable[[str, str], Path],
+    tmp_path: Path,
+    serial: Callable[[str], _GeneratorContextManager],
+    name_factory: Callable[[], str],
+) -> None:
+    '''Test that the command runs correctly.'''
+    uri = str(live_hv.uri)
+    name = name_factory()
+    tmpl_path = live_dom_template(name, 'json')
+
+    with serial('live-domain'):
+        result = runner(('-c', uri, 'domain', 'new', '--template', 'json', '--define', str(tmpl_path)), 0)
+
+    assert len(result.output) > 0
+
+    dom = live_hv.domains.get(name)
+    assert dom is not None
+    assert not dom.running
+
+
+def test_command_run_define_template_yaml(
+    runner: Callable[[Sequence[str], int], Result],
+    live_hv: Hypervisor,
+    live_dom_template: Callable[[str, str], Path],
+    tmp_path: Path,
+    serial: Callable[[str], _GeneratorContextManager],
+    name_factory: Callable[[], str],
+) -> None:
+    '''Test that the command runs correctly.'''
+    uri = str(live_hv.uri)
+    name = name_factory()
+    tmpl_path = live_dom_template(name, 'yaml')
+
+    with serial('live-domain'):
+        result = runner(('-c', uri, 'domain', 'new', '--template', 'yaml', '--define', str(tmpl_path)), 0)
+
+    assert len(result.output) > 0
+
+    dom = live_hv.domains.get(name)
+    assert dom is not None
+    assert not dom.running

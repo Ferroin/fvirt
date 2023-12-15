@@ -2002,7 +2002,12 @@ class DomainInfo(Model):
                 self.vcpu = self.cpu.topology.total_cpus
             else:
                 self.cpu.topology.check(self.vcpu)
-        elif self.vcpu == 0:
-            self.vcpu = 1
+        else:
+            self.cpu = CPUInfo()
+
+            if self.vcpu == 0:
+                self.vcpu = 1
+
+            self.cpu.topology.check(self.vcpu)
 
         return self
