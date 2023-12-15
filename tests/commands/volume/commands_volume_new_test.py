@@ -66,3 +66,45 @@ def test_command_bulk_run(
     finally:
         for vol in pool.volumes:
             vol.undefine()
+
+
+def test_command_template_json(
+    runner: Callable[[Sequence[str], int], Result],
+    live_pool: tuple[StoragePool, Hypervisor],
+    volume_template: Callable[[StoragePool, str], str],
+    tmp_path: Path,
+) -> None:
+    pool, hv = live_pool
+    uri = str(hv.uri)
+    tmpl_path = volume_template(pool, 'json')
+
+    result = runner(('-c', uri, 'volume', 'new', '--template', 'json', pool.name, str(tmpl_path)), 0)
+
+    try:
+        assert len(result.output) > 0
+
+        assert len(pool.volumes) == 1
+    finally:
+        for vol in pool.volumes:
+            vol.undefine()
+
+
+def test_command_template_yaml(
+    runner: Callable[[Sequence[str], int], Result],
+    live_pool: tuple[StoragePool, Hypervisor],
+    volume_template: Callable[[StoragePool, str], str],
+    tmp_path: Path,
+) -> None:
+    pool, hv = live_pool
+    uri = str(hv.uri)
+    tmpl_path = volume_template(pool, 'yaml')
+
+    result = runner(('-c', uri, 'volume', 'new', '--template', 'yaml', pool.name, str(tmpl_path)), 0)
+
+    try:
+        assert len(result.output) > 0
+
+        assert len(pool.volumes) == 1
+    finally:
+        for vol in pool.volumes:
+            vol.undefine()

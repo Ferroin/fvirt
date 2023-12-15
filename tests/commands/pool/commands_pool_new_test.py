@@ -149,3 +149,53 @@ def test_command_bulk_run_create(
 
         assert pool is not None
         assert pool.running
+
+
+def test_command_run_define_template_json(
+    runner: Callable[[Sequence[str], int], Result],
+    live_hv: Hypervisor,
+    pool_template: Callable[[str, str], Path],
+    tmp_path: Path,
+    serial: Callable[[str], _GeneratorContextManager],
+    name_factory: Callable[[], str],
+) -> None:
+    '''Test that the command runs correctly.'''
+    uri = str(live_hv.uri)
+    name = name_factory()
+
+    tmpl_path = pool_template(name, 'json')
+
+    with serial('live-pool'):
+        result = runner(('-c', uri, 'pool', 'new', '--template', 'json', '--define', str(tmpl_path)), 0)
+
+    assert len(result.output) > 0
+
+    pool = live_hv.storage_pools.get(name)
+
+    assert pool is not None
+    assert not pool.running
+
+
+def test_command_run_define_template_yaml(
+    runner: Callable[[Sequence[str], int], Result],
+    live_hv: Hypervisor,
+    pool_template: Callable[[str, str], Path],
+    tmp_path: Path,
+    serial: Callable[[str], _GeneratorContextManager],
+    name_factory: Callable[[], str],
+) -> None:
+    '''Test that the command runs correctly.'''
+    uri = str(live_hv.uri)
+    name = name_factory()
+
+    tmpl_path = pool_template(name, 'yaml')
+
+    with serial('live-pool'):
+        result = runner(('-c', uri, 'pool', 'new', '--template', 'yaml', '--define', str(tmpl_path)), 0)
+
+    assert len(result.output) > 0
+
+    pool = live_hv.storage_pools.get(name)
+
+    assert pool is not None
+    assert not pool.running

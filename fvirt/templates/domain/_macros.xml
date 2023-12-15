@@ -203,9 +203,9 @@
 {% endmacro %}
 
 {% macro chardev(cdev) %}
-    <{{ cdev.target.category }} type='{{ cdev.source.type }}'>
+    <{{ cdev.target.category }} type='{{ cdev.src.type }}'>
         <target {{ add_attrs(cdev.target, ('type', 'address', 'port', 'name', 'state')) }} />
-        {{ charsrc(cdev.source) }}
+        {{ charsrc(cdev.src) }}
         {% if 'log' in cdev %}
             <log file='{{ cdev.log.file }}'{% if 'append' in cdev.log %} append='{{ cdev.log.append }}'{% endif %} />
         {% endif %}
