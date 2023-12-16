@@ -12,13 +12,15 @@ from typing import Final
 
 import libvirt
 
+from .exceptions import call_libvirt
+
 LOGGER: Final = logging.getLogger(__name__)
 
 
 def _event_loop_thread() -> None:
     '''Thread body for the thread returned by start_libvirt_event_thread.'''
     while True:
-        libvirt.virEventRunDefaultImpl()
+        call_libvirt(lambda: libvirt.virEventRunDefaultImpl())
 
 
 def _event_dummy_timer_cb(_id: int, _opaque: None) -> None:
@@ -37,9 +39,8 @@ def start_libvirt_event_thread() -> threading.Thread:
        connection, otherwise reconnect handling will not work correctly
        (among other things).'''
     LOGGER.info('Starting libvirt event handling thread')
-
-    libvirt.virEventRegisterDefaultImpl()
-    libvirt.virEventAddTimeout(60000, _event_dummy_timer_cb, None)
+    call_libvirt(lambda: libvirt.virEventRegisterDefaultImpl())
+    call_libvirt(lambda: libvirt.virEventAddTimeout(60000, _event_dummy_timer_cb, None))
 
     t = threading.Thread(
         target=_event_loop_thread,

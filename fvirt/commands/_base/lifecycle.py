@@ -19,6 +19,7 @@ from .exitcode import ExitCode
 from .match import MatchArgument, MatchCommand, get_match_or_entity
 from .objects import is_object_mixin
 from ...libvirt import InvalidOperation, LifecycleResult
+from ...libvirt.exceptions import FVirtException
 from ...libvirt.runner import RunnerResult, run_entity_method, run_sub_entity_method
 from ...util.report import summary
 
@@ -170,6 +171,11 @@ class LifecycleCommand(MatchCommand):
                             raise RuntimeError
                 except InvalidOperation:
                     click.echo(f'Failed to { op_help.verb } { self.NAME }, operation is not supported for this { self.NAME }.')
+
+                    if state.fail_fast:
+                        break
+                except FVirtException:
+                    click.echo('Unexpected internal error.')
 
                     if state.fail_fast:
                         break

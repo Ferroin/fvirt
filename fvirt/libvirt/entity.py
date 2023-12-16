@@ -12,12 +12,10 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, Final, Literal, Self, TypeVar, cast, final
 from uuid import UUID
 
-import libvirt
-
 from lxml import etree
 
 from .descriptors import MethodProperty
-from .exceptions import FeatureNotSupported, InsufficientPrivileges, InvalidEntity, NotConnected
+from .exceptions import FeatureNotSupported, InsufficientPrivileges, InvalidEntity, NotConnected, libvirtCallWrapper
 from .hypervisor import Hypervisor
 from ..templates import get_environment
 
@@ -75,21 +73,21 @@ class Entity(ABC):
                 else:
                     self._hv: Hypervisor = entity._hv
                     self._parent: Entity | None = entity._parent
-                    self._entity: Any = entity._entity
+                    self._entity: libvirtCallWrapper = entity._entity
             case Hypervisor():
                 if not isinstance(entity, self._wrapped_class):
                     raise TypeError(f'Entity wrapped by {repr(type(self))} must be a {repr(self._wrapped_class)}.')
 
                 self._hv = parent
                 self._parent = None
-                self._entity = entity
+                self._entity = libvirtCallWrapper(entity)
             case Entity():
                 if not isinstance(entity, self._wrapped_class):
                     raise TypeError(f'Entity wrapped by {repr(type(self))} must be a {repr(self._wrapped_class)}.')
 
                 self._hv = parent._hv
                 self._parent = parent
-                self._entity = entity
+                self._entity = libvirtCallWrapper(entity)
             case _:
                 raise TypeError('Parent must be Hypervisor or Entity instance.')
 
@@ -365,7 +363,7 @@ class Entity(ABC):
            fvirt.libvirt.InvalidEntity exception.
 
            Returns LifecycleResult.SUCCESS if the operation succeeds, or
-           LifecycleResult.FAILURE if it fails due to a libvirt error.'''
+           raises an FVirtException if the operation fails.'''
         if not self.valid:
             if idempotent:
                 return LifecycleResult.SUCCESS
@@ -375,11 +373,7 @@ class Entity(ABC):
         mark_invalid = self._mark_invalid_on_undefine
 
         LOGGER.info(f'Undefining entity: {repr(self)}')
-
-        try:
-            self._entity.undefine()
-        except libvirt.libvirtError:
-            return LifecycleResult.FAILURE
+        self._entity.undefine()
 
         if mark_invalid:
             self._valid = False
@@ -588,7 +582,7 @@ class RunnableEntity(Entity):
             raise AttributeError('Entity does not support autostart.')
 
     def start(self: Self, /, *, idempotent: bool = False) -> \
-            Literal[LifecycleResult.SUCCESS, LifecycleResult.FAILURE, LifecycleResult.NO_OPERATION]:
+            Literal[LifecycleResult.SUCCESS, LifecycleResult.NO_OPERATION]:
         '''Attempt to start the entity.
 
            If called on an entity that is already running, do nothing and
@@ -597,7 +591,7 @@ class RunnableEntity(Entity):
 
            If called on an entity that is not running, attempt to start
            it, and return LifecycleResult.SUCCESS if successful or
-           LifecycleResult.FAILUREif unsuccessful.'''
+           raise an FVirtException if unsuccessful.'''
         self._check_valid()
 
         if self.running:
@@ -607,23 +601,21 @@ class RunnableEntity(Entity):
                 return LifecycleResult.NO_OPERATION
 
         LOGGER.info(f'Starting entity: {repr(self)}')
-
-        try:
-            self._entity.create()
-        except libvirt.libvirtError:
-            return LifecycleResult.FAILURE
+        self._entity.create()
 
         return LifecycleResult.SUCCESS
 
     def destroy(self: Self, /, *, idempotent: bool = False) -> \
-            Literal[LifecycleResult.SUCCESS, LifecycleResult.FAILURE, LifecycleResult.NO_OPERATION]:
+            Literal[LifecycleResult.SUCCESS, LifecycleResult.NO_OPERATION]:
         '''Attempt to forcibly shut down the entity.
 
-           If the entity is not running, do nothing and return the value
-           of the idempotent parameter.
+           If called on an entity that is not running, do nothing and
+           return LifecycleResult.SUCCESS or LifecycleResult.NO_OPERATION
+           if the idempotent parameter is True or False respectively.
 
            If the entity is running, attempt to forcibly shut it down,
-           returning True on success or False on failure.
+           returning LifeCycleResult.SUCCESS on success or raising an
+           FVirtException on a failure.
 
            If the entity is transient, the Entity instance will become
            invalid and most methods and property access will raise a
@@ -640,11 +632,7 @@ class RunnableEntity(Entity):
             mark_invalid = True
 
         LOGGER.info(f'Destroying entity: {repr(self)}')
-
-        try:
-            self._entity.destroy()
-        except libvirt.libvirtError:
-            return LifecycleResult.FAILURE
+        self._entity.destroy()
 
         if mark_invalid:
             self._valid = False

@@ -14,6 +14,7 @@ import libvirt
 from .command import Command
 from .exitcode import ExitCode
 from .objects import is_object_mixin
+from ...libvirt.exceptions import FVirtException
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -86,6 +87,9 @@ class FileTransferCommand(Command):
                         ctx.exit(ExitCode.OPERATION_FAILED)
                     except libvirt.libvirtError:
                         click.echo('Operation failed due to libvirt error.', err=True)
+                        ctx.exit(ExitCode.OPERATION_FAILED)
+                    except FVirtException:
+                        click.echo('Unknown internal error.', err=True)
                         ctx.exit(ExitCode.OPERATION_FAILED)
 
                 click.echo(f'Finished transferring data, copied { state.convert_units(transferred) } of data.')

@@ -68,6 +68,8 @@ class AutostartCommand(MatchCommand):
                             e.autostart = enable
                         except InsufficientPrivileges:
                             ctx.fail(f'Cannot modify { self.NAME } autostart state as the Hypervisor connection is read-only.')
+                        except Exception:
+                            ctx.fail('Unknown internal error')
 
                         success += 1
 

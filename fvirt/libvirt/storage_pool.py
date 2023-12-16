@@ -202,14 +202,8 @@ class StoragePool(RunnableEntity):
     def refresh(self: Self) -> LifecycleResult:
         '''Refresh the list of volumes in the pool.'''
         self._check_valid()
-
         LOGGER.info('Refreshing storage pool: {repr(self)}')
-
-        try:
-            self._entity.refresh()
-        except libvirt.libvirtError:
-            return LifecycleResult.FAILURE
-
+        self._entity.refresh()
         return LifecycleResult.SUCCESS
 
     def delete(self: Self, idempotent: bool = True) -> LifecycleResult:
@@ -233,12 +227,7 @@ class StoragePool(RunnableEntity):
                 return LifecycleResult.FAILURE
 
         LOGGER.info(f'Deleting underlying storage pool resources: {repr(self)}')
-
-        try:
-            self._entity.delete()
-        except libvirt.libvirtError:
-            return LifecycleResult.FAILURE
-
+        self._entity.delete()
         return LifecycleResult.SUCCESS
 
     def define_volume(self: Self, config: str) -> Volume:
@@ -258,12 +247,7 @@ class StoragePool(RunnableEntity):
             raise NotConnected
 
         LOGGER.info('Creating new volume in storage pool: {repr(self)}')
-
-        try:
-            vol = self._entity.createXML(config, flags=0)
-        except libvirt.libvirtError:
-            raise InvalidConfig
-
+        vol = self._entity.createXML(config, flags=0)
         return Volume(vol, self)
 
     @staticmethod

@@ -17,7 +17,7 @@ import libvirt
 
 from typing_extensions import Buffer
 
-from .exceptions import FVirtException, InvalidOperation, PlatformNotSupported
+from .exceptions import FVirtException, InvalidOperation, PlatformNotSupported, libvirtCallWrapper
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -83,7 +83,7 @@ class Stream:
         if interactive:
             flags = libvirt.VIR_STREAM_NONBLOCK
 
-        self.__stream = hv._connection.newStream(flags)
+        self.__stream = libvirtCallWrapper(hv._connection.newStream(flags))
         self._ident = str(self.__stream.c_pointer())
 
     def __del__(self: Self) -> None:
@@ -94,7 +94,7 @@ class Stream:
         return f'<fvirt.libvirt.stream.Stream: ident={self.ident}>'
 
     @property
-    def stream(self: Self) -> libvirt.virStream:
+    def stream(self: Self) -> libvirtCallWrapper[libvirt.virStream]:
         '''The underlying stream object.'''
         return self.__stream
 

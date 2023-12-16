@@ -1126,7 +1126,7 @@ class VolumeDisk(_BaseDisk, _DiskStartupMixin):
 DiskDevice = Annotated[
     FileDisk | BlockDisk | VolumeDisk,
     Field(
-        disciminator='type',
+        discriminator='type',
     )
 ]
 

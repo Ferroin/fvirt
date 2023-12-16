@@ -10,9 +10,8 @@ from collections.abc import Iterable, Iterator, Mapping, Sized
 from typing import TYPE_CHECKING, Any, Generic, Self, TypeVar, cast, final
 from uuid import UUID
 
-import libvirt
-
 from .entity import Entity
+from .exceptions import FVirtException
 from ..util.match import MatchArgument, match_items
 
 if TYPE_CHECKING:
@@ -43,7 +42,7 @@ class BaseEntityAccess(ABC, Sized, Generic[T]):
     @final
     def _get_parent_link(self: Self) -> Any:
         if hasattr(self._parent, '_connection'):
-            link = self._parent
+            link: Any = self._parent
             assert link._connection is not None
             return link._connection
         else:
@@ -99,7 +98,7 @@ class EntityMap(BaseEntityAccess[T], Mapping):
                         raise KeyError(key)
                     case entity:
                         return self._entity_class(entity, self._parent)
-            except libvirt.libvirtError:
+            except FVirtException:
                 raise KeyError(key)
 
     @abstractmethod

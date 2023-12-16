@@ -16,6 +16,7 @@ from lxml import etree
 
 from fvirt.libvirt import EntityRunning, Hypervisor, InvalidConfig, LifecycleResult, Volume
 from fvirt.libvirt.entity_access import EntityAccess
+from fvirt.libvirt.exceptions import FVirtException
 from fvirt.libvirt.storage_pool import MATCH_ALIASES, StoragePool, StoragePoolState
 from fvirt.util.match import MatchArgument, MatchTarget
 
@@ -312,10 +313,8 @@ def test_delete(
     assert isinstance(result, LifecycleResult)
     assert result == LifecycleResult.SUCCESS
 
-    result = pool.delete(idempotent=False)
-
-    assert isinstance(result, LifecycleResult)
-    assert result == LifecycleResult.FAILURE
+    with pytest.raises(FVirtException):
+        pool.delete(idempotent=False)
 
 
 def test_xslt(live_pool: tuple[StoragePool, Hypervisor], xslt_doc_factory: Callable[[str, str], str], tmp_path: Path) -> None:
