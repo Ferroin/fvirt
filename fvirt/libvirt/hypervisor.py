@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Any, Final, Self, cast
 
 import libvirt
 
-from .exceptions import InsufficientPrivileges, InvalidConfig
+from .exceptions import InsufficientPrivileges, call_libvirt, libvirtCallWrapper
 from .uri import URI
 from ..version import VersionNumber
 
@@ -169,7 +169,8 @@ class Hypervisor:
 
         self._uri = hvuri
 
-        self._connection: libvirt.virConnect | None = None
+        self._connection: libvirtCallWrapper[libvirt.virConnect] | None = None
+
         self.__read_only = bool(read_only)
         self.__conn_count = 0
         self.__lock = threading.RLock()
@@ -223,10 +224,7 @@ class Hypervisor:
             raise InsufficientPrivileges
 
         with self:
-            try:
-                entity = getattr(self._connection, method)(config, flags)
-            except libvirt.libvirtError:
-                raise InvalidConfig
+            entity = getattr(self._connection, method)(config, flags)
 
             return entity_class(entity, self)
 
@@ -319,13 +317,10 @@ class Hypervisor:
         # TODO: Figure out some way to test reconnect handling
         def cb(*args: Any, **kwargs: Any) -> None:
             with self.__lock:
-                try:
-                    if self.read_only:
-                        self._connection = libvirt.openReadOnly(str(self._uri))
-                    else:
-                        self._connection = libvirt.open(str(self._uri))
-                except libvirt.libvirtError as e:
-                    raise e
+                if self.read_only:
+                    self._connection = libvirtCallWrapper(call_libvirt(lambda: libvirt.openReadOnly(str(self._uri))))
+                else:
+                    self._connection = libvirtCallWrapper(call_libvirt(lambda: libvirt.open(str(self._uri))))
 
                 self._connection.registerCloseCallback(cb, None)
 
@@ -333,13 +328,10 @@ class Hypervisor:
             if self._connection is None or not self._connection.isAlive():
                 LOGGER.debug(f'Opening new connection for hypervisor instance: {repr(self)}')
 
-                try:
-                    if self.read_only:
-                        self._connection = libvirt.openReadOnly(str(self._uri))
-                    else:
-                        self._connection = libvirt.open(str(self._uri))
-                except libvirt.libvirtError as e:
-                    raise e
+                if self.read_only:
+                    self._connection = libvirtCallWrapper(call_libvirt(lambda: libvirt.openReadOnly(str(self._uri))))
+                else:
+                    self._connection = libvirtCallWrapper(call_libvirt(lambda: libvirt.open(str(self._uri))))
 
                 self._connection.registerCloseCallback(cb, None)
                 self.__conn_count += 1

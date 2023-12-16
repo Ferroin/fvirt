@@ -260,7 +260,7 @@ class Domain(RunnableEntity):
             case _:
                 raise RuntimeError
 
-    def reset(self: Self) -> Literal[LifecycleResult.SUCCESS, LifecycleResult.FAILURE]:
+    def reset(self: Self) -> Literal[LifecycleResult.SUCCESS]:
         '''Attempt to reset the domain.
 
            If the domain is not running, raises fvirt.libvirt.EntityNotRunning.
@@ -274,15 +274,17 @@ class Domain(RunnableEntity):
             raise EntityNotRunning
 
         LOGGER.info(f'Resetting domain: {repr(self)}')
-
-        try:
-            self._entity.reset()
-        except libvirt.libvirtError:
-            return LifecycleResult.FAILURE
+        self._entity.reset()
 
         return LifecycleResult.SUCCESS
 
-    def shutdown(self: Self, /, *, timeout: int | None = None, force: bool = False, idempotent: bool = False) -> LifecycleResult:
+    def shutdown(
+        self: Self,
+        /, *,
+        timeout: int | None = None,
+        force: bool = False,
+        idempotent: bool = False,
+    ) -> LifecycleResult:
         '''Attempt to gracefully shut down the domain.
 
            If the domain is not running, do nothing and return the value
@@ -331,11 +333,7 @@ class Domain(RunnableEntity):
             mark_invalid = True
 
         LOGGER.info(f'Beginning shutdown of domain: {repr(self)}')
-
-        try:
-            self._entity.shutdown()
-        except libvirt.libvirtError:
-            return LifecycleResult.FAILURE
+        self._entity.shutdown()
 
         while tmcount > 0:
             # The cast below is needed to convince type checkers that
@@ -358,8 +356,6 @@ class Domain(RunnableEntity):
                 match self.destroy(idempotent=True):
                     case LifecycleResult.SUCCESS:
                         return LifecycleResult.FORCED
-                    case LifecycleResult.FAILURE:
-                        return LifecycleResult.FAILURE
                     case LifecycleResult.NO_OPERATION:
                         self._valid = False
                         return LifecycleResult.SUCCESS
@@ -394,11 +390,7 @@ class Domain(RunnableEntity):
             raise InvalidOperation('Managed saves are only possible for persistent domains.')
 
         LOGGER.info(f'Saving state of domain: {repr(self)}')
-
-        try:
-            self._entity.managedSave(flags=0)
-        except libvirt.libvirtError:
-            return LifecycleResult.FAILURE
+        self._entity.managedSave(flags=0)
 
         return LifecycleResult.SUCCESS
 
