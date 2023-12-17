@@ -5,6 +5,8 @@
 
 from __future__ import annotations
 
+import logging
+
 from enum import CONTINUOUS, UNIQUE, Enum, verify
 from time import sleep
 from typing import TYPE_CHECKING, Any, Final, Literal, Self, cast, overload
@@ -25,7 +27,7 @@ if TYPE_CHECKING:
     from .hypervisor import Hypervisor
     from .models.domain import DomainInfo
 
-
+LOGGER: Final = logging.getLogger(__name__)
 MATCH_ALIASES: Final = {
     'arch': MatchAlias(property='os_arch', desc='Match on the architecture of the domain.'),
     'autostart': MatchAlias(property='autostart', desc='Match on whether the domain is set to autostart or not.'),
@@ -271,6 +273,8 @@ class Domain(RunnableEntity):
         if not self.running:
             raise EntityNotRunning
 
+        LOGGER.info(f'Resetting domain: {repr(self)}')
+
         try:
             self._entity.reset()
         except libvirt.libvirtError:
@@ -326,6 +330,8 @@ class Domain(RunnableEntity):
         if not self.persistent:
             mark_invalid = True
 
+        LOGGER.info(f'Beginning shutdown of domain: {repr(self)}')
+
         try:
             self._entity.shutdown()
         except libvirt.libvirtError:
@@ -347,6 +353,8 @@ class Domain(RunnableEntity):
 
         if cast(bool, self.running):
             if force:
+                LOGGER.warning(f'Failed to shut down domain: {repr(self)}')
+
                 match self.destroy(idempotent=True):
                     case LifecycleResult.SUCCESS:
                         return LifecycleResult.FORCED
@@ -360,8 +368,10 @@ class Domain(RunnableEntity):
             elif timeout is None:
                 return LifecycleResult.SUCCESS
             else:
+                LOGGER.warning(f'Timed out waiting for shut down of domain: {repr(self)}')
                 return LifecycleResult.TIMED_OUT
         else:
+            LOGGER.info(f'Finished shutdown of domain: {repr(self)}')
             return LifecycleResult.SUCCESS
 
     def managed_save(self: Self, idempotent: bool = True) -> LifecycleResult:
@@ -382,6 +392,8 @@ class Domain(RunnableEntity):
 
         if not self.persistent:
             raise InvalidOperation('Managed saves are only possible for persistent domains.')
+
+        LOGGER.info(f'Saving state of domain: {repr(self)}')
 
         try:
             self._entity.managedSave(flags=0)

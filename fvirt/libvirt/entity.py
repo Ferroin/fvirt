@@ -6,9 +6,10 @@
 from __future__ import annotations
 
 import enum
+import logging
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Literal, Self, TypeVar, cast, final
+from typing import TYPE_CHECKING, Any, Final, Literal, Self, TypeVar, cast, final
 from uuid import UUID
 
 import libvirt
@@ -26,6 +27,7 @@ if TYPE_CHECKING:
     from pydantic import BaseModel
 
 T = TypeVar('T')
+LOGGER: Final = logging.getLogger(__name__)
 
 
 class LifecycleResult(enum.Enum):
@@ -257,6 +259,8 @@ class Entity(ABC):
         if self._hv.read_only:
             raise InsufficientPrivileges
 
+        LOGGER.debug(f'Updating config for entity: {repr(self)}')
+
         define = getattr(self._define_target, self._define_method, None)
 
         if define is None:
@@ -369,6 +373,8 @@ class Entity(ABC):
                 return LifecycleResult.NO_OPERATION
 
         mark_invalid = self._mark_invalid_on_undefine
+
+        LOGGER.info(f'Undefining entity: {repr(self)}')
 
         try:
             self._entity.undefine()
@@ -575,6 +581,8 @@ class RunnableEntity(Entity):
             if self._hv.read_only:
                 raise InsufficientPrivileges
 
+            LOGGER.info(f'Setting autostart state to {value} for entity: {repr(self)}')
+
             self._entity.setAutostart(int(value))
         else:
             raise AttributeError('Entity does not support autostart.')
@@ -597,6 +605,8 @@ class RunnableEntity(Entity):
                 return LifecycleResult.SUCCESS
             else:
                 return LifecycleResult.NO_OPERATION
+
+        LOGGER.info(f'Starting entity: {repr(self)}')
 
         try:
             self._entity.create()
@@ -628,6 +638,8 @@ class RunnableEntity(Entity):
 
         if not self.persistent:
             mark_invalid = True
+
+        LOGGER.info(f'Destroying entity: {repr(self)}')
 
         try:
             self._entity.destroy()

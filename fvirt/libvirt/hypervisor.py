@@ -5,10 +5,11 @@
 
 from __future__ import annotations
 
+import logging
 import threading
 
 from types import TracebackType
-from typing import TYPE_CHECKING, Any, Self, cast
+from typing import TYPE_CHECKING, Any, Final, Self, cast
 
 import libvirt
 
@@ -20,6 +21,8 @@ if TYPE_CHECKING:
     from .domain import Domain, DomainAccess
     from .entity import Entity
     from .storage_pool import StoragePool, StoragePoolAccess
+
+LOGGER: Final = logging.getLogger(__name__)
 
 
 class HostInfo:
@@ -175,8 +178,12 @@ class Hypervisor:
 
         self.__storage_pools = StoragePoolAccess(self)
 
+        LOGGER.debug(f'Initialized new hypervisor instance: {repr(self)}')
+
     def __del__(self: Self) -> None:
         with self.__lock:
+            LOGGER.debug(f'Tearing down hypervisor instance: {repr(self)}')
+
             if self.__conn_count > 0:
                 self.__conn_count = 0
 
@@ -324,6 +331,8 @@ class Hypervisor:
 
         with self.__lock:
             if self._connection is None or not self._connection.isAlive():
+                LOGGER.debug(f'Opening new connection for hypervisor instance: {repr(self)}')
+
                 try:
                     if self.read_only:
                         self._connection = libvirt.openReadOnly(str(self._uri))
@@ -335,6 +344,8 @@ class Hypervisor:
                 self._connection.registerCloseCallback(cb, None)
                 self.__conn_count += 1
             else:
+                LOGGER.debug(f'Registering new connection user for hypervisor instance: {repr(self)}')
+
                 if self.__conn_count == 0:
                     raise RuntimeError
                 else:
@@ -357,11 +368,15 @@ class Hypervisor:
            manually.'''
         with self.__lock:
             if self._connection is not None and self.__conn_count < 2:
+                LOGGER.debug(f'Closing connection for hypervisor: {repr(self)}')
+
                 if self._connection.isAlive():
                     self._connection.unregisterCloseCallback()
                     self._connection.close()
 
                 self._connection = None
+            else:
+                LOGGER.debug(f'Unregistering user for hypervisor connection: {repr(self)}')
 
             self.__conn_count -= 1
 
@@ -379,6 +394,8 @@ class Hypervisor:
 
            Returns a Domain instance for the defined domain on success.'''
         from .domain import Domain
+
+        LOGGER.info(f'Creating new persistent domain in hypervisor: {repr(self)}')
 
         return cast(Domain, self.__define_entity(Domain, 'defineXMLFlags', config, 0))
 
@@ -415,6 +432,8 @@ class Hypervisor:
         if auto_destroy:
             flags |= libvirt.VIR_DOMAIN_START_AUTO_DESTROY
 
+        LOGGER.info(f'Creating new transient domain in hypervisor: {repr(self)}')
+
         return cast(Domain, self.__define_entity(Domain, 'createXML', config, flags))
 
     def define_storage_pool(self: Self, config: str) -> StoragePool:
@@ -429,6 +448,8 @@ class Hypervisor:
            Returns a StoragePool instance for the defined storage pool
            on success.'''
         from .storage_pool import StoragePool
+
+        LOGGER.info(f'Creating new persistent storage pool in hypervisor: {repr(self)}')
 
         return cast(StoragePool, self.__define_entity(StoragePool, 'storagePoolDefineXML', config, 0))
 
@@ -464,6 +485,8 @@ class Hypervisor:
                     flags |= libvirt.VIR_STORAGE_POOL_CREATE_WITH_BUILD
                 case _:
                     raise RuntimeError
+
+        LOGGER.info(f'Creating new transient storage pool in hypervisor: {repr(self)}')
 
         return cast(StoragePool, self.__define_entity(StoragePool, 'storagePoolCreateXML', config, flags))
 

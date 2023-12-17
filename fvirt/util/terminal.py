@@ -6,8 +6,13 @@
 from __future__ import annotations
 
 import functools
+import logging
+
+from typing import Final
 
 import blessed
+
+LOGGER: Final = logging.getLogger(__name__)
 
 
 @functools.cache
@@ -20,6 +25,8 @@ def get_terminal() -> blessed.Terminal:
 
        The return value is cached so that only a single instance is
        ever used.'''
+    LOGGER.debug('Initializing terminal interface.')
+
     return blessed.Terminal()
 
 

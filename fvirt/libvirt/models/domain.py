@@ -13,15 +13,19 @@
 
 from __future__ import annotations
 
+import logging
+
 from collections.abc import Mapping, Sequence
 from ipaddress import IPv4Address, IPv6Address
-from typing import Annotated, Literal, Self
+from typing import Annotated, Final, Literal, Self
 from uuid import UUID
 
 from pydantic import Field, ValidationInfo, computed_field, field_validator, model_validator
 from pydantic_extra_types.mac_address import MacAddress
 
 from ._types import FileMode, FilePath, Hostname, Model, NetPort, NonEmptyString, V_OnOff, V_Timestamp, V_YesNo
+
+LOGGER: Final = logging.getLogger(__name__)
 
 
 class PCIAddress(Model):
@@ -198,6 +202,8 @@ class CPUTopology(Model):
             return
 
         if self.coalesce is None:
+            LOGGER.info('Redefining CPU topology based on vCPU count (smart mode).')
+
             if self.dies * self.cores * self.threads == vcpus:
                 self.sockets = 1
                 return
@@ -212,6 +218,7 @@ class CPUTopology(Model):
             self.cores = vcpus
             self.threads = 1
         else:
+            LOGGER.info(f'Redefining CPU topology based on vCPU count (coalesce mode, {self.coalesce}).')
             self.sockets = 1
             self.dies = 1
             self.cores = 1

@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import io
+import logging
 import os
 
 from typing import TYPE_CHECKING, Any, Final, Self, cast, overload
@@ -25,6 +26,7 @@ if TYPE_CHECKING:
     from .models.volume import VolumeInfo
     from .storage_pool import StoragePool
 
+LOGGER: Final = logging.getLogger(__name__)
 MATCH_ALIASES: Final = {
     'format': MatchAlias(property='format', desc='Match on the volume format.'),
     'key': MatchAlias(property='key', desc='Match on the volume key.'),
@@ -162,6 +164,8 @@ class Volume(Entity):
             else:
                 return LifecycleResult.NO_OPERATION
 
+        LOGGER.info(f'Deleting volume: {repr(self)}')
+
         try:
             self._entity.delete()
         except libvirt.libvirtError:
@@ -196,6 +200,8 @@ class Volume(Entity):
         assert self._hv._connection is not None
 
         stream = Stream(self._hv, sparse)
+
+        LOGGER.info(f'Fetching data from volume: {repr(self)}')
 
         if sparse:
             self._entity.download(stream.stream, 0, self.capacity, libvirt.VIR_STORAGE_VOL_DOWNLOAD_SPARSE_STREAM)
@@ -245,6 +251,8 @@ class Volume(Entity):
         else:
             self._entity.upload(stream.stream, 0, self.capacity, 0)
 
+        LOGGER.info(f'Uploading data to volume: {repr(self)}')
+
         stream.write_from_file(source)
 
         return stream.transferred
@@ -259,6 +267,8 @@ class Volume(Entity):
            The exact mechanism used to achieve this is not strictly
            defined, so this may be a long running operation.'''
         self._check_valid()
+
+        LOGGER.info(f'Wiping volume: {repr(self)}')
 
         try:
             self._entity.wipe()
@@ -327,6 +337,8 @@ class Volume(Entity):
                     return LifecycleResult.SUCCESS
                 else:
                     return LifecycleResult.NO_OPERATION
+
+        LOGGER.info(f'Resizing volume: {repr(self)}')
 
         try:
             self._entity.resize(capacity, flags)

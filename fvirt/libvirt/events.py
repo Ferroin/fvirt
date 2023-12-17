@@ -5,9 +5,14 @@
 
 from __future__ import annotations
 
+import logging
 import threading
 
+from typing import Final
+
 import libvirt
+
+LOGGER: Final = logging.getLogger(__name__)
 
 
 def _event_loop_thread() -> None:
@@ -31,6 +36,8 @@ def start_libvirt_event_thread() -> threading.Thread:
        function exactly once prior to establishing your first Hypervisor
        connection, otherwise reconnect handling will not work correctly
        (among other things).'''
+    LOGGER.info('Starting libvirt event handling thread')
+
     libvirt.virEventRegisterDefaultImpl()
     libvirt.virEventAddTimeout(60000, _event_dummy_timer_cb, None)
 
