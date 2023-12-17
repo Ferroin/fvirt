@@ -53,8 +53,8 @@ CONNECTION_HELP += f'\n\nSupported transports:\n{ click.wrap_text(" ".join(RECOG
 
 CONCURRENCY_HELP = f'''
 When asked to perform an operation on more than one libvirt object,
-fvirt will usually by default attempt to parallelize the operations
-using a thread pool to speed up processing.
+fvirt will usually attempt to parallelize the operations using a thread
+pool to speed up processing.
 
 By default, this thread pool will use either 8 threads, or four more
 threads than the number of CPUs in the systme, whichever is less. If
@@ -91,7 +91,7 @@ fvirt's output.
 
 The other two modes convert the raw number of bytes to a larger unit
 such that there are between one and four digits to the left of the
-decimal point, with the largest supported nit currently being
+decimal point, with the largest supported unit currently being
 exabytes/ebibytes. Between zero and three digits will be provided after
 the decimal point depending on how many digits preceed it.
 
@@ -117,14 +117,15 @@ help COMMAND`.
 
 
 def cb(
-        ctx: click.Context,
-        connect: str,
-        fail_fast: bool,
-        idempotent: bool,
-        fail_if_no_match: bool,
-        units: str,
-        jobs: int,
-        ) -> None:
+    ctx: click.Context,
+    connect: str,
+    fail_fast: bool,
+    idempotent: bool,
+    fail_if_no_match: bool,
+    units: str,
+    jobs: int,
+    log_level: str,
+) -> None:
     if jobs == 0:
         jobs = DEFAULT_JOB_COUNT
 
@@ -135,6 +136,7 @@ def cb(
         fail_if_no_match=fail_if_no_match,
         units=units,
         jobs=jobs,
+        log_level=log_level,
     )
 
 
@@ -177,6 +179,12 @@ cli: Final = Group(
             default=DEFAULT_JOB_COUNT,
             type=click.IntRange(min=0),
             help='Specify the number of jobs to use for concurrent execution. Run `fvirt help concurrency` for more information.',
+        ),
+        click.Option(
+            param_decls=('--log-level', '-l'),
+            default='WARNING',
+            type=click.Choice(('DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'), case_sensitive=False),
+            help='Specify the lowest level of log messages to display.',
         ),
     ),
     help_topics=(

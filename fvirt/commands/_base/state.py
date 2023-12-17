@@ -5,6 +5,8 @@
 
 from __future__ import annotations
 
+import logging.config
+import sys
 import threading
 
 from concurrent.futures import ThreadPoolExecutor
@@ -14,6 +16,32 @@ from ...libvirt import URI, Hypervisor
 from ...libvirt.events import start_libvirt_event_thread
 from ...util.dummy_pool import DummyExecutor
 from ...util.units import bytes_to_unit, count_integer_digits
+
+
+def _configure_logging(level: str) -> None:
+    logging.config.dictConfig({
+        'version': 1,
+        'formatters': {
+            'basic': {
+                'format': '%(asctime)s : %(levelname)s : %(name)s : %(message)s',
+            },
+        },
+        'handlers': {
+            'console': {
+                'class': 'logging.StreamHandler',
+                'stream': sys.stderr,
+                'formatter': 'basic',
+                'level': level,
+            },
+        },
+        'root': {
+            'handlers': [
+                'console',
+            ],
+            'level': level,
+        },
+        'disable_existing_loggers': False,
+    })
 
 
 class State:
@@ -30,7 +58,16 @@ class State:
         '__uri',
     ]
 
-    def __init__(self: Self, uri: URI, fail_fast: bool, idempotent: bool, fail_if_no_match: bool, units: str, jobs: int):
+    def __init__(
+        self: Self,
+        uri: URI,
+        fail_fast: bool,
+        idempotent: bool,
+        fail_if_no_match: bool,
+        units: str,
+        jobs: int,
+        log_level: str,
+    ) -> None:
         if jobs < 1:
             raise ValueError('Number of jobs must be at least 1')
 
@@ -43,6 +80,8 @@ class State:
         self.__thread: threading.Thread | None = None
         self.__units = units
         self.__uri = uri
+
+        _configure_logging(log_level)
 
     def __del__(self: Self) -> None:
         if self.__pool is not None:
