@@ -7,10 +7,11 @@ from __future__ import annotations
 
 import errno
 import io
+import logging
 import os
 import sys
 
-from typing import TYPE_CHECKING, Self
+from typing import TYPE_CHECKING, Final, Self
 
 import libvirt
 
@@ -19,9 +20,12 @@ from typing_extensions import Buffer
 from .exceptions import FVirtException, InvalidOperation, PlatformNotSupported
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from .hypervisor import Hypervisor
 
-DEFAULT_BUFFER_SIZE = 256 * 1024  # 256 kiB
+DEFAULT_BUFFER_SIZE: Final = 256 * 1024  # 256 kiB
+LOGGER: Final = logging.getLogger(__name__)
 
 
 class StreamError(FVirtException):
@@ -39,7 +43,9 @@ class Stream:
         '__error',
         '__finalized',
         '__hv',
+        '_ident',
         '__interactive',
+        '_progress_hook',
         '__sparse',
         '__stream',
         '_total',
@@ -51,6 +57,7 @@ class Stream:
         hv: Hypervisor,
         sparse: bool = False,
         interactive: bool = False,
+        progress_hook: Callable[[str, int, int], None] = lambda x, y, z: None,
     ) -> None:
         self.__error = False
         self.__finalized = False
@@ -60,6 +67,7 @@ class Stream:
         self._buf = b''
         self._total = 0
         self._transferred = 0
+        self._progress_hook = progress_hook
 
         if interactive and sparse:
             raise ValueError('Interactive mode and sparse mode are mutually exclusive.')
@@ -76,10 +84,14 @@ class Stream:
             flags = libvirt.VIR_STREAM_NONBLOCK
 
         self.__stream = hv._connection.newStream(flags)
+        self._ident = str(self.__stream.c_pointer())
 
     def __del__(self: Self) -> None:
         self.close()
         self.__hv.close()
+
+    def __repr__(self: Self) -> str:
+        return f'<fvirt.libvirt.stream.Stream: ident={self.ident}>'
 
     @property
     def stream(self: Self) -> libvirt.virStream:
@@ -107,6 +119,14 @@ class Stream:
            skipped over because of holes.'''
         return self._total
 
+    @property
+    def ident(self: Self) -> str:
+        '''Identifier for this stream.
+
+           This is guaranteed unique for a given underlying stream for
+           the lifetime of the stream.'''
+        return self._ident
+
     @staticmethod
     def _recv_callback(
         _stream: libvirt.virStream,
@@ -114,14 +134,16 @@ class Stream:
         state: tuple[Stream, io.BufferedRandom],
     ) -> int:
         st, fd = state
-
         written = 0
+
+        LOGGER.debug(f'Recieving data block for stream: {repr(st)}')
 
         while written < len(data):
             written += fd.write(data[written:])
 
         st._total += written
         st._transferred += written
+        st._progress_hook('recv', st._total, st._transferred)
         return written
 
     @staticmethod
@@ -132,14 +154,17 @@ class Stream:
     ) -> None:
         st, fd = state
 
+        LOGGER.debug(f'Recieving hole for stream: {repr(st)}')
+
         target = fd.seek(length, os.SEEK_CUR)
 
         try:
-            fd.truncate()
+            fd.truncate(target)
         except OSError:
             fd.seek(target, os.SEEK_SET)
 
         st._total += length
+        st._progress_hook('recv_hole', st._total, st._transferred)
 
     @staticmethod
     def _send_callback(
@@ -148,9 +173,13 @@ class Stream:
         state: tuple[Stream, io.BufferedRandom],
     ) -> bytes:
         st, fd = state
+
+        LOGGER.debug(f'Sending data block for stream: {repr(st)}')
+
         data = fd.read(length)
         st._total += len(data)
         st._transferred += len(data)
+        st._progress_hook('send', st._total, st._transferred)
         return data
 
     @staticmethod
@@ -161,7 +190,10 @@ class Stream:
     ) -> int:
         st, fd = state
 
+        LOGGER.debug(f'Sending hole for stream: {repr(st)}')
+
         st._total += length
+        st._progress_hook('send_hole', st._total, st._transferred)
         return fd.seek(length, os.SEEK_CUR)
 
     @staticmethod
@@ -222,6 +254,7 @@ class Stream:
     def close(self: Self) -> None:
         '''Close the stream.'''
         if not self.__finalized:
+            LOGGER.debug(f'Closing stream: {repr(self)}')
             if self.__error:
                 self.stream.abort()
             else:
@@ -232,6 +265,7 @@ class Stream:
     def abort(self: Self) -> None:
         '''Abort any pending stream transfer.'''
         if not self.__finalized:
+            LOGGER.debug(f'Aborting stream: {repr(self)}')
             self.stream.abort()
             self.__finalized = True
 
@@ -277,6 +311,7 @@ class Stream:
 
             return ret
         else:
+            LOGGER.debug(f'Reading {nbytes} bytes from stream: {repr(self)}')
             match self.stream.recvFlags(nbytes, libvirt.VIR_STREAM_RECV_STOP_AT_HOLE if self.__sparse else 0):
                 case 0:
                     return b''
@@ -303,6 +338,8 @@ class Stream:
            Otherwise returns the size of the hole.'''
         if not self.__sparse:
             raise InvalidOperation
+
+        LOGGER.debug('Reading next hole from stream: {repr(self)}')
 
         match self.stream.recvHole(0):
             case -1:
@@ -358,7 +395,11 @@ class Stream:
            Otherwise returns the number of bytes actually written to
            the stream, which may be less than the length of the data
            provided.'''
-        match self.stream.send(bytes(data)):
+        wdata = bytes(data)
+
+        LOGGER.debug(f'Writing {len(wdata)} bytes to stream: {repr(self)}')
+
+        match self.stream.send(wdata):
             case -1:
                 raise StreamError
             case -2:
@@ -379,6 +420,8 @@ class Stream:
            closing the stream once it has written all other data.'''
         if length < 0:
             raise ValueError('Hole length may not be negative.')
+
+        LOGGER.debug(f'Writing {length} byte hole to stream: {repr(self)}')
 
         match self.stream.sendHole(length):
             case -1:

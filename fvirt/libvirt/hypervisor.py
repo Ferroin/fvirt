@@ -195,7 +195,7 @@ class Hypervisor:
                 self._connection = None
 
     def __repr__(self: Self) -> str:
-        return f'<fvirt.libvirt.Hypervisor: uri={ str(self.uri) }, ro={ self.read_only }, conns={ self.__conn_count }>'
+        return f'<fvirt.libvirt.Hypervisor: uri={ str(self._uri) }, ro={ self.read_only }, conns={ self.__conn_count }>'
 
     def __bool__(self: Self) -> bool:
         with self.__lock:
