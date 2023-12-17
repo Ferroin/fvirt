@@ -5,6 +5,8 @@
 
 from __future__ import annotations
 
+import logging
+
 from enum import CONTINUOUS, UNIQUE, Enum, verify
 from typing import TYPE_CHECKING, Any, Final, Self, cast, overload
 
@@ -23,6 +25,7 @@ if TYPE_CHECKING:
     from .hypervisor import Hypervisor
     from .models.storage_pool import PoolInfo
 
+LOGGER: Final = logging.getLogger(__name__)
 MATCH_ALIASES: Final = {
     'autostart': MatchAlias(property='autostart', desc='Match on whether the pool is set to autostart or not.'),
     'device': MatchAlias(property='device', desc='Match on the pool device.'),
@@ -187,6 +190,8 @@ class StoragePool(RunnableEntity):
         '''Build the storage pool.'''
         self._check_valid()
 
+        LOGGER.info('Building storage pool: {repr(self)}')
+
         try:
             self._entity.build(flags=0)
         except libvirt.libvirtError:
@@ -197,6 +202,8 @@ class StoragePool(RunnableEntity):
     def refresh(self: Self) -> LifecycleResult:
         '''Refresh the list of volumes in the pool.'''
         self._check_valid()
+
+        LOGGER.info('Refreshing storage pool: {repr(self)}')
 
         try:
             self._entity.refresh()
@@ -225,6 +232,8 @@ class StoragePool(RunnableEntity):
             else:
                 return LifecycleResult.FAILURE
 
+        LOGGER.info(f'Deleting underlying storage pool resources: {repr(self)}')
+
         try:
             self._entity.delete()
         except libvirt.libvirtError:
@@ -247,6 +256,8 @@ class StoragePool(RunnableEntity):
 
         if not self._hv.connected:
             raise NotConnected
+
+        LOGGER.info('Creating new volume in storage pool: {repr(self)}')
 
         try:
             vol = self._entity.createXML(config, flags=0)
