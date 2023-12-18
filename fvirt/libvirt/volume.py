@@ -166,11 +166,7 @@ class Volume(Entity):
 
         LOGGER.info(f'Deleting volume: {repr(self)}')
 
-        try:
-            self._entity.delete()
-        except libvirt.libvirtError:
-            return LifecycleResult.FAILURE
-
+        self._entity.delete()
         self._valid = False
 
         return LifecycleResult.SUCCESS
@@ -270,10 +266,7 @@ class Volume(Entity):
 
         LOGGER.info(f'Wiping volume: {repr(self)}')
 
-        try:
-            self._entity.wipe()
-        except libvirt.libvirtError:
-            return LifecycleResult.FAILURE
+        self._entity.wipe()
 
         return LifecycleResult.SUCCESS
 
@@ -340,10 +333,7 @@ class Volume(Entity):
 
         LOGGER.info(f'Resizing volume: {repr(self)}')
 
-        try:
-            self._entity.resize(capacity, flags)
-        except libvirt.libvirtError:
-            return LifecycleResult.FAILURE
+        self._entity.resize(capacity, flags)
 
         return LifecycleResult.SUCCESS
 

@@ -5,8 +5,10 @@
 
 from __future__ import annotations
 
+import logging
+
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Generic, Self, TypeVar
+from typing import TYPE_CHECKING, Any, Final, Generic, Self, TypeVar
 
 import libvirt
 
@@ -15,6 +17,7 @@ if TYPE_CHECKING:
 
 T = TypeVar('T')
 W = TypeVar('W')
+LOGGER: Final = logging.getLogger(__name__)
 
 
 class FVirtException(Exception):
@@ -87,7 +90,7 @@ def call_libvirt(f: Callable[[], T], /) -> T:
             ):
                 e_cls: type[FVirtException] = InvalidConfig
             case (
-                libvirt.VIR_ERR_INVALID_CONNECTION |
+                libvirt.VIR_ERR_INVALID_CONN |
                 libvirt.VIR_ERR_INVALID_DOMAIN |
                 libvirt.VIR_ERR_INVALID_NETWORK |
                 libvirt.VIR_ERR_INVALID_STORAGE_POOL |
@@ -101,11 +104,13 @@ def call_libvirt(f: Callable[[], T], /) -> T:
             ):
                 e_cls = InvalidEntity
             case (
-                libvirt.VIR_ERR_INVALID_OPERATION
+                libvirt.VIR_ERR_OPERATION_INVALID
             ):
                 e_cls = InvalidOperation
             case _:
                 e_cls = FVirtException
+
+        LOGGER.debug('Converting libvirt error to fvirt exception', exc_info=e)
 
         raise e_cls(exc=e) from e
 
