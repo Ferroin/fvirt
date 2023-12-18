@@ -6,14 +6,16 @@
 from __future__ import annotations
 
 import concurrent.futures
+import logging
 
 from textwrap import dedent
-from typing import TYPE_CHECKING, Self
+from typing import TYPE_CHECKING, Final, Self
 
 import click
 
 from lxml import etree
 
+from .exitcode import ExitCode
 from .match import MatchCommand, get_match_or_entity
 from .objects import is_object_mixin
 from ...libvirt.runner import RunnerResult, run_entity_method, run_sub_entity_method
@@ -26,6 +28,8 @@ if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
 
     from .state import State
+
+LOGGER: Final = logging.getLogger(__name__)
 
 
 class XSLTCommand(MatchCommand):
@@ -95,47 +99,54 @@ class XSLTCommand(MatchCommand):
             success = 0
 
             for f in concurrent.futures.as_completed(futures):
-                match f.result():
-                    case RunnerResult(attrs_found=False) as r:
-                        name = r.ident
+                try:
+                    match f.result():
+                        case RunnerResult(attrs_found=False) as r:
+                            name = r.ident
 
-                        if parent is not None:
-                            name = r.ident[1]
+                            if parent is not None:
+                                name = r.ident[1]
 
-                        ctx.fail(f'Unexpected internal error processing { self.NAME } "{ name }".')
-                    case RunnerResult(entity_found=False) as r if parent is None:
-                        click.echo(f'{ self.NAME } "{ r.ident }" disappeared before we could modify it.')
+                            LOGGER.critical(f'Unexpected internal error processing { self.NAME } "{ name }"')
+                            ctx.exit(ExitCode.OPERATION_FAILED)
+                        case RunnerResult(entity_found=False) as r if parent is None:
+                            LOGGER.error(f'{ self.NAME } "{ r.ident }" disappeared before we could modify it.')
 
-                        if state.fail_fast:
-                            break
-                    case RunnerResult(entity_found=False) as r:
-                        click.echo(f'{ self.PARENT_NAME } "{ r.ident[0] }" not found when trying to modify { self.NAME } "{ r.ident[1] }".')
-                        break  # Can't recover in this case, but we should still print our normal summary.
-                    case RunnerResult(entity_found=True, sub_entity_found=False) as r:
-                        click.echo(f'{ self.NAME } "{ r.ident[1] }" disappeared before we could modify it.')
+                            if state.fail_fast:
+                                break
+                        case RunnerResult(entity_found=False) as r:
+                            LOGGER.critical(f'{ self.PARENT_NAME } "{ r.ident[0] }" not found when trying to modify { self.NAME } "{ r.ident[1] }".')
+                            break  # Can't recover in this case, but we should still print our normal summary.
+                        case RunnerResult(entity_found=True, sub_entity_found=False) as r:
+                            LOGGER.warning(f'{ self.NAME } "{ r.ident[1] }" disappeared before we could modify it.')
 
-                        if state.fail_fast:
-                            break
-                    case RunnerResult(method_success=False) as r:
-                        name = r.ident
+                            if state.fail_fast:
+                                break
+                        case RunnerResult(method_success=False) as r:
+                            name = r.ident
 
-                        if parent is not None:
-                            name = r.ident[1]
+                            if parent is not None:
+                                name = r.ident[1]
 
-                        click.echo(f'Failed to modify { self.NAME } "{ name }".')
+                            LOGGER.error(f'Failed to modify { self.NAME } "{ name }".')
 
-                        if state.fail_fast:
-                            break
-                    case RunnerResult(method_success=True) as r:
-                        name = r.ident
+                            if state.fail_fast:
+                                break
+                        case RunnerResult(method_success=True) as r:
+                            name = r.ident
 
-                        if parent is not None:
-                            name = r.ident[1]
+                            if parent is not None:
+                                name = r.ident[1]
 
-                        click.echo(f'Successfully modified { self.NAME } "{ name }".')
-                        success += 1
-                    case _:
-                        raise RuntimeError
+                            LOGGER.info(f'Successfully modified { self.NAME } "{ name }".')
+                            success += 1
+                        case _:
+                            raise RuntimeError
+                except Exception as e:
+                    LOGGER.error('Encountered unexpected error while attempting to modify { self.NAME }', exc_info=e)
+
+                    if state.fail_fast:
+                        break
 
             click.echo(f'Finished modifying specified { self.NAME }s using XSLT document at { xslt }.')
             click.echo('')

@@ -6,12 +6,13 @@
 from __future__ import annotations
 
 import concurrent.futures
+import logging
 
 from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from textwrap import dedent
-from typing import TYPE_CHECKING, Any, Self
+from typing import TYPE_CHECKING, Any, Final, Self
 
 import click
 
@@ -26,6 +27,8 @@ from ...util.report import summary
 if TYPE_CHECKING:
     from .state import State
     from ...util.match import MatchAlias
+
+LOGGER: Final = logging.getLogger(__name__)
 
 
 @dataclass(kw_only=True, slots=True)
@@ -132,50 +135,51 @@ class LifecycleCommand(MatchCommand):
                 try:
                     match f.result():
                         case RunnerResult(attrs_found=False) as r:
-                            ctx.fail(f'Unexpected internal error processing { self.NAME } "{ r.ident }".')
+                            LOGGER.error(f'Unable to look up { self.NAME } "{ r.ident }".')
+                            ctx.exit(ExitCode.OPERATION_FAILED)
                         case RunnerResult(entity_found=False) as r:
-                            click.echo(f'Could not find { self.NAME } "{ r.ident }".')
+                            LOGGER.error(f'Could not find { self.NAME } "{ r.ident }".')
                             not_found += 1
 
                             if state.fail_fast:
                                 break
                         case RunnerResult(method_success=False) as r:
-                            click.echo(f'Unexpected error processing { self.NAME } "{ r.ident }".')
+                            LOGGER.error(f'Unexpected error processing { self.NAME } "{ r.ident }".')
 
                             if state.fail_fast:
                                 break
                         case RunnerResult(method_success=True, result=LifecycleResult.SUCCESS) as r:
-                            click.echo(f'{ op_help.continuous.capitalize() } { self.NAME } "{ r.ident }".')
+                            LOGGER.info(f'{ op_help.continuous.capitalize() } { self.NAME } "{ r.ident }".')
                             success += 1
                         case RunnerResult(method_success=True, result=LifecycleResult.NO_OPERATION) as r:
-                            click.echo(f'{ self.NAME.capitalize() } "{ r.ident }" is already { op_help.idempotent_state }.')
+                            LOGGER.info(f'{ self.NAME.capitalize() } "{ r.ident }" is already { op_help.idempotent_state }.')
                             skipped += 1
 
                             if state.idempotent:
                                 success += 1
                         case RunnerResult(method_success=True, result=LifecycleResult.FAILURE) as r:
-                            click.echo(f'Failed to { op_help.verb } { self.NAME } "{ r.ident }".')
+                            LOGGER.warning(f'Failed to { op_help.verb } { self.NAME } "{ r.ident }".')
 
                             if state.fail_fast:
                                 break
                         case RunnerResult(method_success=True, result=LifecycleResult.TIMED_OUT) as r:
-                            click.echo(f'Timed out waiting for { self.NAME } "{ r.ident }" to { op_help.verb }.')
+                            LOGGER.warning(f'Timed out waiting for { self.NAME } "{ r.ident }" to { op_help.verb }.')
                             timed_out += 1
 
                             if state.fail_fast:
                                 break
                         case RunnerResult(method_success=True, result=LifecycleResult.FORCED) as r:
-                            click.echo(f'{ self.NAME.capitalize() } "{ r.ident }" failed to { op_help.verb } and was forced to do so anyway.')
+                            LOGGER.warning(f'{ self.NAME.capitalize() } "{ r.ident }" failed to { op_help.verb } and was forced to do so anyway.')
                             forced += 1
                         case _:
                             raise RuntimeError
                 except InvalidOperation:
-                    click.echo(f'Failed to { op_help.verb } { self.NAME }, operation is not supported for this { self.NAME }.')
+                    LOGGER.error(f'Failed to { op_help.verb } { self.NAME }, operation is not supported for this { self.NAME }.')
 
                     if state.fail_fast:
                         break
-                except FVirtException:
-                    click.echo('Unexpected internal error.')
+                except Exception as e:
+                    LOGGER.error('Encountered unexpected error while attempting to { op_help.verb } { self.NAME }', exc_info=e)
 
                     if state.fail_fast:
                         break

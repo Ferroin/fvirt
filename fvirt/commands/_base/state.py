@@ -19,15 +19,22 @@ from ...util.units import bytes_to_unit, count_integer_digits
 
 
 def _configure_logging(level: str) -> None:
+    if sys.stderr.isatty():
+        formatter = {
+            'format': '%(message)s',
+        }
+    else:
+        formatter = {
+            'format': '%(asctime)s : %(levelname)s : %(name)s : %(message)s',
+        }
+
     logging.config.dictConfig({
         'version': 1,
         'formatters': {
-            'basic': {
-                'format': '%(asctime)s : %(levelname)s : %(name)s : %(message)s',
-            },
+            'basic': formatter,
         },
         'handlers': {
-            'console': {
+            'main': {
                 'class': 'logging.StreamHandler',
                 'stream': sys.stderr,
                 'formatter': 'basic',
@@ -36,7 +43,7 @@ def _configure_logging(level: str) -> None:
         },
         'root': {
             'handlers': [
-                'console',
+                'main',
             ],
             'level': level,
         },

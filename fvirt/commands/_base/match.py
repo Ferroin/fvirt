@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import logging
 import re
 
 from typing import TYPE_CHECKING, Any, Concatenate, Final, ParamSpec, Self, Type, TypeVar, cast
@@ -29,6 +30,7 @@ P = ParamSpec('P')
 T = TypeVar('T')
 
 DEFAULT_MATCH: Final = re.compile('.*')
+LOGGER: Final = logging.getLogger(__name__)
 
 
 def MatchTargetParam(aliases: Mapping[str, MatchAlias]) -> Type[click.ParamType]:
@@ -102,7 +104,7 @@ def get_match_or_entity(
             entities = list(obj.match_entities(ctx, hv, match))
 
         if not entities and state.fail_if_no_match:
-            click.echo(f'No { obj.NAME }s found matching the specified criteria.', err=True)
+            LOGGER.error(f'No { obj.NAME }s found matching the specified criteria.')
             ctx.exit(ExitCode.ENTITY_NOT_FOUND)
     elif entity is not None:
         if obj.HAS_PARENT:
