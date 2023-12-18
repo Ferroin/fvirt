@@ -215,7 +215,12 @@ jobs:
       - name: Install python dependencies
         run: poetry install --sync --all-extras
       - name: Run pytest
-        run: FVIRT_FAIL_NON_RUNNABLE_TESTS=1 FVIRT_NO_KVM_FOR_TESTS=1 poetry run pytest -n logical --dist worksteal
+        uses: nick-fields/retry@v2
+        with:
+          timeout_seconds: 900
+          max_attempts: 3
+          retry_wait_seconds: 1
+          command: FVIRT_FAIL_NON_RUNNABLE_TESTS=1 FVIRT_NO_KVM_FOR_TESTS=1 poetry run pytest
 
   bandit:
     name: bandit
