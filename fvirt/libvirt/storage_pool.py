@@ -15,7 +15,7 @@ import libvirt
 from .descriptors import ConfigProperty
 from .entity import LifecycleResult, RunnableEntity
 from .entity_access import BaseEntityAccess, EntityAccess, NameMap, UUIDMap
-from .exceptions import EntityRunning, InsufficientPrivileges, InvalidConfig, NotConnected
+from .exceptions import EntityRunning, InsufficientPrivileges, NotConnected
 from .volume import Volume, VolumeAccess
 from ..util.match import MatchAlias
 
