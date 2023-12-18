@@ -5,21 +5,23 @@
 
 from __future__ import annotations
 
+import logging
+
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Self
+from typing import TYPE_CHECKING, Any, Final, Self
 
 import click
-import libvirt
 
 from .command import Command
 from .exitcode import ExitCode
 from .objects import is_object_mixin
-from ...libvirt.exceptions import FVirtException
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
     from .state import State
+
+LOGGER: Final = logging.getLogger(__name__)
 
 
 class FileTransferCommand(Command):
@@ -55,15 +57,15 @@ class FileTransferCommand(Command):
 
             if require_file:
                 if not target.exists():
-                    click.echo(f'{ str(target) } does not exist.', err=True)
+                    LOGGER.error(f'{ str(target) } does not exist.')
                     ctx.exit(ExitCode.PATH_NOT_VALID)
             else:
                 if not (target.parent.exists() and target.parent.is_dir()):
-                    click.echo(f'{ str(target.parent) } either does not exist or is not a directory.', err=True)
+                    LOGGER.error(f'{ str(target.parent) } either does not exist or is not a directory.')
                     ctx.exit(ExitCode.PATH_NOT_VALID)
 
             if target.exists() and not (target.is_file() or target.is_block_device()):
-                click.echo(f'{ str(target) } must be a regular file or a block device.', err=True)
+                LOGGER.error(f'{ str(target) } must be a regular file or a block device.')
                 ctx.exit(ExitCode.PATH_NOT_VALID)
 
             with state.hypervisor as hv:
@@ -83,13 +85,10 @@ class FileTransferCommand(Command):
                     try:
                         transferred = transfer(f, **transfer_args)
                     except OSError as e:
-                        click.echo(f'Operation failed due to local system error: { e.strerror }.', err=True)
+                        LOGGER.error(f'Operation failed due to local system error: { e.strerror }')
                         ctx.exit(ExitCode.OPERATION_FAILED)
-                    except libvirt.libvirtError:
-                        click.echo('Operation failed due to libvirt error.', err=True)
-                        ctx.exit(ExitCode.OPERATION_FAILED)
-                    except FVirtException:
-                        click.echo('Unknown internal error.', err=True)
+                    except Exception as e:
+                        LOGGER.error('Encountered unexpected error while trying to transfer data', exc_info=e)
                         ctx.exit(ExitCode.OPERATION_FAILED)
 
                 click.echo(f'Finished transferring data, copied { state.convert_units(transferred) } of data.')

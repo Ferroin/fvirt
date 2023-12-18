@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import logging
 import sys
 
 from textwrap import dedent
@@ -28,6 +29,7 @@ if TYPE_CHECKING:
     from .state import State
 
 HAVE_TEMPLATING: Final = get_environment() is not None
+LOGGER: Final = logging.getLogger(__name__)
 
 if HAVE_TEMPLATING:
     import json
@@ -145,7 +147,8 @@ class NewCommand(Command):
 
             with state.hypervisor as hv:
                 if hv.read_only:
-                    ctx.fail(f'Unable to create any { self.NAME }s, the hypervisor connection is read-only.')
+                    LOGGER.error(f'Unable to create any { self.NAME }s, the hypervisor connection is read-only.')
+                    ctx.exit(ExitCode.OPERATION_FAILED)
 
                 for conf in confdata:
                     if self.HAS_PARENT:
@@ -162,17 +165,17 @@ class NewCommand(Command):
                         else:
                             obj = getattr(define_obj, NEW_METHOD)(c)
                     except InvalidConfig:
-                        click.echo(f'The configuration at { p } is not valid for a { self.NAME }.')
+                        LOGGER.warning(f'The configuration at { p } is not valid for a { self.NAME }')
 
                         if state.fail_fast:
                             break
-                    except Exception:
-                        click.echo(f'Failed to create { self.NAME }.')
+                    except Exception as e:
+                        LOGGER.error(f'Failed to create { self.NAME }', exc_info=e)
 
                         if state.fail_fast:
                             break
                     else:
-                        click.echo(f'Successfully created { self.NAME }: "{ obj.name }".')
+                        LOGGER.info(f'Successfully created { self.NAME }: "{ obj.name }".')
                         success += 1
 
             click.echo(f'Finished creatng specified { self.NAME }s.')

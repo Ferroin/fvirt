@@ -5,8 +5,10 @@
 
 from __future__ import annotations
 
+import logging
+
 from textwrap import dedent
-from typing import TYPE_CHECKING, Self
+from typing import TYPE_CHECKING, Final, Self
 
 import click
 
@@ -24,6 +26,8 @@ if TYPE_CHECKING:
     from .state import State
     from ...libvirt import Hypervisor
     from ...libvirt.entity import Entity
+
+LOGGER: Final = logging.getLogger(__name__)
 
 
 class ListCommand(MatchCommand):
@@ -92,7 +96,7 @@ class ListCommand(MatchCommand):
                     entities = getattr(obj, self.LOOKUP_ATTR).match(match)
 
                 if not entities and state.fail_if_no_match:
-                    click.echo(f'No { self.NAME }s found matching the specified parameters.', err=True)
+                    LOGGER.warning(f'No { self.NAME }s found matching the specified parameters.')
                     ctx.exit(ExitCode.ENTITY_NOT_FOUND)
 
                 if only is None:

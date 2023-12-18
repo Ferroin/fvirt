@@ -5,9 +5,11 @@
 
 from __future__ import annotations
 
+import logging
+
 from collections.abc import Mapping, Sequence
 from textwrap import dedent
-from typing import TYPE_CHECKING, Self, cast
+from typing import TYPE_CHECKING, Final, Self, cast
 
 import click
 
@@ -21,6 +23,8 @@ from ...util.report import summary
 if TYPE_CHECKING:
     from .state import State
     from ...util.match import MatchAlias
+
+LOGGER: Final = logging.getLogger(__name__)
 
 
 class AutostartCommand(MatchCommand):
@@ -67,9 +71,11 @@ class AutostartCommand(MatchCommand):
                         try:
                             e.autostart = enable
                         except InsufficientPrivileges:
-                            ctx.fail(f'Cannot modify { self.NAME } autostart state as the Hypervisor connection is read-only.')
-                        except Exception:
-                            ctx.fail('Unknown internal error')
+                            LOGGER.error(f'Cannot modify { self.NAME } autostart state as the Hypervisor connection is read-only.')
+                            ctx.exit(ExitCode.OPERATION_FAILED)
+                        except Exception as e:
+                            LOGGER.error('Encountered unexpected error while trying to set autostart status', exc_info=e)
+                            ctx.exit(ExitCode.OPERATION_FAILED)
 
                         success += 1
 

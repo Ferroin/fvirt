@@ -5,8 +5,10 @@
 
 from __future__ import annotations
 
+import logging
+
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Self, Type, TypeGuard, cast
+from typing import TYPE_CHECKING, Any, Final, Self, Type, TypeGuard, cast
 
 import click
 
@@ -22,6 +24,8 @@ if TYPE_CHECKING:
 
     from ...libvirt import Hypervisor
     from ...util.match import MatchArgument
+
+LOGGER: Final = logging.getLogger(__name__)
 
 
 def is_object_mixin(obj: Any) -> TypeGuard[ObjectMixin]:
@@ -134,7 +138,7 @@ class ObjectMixin(ABC):
         entity = cast(EntityAccess[Entity], getattr(parent, self.LOOKUP_ATTR)).get(ident)
 
         if entity is None:
-            click.echo(f'Could not find { self.NAME } "{ ident }".', err=True)
+            LOGGER.error(f'Could not find { self.NAME } "{ ident }"')
             ctx.exit(ExitCode.ENTITY_NOT_FOUND)
 
         return entity
@@ -147,7 +151,7 @@ class ObjectMixin(ABC):
         parent = cast(EntityAccess[Entity], getattr(hv, self.PARENT_ATTR)).get(parent_ident)
 
         if not parent:
-            click.echo(f'Could not find { self.PARENT_NAME } "{ parent_ident }".', err=True)
+            LOGGER.error(f'Could not find { self.PARENT_NAME } "{ parent_ident }"')
             ctx.exit(ExitCode.PARENT_NOT_FOUND)
 
         return parent
