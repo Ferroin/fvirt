@@ -12,17 +12,18 @@ poetry run pytest
 
 ## Live domain tests.
 
-A number of the tests for fvirt one or more live domains with an actual guest OS booted in them. These tests use
-kernel and initramfs images included in this repository via git-lfs, and require QEMU. By default, they will try
-to run native VMs using the host system’s CPU architecture, but they will fall back to emulation if images are
-not available for the host architecture.
+A number of the tests for fvirt require one or more live domains with an actual guest OS booted in them. These
+tests use kernel and initramfs images included in this repository via git-lfs, and require QEMU. By default,
+they will try to run native VMs using the host system’s CPU architecture, but they will fall back to emulation
+if images are not available for the host architecture.
 
 More details about the test images can be found [here](./data/images/README.md).
 
 ## Test timeouts.
 
-All tests intentionally have a hard 30-second timeout. Any test which exceeds this time limit will be terminated
-and counted as a failure.
+All tests intentionally have a hard 45-second timeout. Because of constraints involving setup and cleanup, this
+effectively translates to a roughly 30 second timeout for each actual test case. Any test which exceeds this time
+limit will be terminated and counted as a failure.
 
 This policy was instituted because it’s possible for Python code interacting with libvirt to trigger situations
 in libvirt where the process simply hangs, and any such situations that are caused by fvirt code are treated as
@@ -42,7 +43,7 @@ Tests must also be safe against reordering of test cases, and we internally util
 
 ## Tests with external dependencies.
 
-A number of our tests uses `qemu:///session` URIs. This means those tests have a functional dependency on virtqemud
+A number of our tests use `qemu:///session` URIs. This means those tests have a functional dependency on virtqemud
 and possibly on a working qemu-system emulator.
 
 By default, the test suite will check for these external dependencies and skip any tests that require them if they
