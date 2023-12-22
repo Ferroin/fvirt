@@ -278,7 +278,7 @@ class URI:
         return self.__parameters
 
     @classmethod
-    def from_string(cls: Type[URI], uri: str) -> URI:
+    def from_string(cls: Type[URI], uri: str, /) -> URI:
         '''Construct a URI instance from a URI string.'''
         if not uri:
             return cls()
@@ -321,7 +321,6 @@ class URI:
 
 
 LIBVIRT_DEFAULT_URI: Final = URI()
-
 
 __all__ = [
     'Driver',

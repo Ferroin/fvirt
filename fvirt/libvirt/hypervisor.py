@@ -163,7 +163,7 @@ class Hypervisor:
 
        The underlying libvirt APIs are all concurrent-access safe
        irrespective of the concurrency model in use.'''
-    def __init__(self: Self, hvuri: URI, read_only: bool = False) -> None:
+    def __init__(self: Self, /, hvuri: URI, *, read_only: bool = False) -> None:
         from .domain import DomainAccess
         from .storage_pool import StoragePoolAccess
 
@@ -375,7 +375,7 @@ class Hypervisor:
             if self.__conn_count < 0:
                 self.__conn_count = 0
 
-    def define_domain(self: Self, config: str) -> Domain:
+    def define_domain(self: Self, /, config: str) -> Domain:
         '''Define a domain from an XML config string.
 
            Raises fvirt.libvirt.NotConnected if called on a Hypervisor
@@ -391,7 +391,7 @@ class Hypervisor:
 
         return cast(Domain, self.__define_entity(Domain, 'defineXMLFlags', config, 0))
 
-    def create_domain(self: Self, config: str, paused: bool = False, reset_nvram: bool = False, auto_destroy: bool = False) -> Domain:
+    def create_domain(self: Self, /, config: str, *, paused: bool = False, reset_nvram: bool = False, auto_destroy: bool = False) -> Domain:
         '''Create a domain from an XML config string.
 
            If `paused` is True, the domain will be started in the paused state.
@@ -428,7 +428,7 @@ class Hypervisor:
 
         return cast(Domain, self.__define_entity(Domain, 'createXML', config, flags))
 
-    def define_storage_pool(self: Self, config: str) -> StoragePool:
+    def define_storage_pool(self: Self, /, config: str) -> StoragePool:
         '''Define a storage pool from an XML config string.
 
            Raises fvirt.libvirt.NotConnected if called on a Hypervisor
@@ -445,7 +445,7 @@ class Hypervisor:
 
         return cast(StoragePool, self.__define_entity(StoragePool, 'storagePoolDefineXML', config, 0))
 
-    def create_storage_pool(self: Self, config: str, build: bool = True, overwrite: bool | None = None) -> StoragePool:
+    def create_storage_pool(self: Self, /, config: str, *, build: bool = True, overwrite: bool | None = None) -> StoragePool:
         '''Create a storage pool from an XML config string.
 
            If `build` is True, then the pool will also be built during creation.

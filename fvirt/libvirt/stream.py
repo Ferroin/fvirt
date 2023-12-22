@@ -54,7 +54,9 @@ class Stream:
 
     def __init__(
         self: Self,
+        /,
         hv: Hypervisor,
+        *,
         sparse: bool = False,
         interactive: bool = False,
         progress_hook: Callable[[str, int, int], None] = lambda x, y, z: None,
@@ -251,7 +253,7 @@ class Stream:
     def writable(self: Self) -> bool:
         return True
 
-    def close(self: Self) -> None:
+    def close(self: Self, /) -> None:
         '''Close the stream.'''
         if not self.__finalized:
             LOGGER.debug(f'Closing stream: {repr(self)}')
@@ -262,7 +264,7 @@ class Stream:
 
             self.__finalized = True
 
-    def abort(self: Self) -> None:
+    def abort(self: Self, /) -> None:
         '''Abort any pending stream transfer.'''
         if not self.__finalized:
             LOGGER.debug(f'Aborting stream: {repr(self)}')

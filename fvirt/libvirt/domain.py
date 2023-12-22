@@ -370,7 +370,7 @@ class Domain(RunnableEntity):
             LOGGER.info(f'Finished shutdown of domain: {repr(self)}')
             return LifecycleResult.SUCCESS
 
-    def managed_save(self: Self, idempotent: bool = True) -> LifecycleResult:
+    def managed_save(self: Self, /, *, idempotent: bool = True) -> LifecycleResult:
         '''Suspend the domain and save it's state to disk.
 
            On the next start, this saved state will be used to restore
@@ -394,8 +394,10 @@ class Domain(RunnableEntity):
 
         return LifecycleResult.SUCCESS
 
-    def console(self: Self, dev: str | None = None, force: bool = False, safe: bool = False) -> Stream:
-        '''Get a Stream connected to the specified console device for the domain.'''
+    def console(self: Self, /, dev: str | None = None, *, force: bool = False, safe: bool = False) -> Stream:
+        '''Get a Stream connected to the specified console device for the domain.
+
+           Specifying a device of None will open the first console or serial device for the domain.'''
         self._check_valid()
 
         if not self.running:
@@ -490,7 +492,7 @@ class DomainAccess(EntityAccess[Domain], Domains):
         self.__by_id = DomainsByID(parent)
         super().__init__(parent)
 
-    def get(self: Self, key: Any) -> Domain | None:
+    def get(self: Self, key: Any, /) -> Domain | None:
         '''Look up a domain by a general identifier.
 
            This tries, in order, looking up by ID, then by name, then

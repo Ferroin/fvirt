@@ -71,7 +71,7 @@ class MatchTarget:
     xpath: etree.XPath | None = None
     property: str | None = None
 
-    def get_value(self: Self, entity: Entity) -> str:
+    def get_value(self: Self, entity: Entity, /) -> str:
         '''Get the match target value for the specified entity.'''
         if self.xpath is not None:
             result = self.xpath(entity.config)
@@ -96,7 +96,7 @@ class MatchTarget:
 MatchArgument = tuple[MatchTarget, re.Pattern]
 
 
-def match_items(items: Iterable[T], match: MatchArgument) -> Iterable[T]:
+def match_items(items: Iterable[T], match: MatchArgument, /) -> Iterable[T]:
     '''Match a group of items based on the match argument.'''
     def f(entity: T) -> bool:
         value = match[0].get_value(entity)

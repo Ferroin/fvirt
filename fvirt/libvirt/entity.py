@@ -283,7 +283,7 @@ class Entity(ABC):
         '''Recreate the Entity with the specified XML configuration.'''
         self.config_raw = etree.tostring(config, encoding='unicode')
 
-    def update_config_element(self: Self, path: str, text: str, *, reset_units: bool = False) -> bool:
+    def update_config_element(self: Self, /, path: str, text: str, *, reset_units: bool = False) -> bool:
         '''Update the element at path in config to have a value of text.
 
            `path` should be a valid XPath expression that evaluates to
@@ -318,7 +318,7 @@ class Entity(ABC):
         self.config = config
         return True
 
-    def update_config_attribute(self: Self, path: str, attrib: str, value: str) -> bool:
+    def update_config_attribute(self: Self, /, path: str, attrib: str, value: str) -> bool:
         '''Update the attribute attrib of element at path in config to have a value of value.
 
            `path` should be a valid XPath expression that evaluates to
@@ -380,7 +380,7 @@ class Entity(ABC):
 
         return LifecycleResult.SUCCESS
 
-    def apply_xslt(self: Self, xslt: etree.XSLT) -> None:
+    def apply_xslt(self: Self, xslt: etree.XSLT, /) -> None:
         '''Apply the given etree.XSLT object to the domain's configuration.
 
            The XSLT document must specify an xsl:output element, and it

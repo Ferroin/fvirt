@@ -58,7 +58,7 @@ IEC_FACTOR_TO_NAME: Final = frozendict({
 })
 
 
-def unit_to_bytes(value: int | float, unit: str) -> int:
+def unit_to_bytes(value: int | float, unit: str, /) -> int:
     '''Convert a value with units to integral bytes.
 
        Conversion rules for the unit are the same as used by libvirt in
@@ -126,7 +126,7 @@ def bytes_to_unit(value: int, /, *, iec: bool = False) -> tuple[float, str]:
     )
 
 
-def count_integer_digits(n: int | float) -> int:
+def count_integer_digits(n: int | float, /) -> int:
     '''Count the number of digits in an int or float.
 
        For floats, this only counts the digits in the integral part.

@@ -22,7 +22,7 @@ T = TypeVar('T', bound=Entity)
 
 class BaseEntityAccess(ABC, Sized, Generic[T]):
     '''Abstract base class for entity access protocols.'''
-    def __init__(self: Self, parent: Hypervisor | Entity) -> None:
+    def __init__(self: Self, parent: Hypervisor | Entity, /) -> None:
         self._parent = parent
 
     def __repr__(self: Self) -> str:
@@ -180,7 +180,7 @@ class EntityAccess(BaseEntityAccess[T], Iterable):
                 case entities:
                     return iter(self._entity_class(x, self._parent) for x in self._filter_entities(entities))
 
-    def get(self: Self, key: Any) -> T | None:
+    def get(self: Self, key: Any, /) -> T | None:
         '''Look up an entity by a general identifier.
 
            This tries, in order, looking up by name and then by UUID. If
@@ -205,6 +205,6 @@ class EntityAccess(BaseEntityAccess[T], Iterable):
 
         return ret
 
-    def match(self: Self, match: MatchArgument) -> Iterable[T]:
+    def match(self: Self, match: MatchArgument, /) -> Iterable[T]:
         '''Return an iterable of entities that match given match parameters.'''
         return match_items(self, match)

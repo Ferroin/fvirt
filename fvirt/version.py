@@ -10,7 +10,13 @@ from typing import Any, Final, Self
 
 class VersionNumber:
     '''Minimal wrapper class for version information.'''
-    def __init__(self: Self, major: int, minor: int, release: int) -> None:
+    __slots__ = (
+        '__major',
+        '__minor',
+        '__release',
+    )
+
+    def __init__(self: Self, /, major: int, minor: int, release: int) -> None:
         if major < 0:
             raise ValueError('Major version number must be non-negative.')
 
@@ -68,7 +74,7 @@ class VersionNumber:
         return self.__release
 
     @staticmethod
-    def from_libvirt_version(version: int) -> VersionNumber:
+    def from_libvirt_version(version: int, /) -> VersionNumber:
         '''Parse a libvirt version number into a VersionNumber.'''
         vstr = str(version)
         release = int(vstr[-3:].lstrip('0') or '0')

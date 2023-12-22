@@ -148,7 +148,7 @@ class Volume(Entity):
     def config_raw(self: Self, value: Any) -> None:
         raise InvalidOperation
 
-    def delete(self: Self, idempotent: bool = True) -> LifecycleResult:
+    def delete(self: Self, /, *, idempotent: bool = True) -> LifecycleResult:
         '''Remove the volume from the storage pool.
 
            This may or may not also delete the actual data of the volume.
@@ -171,11 +171,11 @@ class Volume(Entity):
 
         return LifecycleResult.SUCCESS
 
-    def undefine(self: Self, idempotent: bool = True) -> LifecycleResult:
+    def undefine(self: Self, /, *, idempotent: bool = True) -> LifecycleResult:
         '''Alias for delete() to preserve compatibility with other entities.'''
         return self.delete(idempotent=idempotent)
 
-    def download(self: Self, target: io.BufferedWriter, *, sparse: bool = False) -> int:
+    def download(self: Self, target: io.BufferedWriter, /, *, sparse: bool = False) -> int:
         '''Download the raw data from a storage volume.
 
            Takes a writable binary IO stream to copy the data to.
@@ -195,7 +195,7 @@ class Volume(Entity):
            format the volume itself is in.'''
         assert self._hv._connection is not None
 
-        stream = Stream(self._hv, sparse)
+        stream = Stream(self._hv, sparse=sparse)
 
         LOGGER.info(f'Fetching data from volume: {repr(self)}')
 
@@ -208,7 +208,7 @@ class Volume(Entity):
 
         return stream.transferred
 
-    def upload(self: Self, source: io.BufferedRandom, *, sparse: bool = False, resize: bool = False) -> int:
+    def upload(self: Self, source: io.BufferedRandom, /, *, sparse: bool = False, resize: bool = False) -> int:
         '''Upload the raw data from a file to the volume.
 
            Takes a readable binary IO stream to read data from.
@@ -240,7 +240,7 @@ class Volume(Entity):
                 case _:
                     raise SubOperationFailed('Failed to resize volume.')
 
-        stream = Stream(self._hv, sparse)
+        stream = Stream(self._hv, sparse=sparse)
 
         if sparse:
             self._entity.upload(stream.stream, 0, self.capacity, libvirt.VIR_STORAGE_VOL_DOWNLOAD_SPARSE_STREAM)

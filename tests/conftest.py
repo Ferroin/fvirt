@@ -49,6 +49,12 @@ FAIL_NON_RUNNABLE = os.environ.get('FVIRT_FAIL_NON_RUNNABLE_TESTS', 0)
 TEST_SKIP = os.environ.get('FVIRT_TEST_SKIP_TESTS', 0)
 GROUP_COUNT = int(os.environ.get('FVIRT_TEST_OBJECT_GROUP_SIZE', 3))
 NO_KVM = os.environ.get('FVIRT_NO_KVM_FOR_TESTS', 0)
+DEBUG_LOG = os.environ.get('FVIRT_DEBUG_LOG_TESTS', 0)
+
+if DEBUG_LOG != 0:
+    import logging
+
+    logging.basicConfig(level=logging.DEBUG)
 
 TESTS_PATH = Path(__file__).parent
 

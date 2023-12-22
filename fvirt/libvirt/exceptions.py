@@ -116,7 +116,17 @@ def call_libvirt(f: Callable[[], T], /) -> T:
 
 
 class libvirtCallWrapper(Generic[W]):
-    '''Proxy class that adds automatic exception handling to method calls made against the wrapped object.'''
+    '''Proxy class that adds automatic exception handling to method calls made against the wrapped object.
+
+       This works by using a custom __getattr__ to indirect
+       attribute lookups to the wrapped class. Attribute lookups
+       that return non-callable objects simply return those objects
+       directly. Attribute lookups that return callable objects
+       automatically wrap them with call_libvirt() usin a lambda
+       expression for the call, and return the wrapped form.
+
+       Callable attributes are cached in their wrapped form to slightly
+       speed up repeated access to them.'''
     __slots__ = (
         '__wrapped',
         '__callable_cache',
