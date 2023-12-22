@@ -20,7 +20,7 @@ The fvirt CLI tool can:
   does, as well as extra info like the generation ID, the OS type,
   the CPU architecture, and the domain ‘title’.
 - Perform most common lifecycle operations on libvirt objects, including
-  defining, starting, stopping, and destroying them.
+  defining, starting, stopping, and undefining them.
 - Use a custom timeout to wait for domains to shut down. This cleanly
   encapsulates a relatively common use case which requires scripting to
   work with virsh, allowing for much simpler scripts.
@@ -31,8 +31,10 @@ The fvirt CLI tool can:
 - Match objects to operate on using XPath expressions and Python
   regexes. Special options are provided to simplify matching on commonly
   used properties, such as domain architecture or storage pool type. This
-  matching works with almost all other commands provided by fvirt,
-  allowing you to easily operate on groups of objects in bulk.
+  matching works with a significant majority of commands provided by
+  fvirt, allowing you to easily operate on groups of objects in bulk.
+- Generate object configurations from relatively simple YAML or JSON
+  templates describing the object properties.
 - Still interoperate cleanly with `virsh`. fvirt stores no state
   client-side, so there’s nothing to get out of sync relative to what
   `virsh` would see or operate on. This means you can use fvirt as your
@@ -43,14 +45,15 @@ The fvirt CLI tool can:
 ### fvirt.libvirt
 
 The libvirt bindings included with fvirt provide a number of enhancements
-over the official bindings, including:
+over the official bindings for Python, including:
 
 - Hypervisor connections support the context manager protocol.
 - Hypervisor objects provide iterator and mapping access to objects like
   domains and storage pools, including automatic connection management.
 - Storage pools provide iterator and mapping access to their volumes.
-- Domain states are an enumerable (like they are in the C API) instead
-  of just being an opaque number (like they are in libvirt-python).
+- Object states are enumerables (like they are in the C API) instead
+  of a somewhat opaque list of integer constants (like they are in
+  libvirt-python).
 - Object XML is directly accessible as lxml Element objects.
 - Things that should logically return an empty sequence when nothing
   is matched usually do so, in contrast to libvirt-python often returning
@@ -58,10 +61,10 @@ over the official bindings, including:
 - libvirt URIs are objects that can be easily modified to change things
   like the driver or host, as opposed to being strings you have to
   manipulate with regexes.
-- Most common properties of objects are accessible using regular attribute
+- Many common properties of objects are accessible using regular attribute
   access instead of requiring either method calls or manual lookup in the
   object’s XML config. This includes writability for many of these
-  properties.
+  properties (though this currently does not work for transient objects).
 
 ## What doesn’t it do?
 
@@ -79,18 +82,31 @@ usage, thus it was the first thing I implemented. I plan to expand this
 further to at least include netowrks and network interfaces, but it’s
 not a priority at the moment.
 
-## Dependencies
+## Installation
 
-fvirt is written in Python 3, and requires Python 3.11 or newer.
+fvirt is packaged on the Python Package Index with the package name
+`fvirt`. It can be easily installed using any Python packag emanagement
+tool that works with pypi.
 
-It additionally requires the following Python packages beyond what is
-found in the Python standard library:
+The actual CLI tool is installed as a script with the name `fvirt`.
 
-- blessed 1.20 or newer
-- Click 8.1 or newer
-- frozendict 2.3 or newer
-- libvirt-python 9.6 or newer
-- lxml 4.9 or newer
+Object templating support is optional, and can be installed by asking for
+the `templates` extra (for example `pip install fvirt[templates]`. A vast
+majority of fvirt’s functionality is usable without it, and the CLI
+tool won’t even expose templating functionality if it’s not installed.
+
+## Contributing
+
+fvirt is developed using [Poetry](https://python-poetry.org/). Assuming
+you have Poetry installed and have cloned the repository, you can set
+up almost everything that’s needed for development by running `poetry
+install --all-extras`
+
+In addition to the Python dependencies, a number of tests in our test
+suite require additional tooling, specifically a usable local install
+of libvirt (including `virtqemud`) and a working install of QEMU’s
+full system emulation tooling. Full details can be found in the
+`README.md` file in the `tests` directory of the repository.
 
 ## Why not just contribute to libvirt/virsh?
 
