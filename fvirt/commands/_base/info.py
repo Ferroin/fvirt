@@ -87,7 +87,7 @@ class InfoCommand(Command):
             header = f'Show detailed information about a { self.NAME }.'
 
         docstr = header + '\n\n' + dedent(f'''
-        A specific { self.NAME } should be specified to retrieve
+        A specific { self.NAME } must be specified to retrieve
         information about.
         ''')
 

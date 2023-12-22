@@ -25,10 +25,13 @@ LOGGER: Final = logging.getLogger(__name__)
 
 
 @functools.cache
-def check_for_templating(importer: Callable[..., ModuleType] = import_module) -> bool:
+def check_for_templating(*, importer: Callable[..., ModuleType] = import_module) -> bool:
     '''Check if templating is actually supported.
 
-       The result of this function is cached.'''
+       The result of this function is cached.
+
+       The `importer` keyword argument is only intended for internal
+       usage and is not part of the public API for this function.'''
     try:
         importer('jinja2')
         importer('psutil')
@@ -40,7 +43,7 @@ def check_for_templating(importer: Callable[..., ModuleType] = import_module) ->
     return True
 
 
-def get_environment(importer: Callable[..., ModuleType] = import_module) -> jinja2.Environment | None:
+def get_environment(*, importer: Callable[..., ModuleType] = import_module) -> jinja2.Environment | None:
     '''Get a jinja2 Environment with our templates in it.
 
        If templating is not supported, this will return None. This checks
@@ -51,7 +54,7 @@ def get_environment(importer: Callable[..., ModuleType] = import_module) -> jinj
        it’s more efficient to call this once and cache the result
        yourself. If you just want to check if templating support is
        available, use check_for_templating() instead.'''
-    if not check_for_templating(importer):
+    if not check_for_templating(importer=importer):
         return None
 
     LOGGER.debug('Generating jinja2 environment.')
@@ -66,7 +69,7 @@ def get_environment(importer: Callable[..., ModuleType] = import_module) -> jinj
     )
 
 
-def template_filter(name: str) -> bool:
+def template_filter(name: str, /) -> bool:
     '''Filter for use with list_templates and compile_templates.'''
     if name.startswith('__') or \
        name.startswith('.') or \

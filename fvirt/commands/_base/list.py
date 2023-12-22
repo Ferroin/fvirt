@@ -50,7 +50,7 @@ class ListCommand(MatchCommand):
 
         params: tuple[click.Parameter, ...] = (
             click.Option(
-                param_decls=('--columns', 'cols'),
+                param_decls=('--columns', 'selected'),
                 type=ColumnsParam(columns, f'{ self.NAME } columns')(),
                 nargs=1,
                 help=f'A comma separated list of columns to show when listing { self.NAME }s. Use `--columns list` to list recognized column names.',
@@ -74,13 +74,13 @@ class ListCommand(MatchCommand):
         def cb(
             ctx: click.Context,
             state: State,
-            cols: Sequence[str],
+            selected: Sequence[str],
             only: str | None,
             no_headings: bool,
             match: tuple[MatchTarget, re.Pattern] | None,
             parent: str | None = None
         ) -> None:
-            if cols == ['list']:
+            if selected == ['list']:
                 click.echo(column_info(columns, default_cols))
                 ctx.exit(ExitCode.SUCCESS)
 
@@ -100,7 +100,7 @@ class ListCommand(MatchCommand):
                     ctx.exit(ExitCode.ENTITY_NOT_FOUND)
 
                 if only is None:
-                    data = tabulate_entities(entities, columns, cols, lambda x: state.convert_units(x))
+                    data = tabulate_entities(entities, columns, selected, convert=lambda x: state.convert_units(x))
                 else:
                     for e in entities:
                         click.echo(getattr(e, only))
@@ -108,7 +108,7 @@ class ListCommand(MatchCommand):
             if only is None:
                 click.echo(render_table(
                     data,
-                    [columns[x] for x in cols],
+                    [columns[x] for x in selected],
                     headings=not no_headings,
                 ))
 

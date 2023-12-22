@@ -59,7 +59,7 @@ class CustomBool:
         '__value',
     )
 
-    def __init__(self: Self, value: bool | str | CustomBool) -> None:
+    def __init__(self: Self, value: bool | str | CustomBool, /) -> None:
         if not self.TRUE_STR or not self.FALSE_STR:
             raise NotImplementedError
 
@@ -180,7 +180,7 @@ class Timestamp:
         '__value',
     )
 
-    def __init__(self: Self, tstamp: int | str | datetime.datetime | datetime.date = datetime.datetime.now()) -> None:
+    def __init__(self: Self, tstamp: int | str | datetime.datetime | datetime.date = datetime.datetime.now(), /) -> None:
         match tstamp:
             case int():
                 self.__value = datetime.datetime.fromtimestamp(tstamp, datetime.timezone.utc)

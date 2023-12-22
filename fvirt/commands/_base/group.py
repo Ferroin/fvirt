@@ -24,7 +24,7 @@ T = TypeVar('T')
 
 
 class Group(click.Group):
-    '''Base class used for all commands in fvirt.
+    '''Base class used for all command groups in fvirt.
 
        This does most of the same things that
        fvirt.commands._base.command.Command does, as well as adding a help

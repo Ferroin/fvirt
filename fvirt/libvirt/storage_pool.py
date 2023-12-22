@@ -186,7 +186,7 @@ class StoragePool(RunnableEntity):
         else:
             return None
 
-    def build(self: Self) -> LifecycleResult:
+    def build(self: Self, /) -> LifecycleResult:
         '''Build the storage pool.'''
         self._check_valid()
 
@@ -199,14 +199,14 @@ class StoragePool(RunnableEntity):
 
         return LifecycleResult.SUCCESS
 
-    def refresh(self: Self) -> LifecycleResult:
+    def refresh(self: Self, /) -> LifecycleResult:
         '''Refresh the list of volumes in the pool.'''
         self._check_valid()
         LOGGER.info('Refreshing storage pool: {repr(self)}')
         self._entity.refresh()
         return LifecycleResult.SUCCESS
 
-    def delete(self: Self, idempotent: bool = True) -> LifecycleResult:
+    def delete(self: Self, /, *, idempotent: bool = True) -> LifecycleResult:
         '''Delete the underlying storage resources for the pool.
 
            Only works on storage pools that are not running.
@@ -230,7 +230,7 @@ class StoragePool(RunnableEntity):
         self._entity.delete()
         return LifecycleResult.SUCCESS
 
-    def define_volume(self: Self, config: str) -> Volume:
+    def define_volume(self: Self, /, config: str) -> Volume:
         '''Define a volume within the storage pool.
 
            Raises fvirt.libvirt.InvalidConfig if config is not a valid
@@ -302,7 +302,7 @@ class StoragePoolAccess(EntityAccess[StoragePool], StoragePools):
         self.__by_uuid = StoragePoolsByUUID(parent)
         super().__init__(parent)
 
-    def get(self: Self, key: Any) -> StoragePool | None:
+    def get(self: Self, key: Any, /) -> StoragePool | None:
         '''Look up a storage pool by a general identifier.'''
         return super().get(key)
 

@@ -181,7 +181,7 @@ class CPUTopology(Model):
         '''Total number of logical CPUs described by the topology info.'''
         return self.sockets * self.dies * self.cores * self.threads
 
-    def check(self: Self, vcpus: int) -> None:
+    def check(self: Self, vcpus: int, /) -> None:
         '''Propery sync up the topology info with the vcpu count.
 
            If the topology is valid for the number of vcpus, do nothing.
@@ -192,9 +192,12 @@ class CPUTopology(Model):
            Otherwise, try to sync up the topology with the vcpu count
            with minimal changes.
 
-           The exact manner in which this coerces the topology to match
-           the vcpu count is considered to be an implementation detail
-           and should not be relied on by users.'''
+           When `coalesce` is not set, the only aspect of this function
+           that is guaranteed by the public API is that after running it,
+           the total number of logical CPUs indicated by the topology
+           will match the number of vcpus passed to this function. Users
+           should not rely on it modifying the toplogy information in
+           any particular way.'''
         if vcpus < 1:
             raise ValueError('Number of vcpus should be a positive integer')
 
@@ -1976,7 +1979,7 @@ class DomainInfo(Model):
     )
     cpu: CPUInfo | None = Field(
         default=None,
-        description='CPU configuration for domains that are virtual machines.',
+        description='CPU configuration for domains that are virtual machines. If not specified, a sane default will be provided automatically.',
     )
     os: OSFirmwareInfo | OSHostBootInfo | OSDirectBootInfo | OSContainerBootInfo | OSTestBootInfo = Field(
         discriminator='variant',

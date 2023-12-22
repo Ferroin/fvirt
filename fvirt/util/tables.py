@@ -28,7 +28,7 @@ class Column:
     color: Callable[[Any], str] = lambda x: str(x)
 
 
-def ColumnsParam(cols: Mapping[str, Column], type_name: str) -> Type[click.ParamType]:
+def ColumnsParam(cols: Mapping[str, Column], type_name: str, /) -> Type[click.ParamType]:
     '''Factory funcion for creating types for column options.
 
        This will produce a subclass of click.ParamType for parsing a
@@ -61,7 +61,7 @@ def ColumnsParam(cols: Mapping[str, Column], type_name: str) -> Type[click.Param
     return ColumnsParam
 
 
-def column_info(columns: Mapping[str, Column], defaults: Sequence[str]) -> str:
+def column_info(columns: Mapping[str, Column], defaults: Sequence[str], /) -> str:
     '''Produce a list of supported columns.
 
        Takes the column definitions that would be passed to ColumnsParam
@@ -97,7 +97,8 @@ def tabulate_entities(
     entities: Iterable[Entity],
     columns: Mapping[str, Column],
     selected_cols: Sequence[str],
-    convert: Callable[[int], str] = lambda x: str(x)
+    /, *,
+    convert: Callable[[int], str] = lambda x: str(x),
 ) -> Sequence[Sequence[str]]:
     '''Convert an iterable of entities to a list of values for columns.'''
     ret = []
