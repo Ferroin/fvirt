@@ -22,10 +22,12 @@ import libvirt
 
 from .domain import Domain, DomainState
 from .entity import LifecycleResult
-from .exceptions import (EntityNotRunning, EntityRunning, InsufficientPrivileges, InvalidConfig,
-                         InvalidEntity, InvalidOperation, NotConnected, PlatformNotSupported)
+from .events import start_libvirt_event_thread
+from .exceptions import (EntityNotRunning, EntityRunning, FeatureNotSupported, FVirtException, InsufficientPrivileges, InvalidConfig,
+                         InvalidEntity, InvalidOperation, NotConnected, PlatformNotSupported, SubOperationFailed, TimedOut)
 from .hypervisor import Hypervisor
-from .storage_pool import StoragePool
+from .storage_pool import StoragePool, StoragePoolState
+from .stream import Stream, StreamError
 from .uri import DRIVER_INFO, LIBVIRT_DEFAULT_URI, URI, Driver, Transport
 from .volume import Volume
 from ..version import VersionNumber
@@ -33,24 +35,32 @@ from ..version import VersionNumber
 API_VERSION = VersionNumber.from_libvirt_version(libvirt.getVersion())
 
 __all__ = [
+    'API_VERSION',
+    'Domain',
+    'DomainState',
+    'Driver',
+    'DRIVER_INFO',
     'EntityNotRunning',
     'EntityRunning',
+    'FeatureNotSupported',
+    'FVirtException',
+    'Hypervisor',
     'InsufficientPrivileges',
     'InvalidConfig',
     'InvalidEntity',
     'InvalidOperation',
+    'LIBVIRT_DEFAULT_URI',
+    'LifecycleResult',
     'NotConnected',
     'PlatformNotSupported',
-    'LifecycleResult',
-    'Hypervisor',
-    'Domain',
-    'DomainState',
+    'start_libvirt_event_thread',
     'StoragePool',
-    'URI',
-    'Driver',
+    'StoragePoolState',
+    'Stream',
+    'StreamError',
+    'SubOperationFailed',
+    'TimedOut',
     'Transport',
-    'DRIVER_INFO',
-    'LIBVIRT_DEFAULT_URI',
+    'URI',
     'Volume',
-    'API_VERSION',
 ]
