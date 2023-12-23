@@ -12,7 +12,7 @@ from urllib.parse import parse_qs, quote, urlparse
 from frozendict import frozendict
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping
+    from collections.abc import Mapping, Set
 
 
 class DriverFlag(Flag):
@@ -53,7 +53,7 @@ __QEMU_FLAGS = DriverFlag.SYSTEM | DriverFlag.SESSION | DriverFlag.EMBED | Drive
 __VMWARE_ESX_FLAGS = DriverFlag.CLIENT_ONLY | DriverFlag.PATH
 __VMWARE_FUSION_FLAGS = DriverFlag.SESSION | DriverFlag.REMOTE
 
-DRIVER_INFO: Final = frozendict({
+DRIVER_INFO: Final[Mapping] = frozendict({
     Driver.BHYVE: DriverFlag.SYSTEM | DriverFlag.REMOTE,
     Driver.CLOUD_HYPERVISOR: DriverFlag.SESSION,
     Driver.HYPERV: DriverFlag.CLIENT_ONLY | DriverFlag.REMOTE,
@@ -86,7 +86,7 @@ class Transport(Enum):
     LOCAL = 'unix'
 
 
-REMOTE_TRANSPORTS: Final = frozenset({
+REMOTE_TRANSPORTS: Final[Set] = frozenset({
     Transport.EXTERNAL,
     Transport.LIBSSH2,
     Transport.LIBSSH,
