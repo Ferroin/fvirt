@@ -7,8 +7,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import pytest
-
 from lxml import etree
 
 if TYPE_CHECKING:
@@ -86,7 +84,6 @@ def test_command_bulk_run_define(
         assert not dom.running
 
 
-@pytest.mark.xfail(reason='Failing due to an unknown internal error.')
 def test_command_run_create(
     runner: Callable[[Sequence[str], int], Result],
     live_hv: Hypervisor,
@@ -114,7 +111,6 @@ def test_command_run_create(
     assert dom.running
 
 
-@pytest.mark.xfail(reason='Failing due to an unknown internal error.')
 def test_command_bulk_run_create(
     runner: Callable[[Sequence[str], int], Result],
     live_hv: Hypervisor,

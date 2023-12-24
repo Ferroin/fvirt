@@ -26,7 +26,7 @@ def test_get_environment_no_jinja2() -> None:
             case _:
                 return import_module(name)
 
-    assert get_environment(importer) is None
+    assert get_environment(importer=importer) is None
 
 
 def test_get_environment() -> None:
