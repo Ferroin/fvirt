@@ -7,9 +7,9 @@ from __future__ import annotations
 
 from typing import Final, final
 
+from ._mixin import DomainMixin
 from .list import COLUMNS
 from .._base.info import InfoCommand, InfoItem
-from .._base.objects import DomainMixin
 from .._base.tables import color_optional
 
 INFO_ITEMS: Final = (

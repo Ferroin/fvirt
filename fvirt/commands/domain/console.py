@@ -12,9 +12,9 @@ from typing import TYPE_CHECKING, Final, Self, cast, final
 
 import click
 
+from ._mixin import DomainMixin
 from .._base.command import Command
 from .._base.exitcode import ExitCode
-from .._base.objects import DomainMixin
 from .._base.terminal import get_terminal
 from ...libvirt.domain import Domain
 

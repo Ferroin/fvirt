@@ -7,8 +7,8 @@ from __future__ import annotations
 
 from typing import Final, final
 
+from ._mixin import StoragePoolMixin
 from .._base.list import ListCommand
-from .._base.objects import StoragePoolMixin
 from .._base.tables import Column, color_bool, color_optional
 from .._base.terminal import get_terminal
 from ...libvirt.storage_pool import StoragePoolState

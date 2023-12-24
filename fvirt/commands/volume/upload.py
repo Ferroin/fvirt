@@ -9,8 +9,8 @@ from typing import Final
 
 import click
 
+from ._mixin import VolumeMixin
 from .._base.filetransfer import FileTransferCommand
-from .._base.objects import VolumeMixin
 
 HELP: Final = '''
 Upload the contents of a local file to a volume.

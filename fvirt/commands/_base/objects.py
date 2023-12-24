@@ -13,11 +13,8 @@ from typing import TYPE_CHECKING, Any, Final, Self, Type, TypeGuard, cast
 import click
 
 from .exitcode import ExitCode
-from ...libvirt.domain import Domain
 from ...libvirt.entity import Entity
 from ...libvirt.entity_access import EntityAccess
-from ...libvirt.storage_pool import StoragePool
-from ...libvirt.volume import Volume
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -171,71 +168,3 @@ class ObjectMixin(ABC):
         parent = self.get_parent_obj(ctx, hv, parent_ident)
 
         return self.match_entities(ctx, parent, match)
-
-
-class DomainMixin(ObjectMixin):
-    '''Mixin for commands that operate on domains.'''
-    @property
-    def NAME(self: Self) -> str: return 'domain'
-
-    @property
-    def CLASS(self: Self) -> Type[Domain]: return Domain
-
-    @property
-    def METAVAR(self: Self) -> str: return 'DOMAIN'
-
-    @property
-    def LOOKUP_ATTR(self: Self) -> str: return 'domains'
-
-    @property
-    def DEFINE_METHOD(self: Self) -> str: return 'define_domain'
-
-    @property
-    def CREATE_METHOD(self: Self) -> str: return 'create_domain'
-
-
-class StoragePoolMixin(ObjectMixin):
-    '''Mixin for commands that operate on storage pools.'''
-    @property
-    def NAME(self: Self) -> str: return 'storage pool'
-
-    @property
-    def CLASS(self: Self) -> Type[StoragePool]: return StoragePool
-
-    @property
-    def METAVAR(self: Self) -> str: return 'POOL'
-
-    @property
-    def LOOKUP_ATTR(self: Self) -> str: return 'storage_pools'
-
-    @property
-    def DEFINE_METHOD(self: Self) -> str: return 'define_storage_pool'
-
-    @property
-    def CREATE_METHOD(self: Self) -> str: return 'create_storage_pool'
-
-
-class VolumeMixin(ObjectMixin):
-    @property
-    def NAME(self: Self) -> str: return 'volume'
-
-    @property
-    def CLASS(self: Self) -> Type[Volume]: return Volume
-
-    @property
-    def METAVAR(self: Self) -> str: return 'VOLUME'
-
-    @property
-    def LOOKUP_ATTR(self: Self) -> str: return 'volumes'
-
-    @property
-    def DEFINE_METHOD(self: Self) -> str: return 'define_volume'
-
-    @property
-    def PARENT_NAME(self: Self) -> str: return 'storage pool'
-
-    @property
-    def PARENT_METAVAR(self: Self) -> str: return 'POOL'
-
-    @property
-    def PARENT_ATTR(self: Self) -> str: return 'storage_pools'

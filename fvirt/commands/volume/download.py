@@ -7,8 +7,8 @@ from __future__ import annotations
 
 from typing import Final
 
+from ._mixin import VolumeMixin
 from .._base.filetransfer import FileTransferCommand
-from .._base.objects import VolumeMixin
 
 HELP: Final = '''
 Download the contents of a volume to a local file.

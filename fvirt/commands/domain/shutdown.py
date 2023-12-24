@@ -9,8 +9,8 @@ from typing import Final, Self, final
 
 import click
 
+from ._mixin import DomainMixin
 from .._base.lifecycle import OperationHelpInfo, SimpleLifecycleCommand
-from .._base.objects import DomainMixin
 
 
 @final

@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from typing import Final, final
 
-from .._base.objects import VolumeMixin
+from ._mixin import VolumeMixin
 from .._base.xml import XMLCommand
 
 

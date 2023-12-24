@@ -48,7 +48,7 @@ def check_lazy_commands(group: Group, modpath: Path) -> None:
     cmdpaths = {x.rpartition('.')[0] for x in group.lazy_commands.values()}
 
     for p in modpath.iterdir():
-        if not p.match('*.py') or p.match('__init__.py'):
+        if not p.match('*.py') or p.match('_*.py'):
             continue
 
         cmdpath = '.'.join(p.relative_to(SRC_ROOT).with_suffix('').parts)
