@@ -9,10 +9,10 @@ from typing import Final, final
 
 from .._base.list import ListCommand
 from .._base.objects import DomainMixin
+from .._base.tables import Column, color_bool, color_optional
+from .._base.terminal import get_terminal
 from ...libvirt import DomainState
 from ...libvirt.domain import MATCH_ALIASES
-from ...util.tables import Column, color_bool, color_optional
-from ...util.terminal import get_terminal
 
 
 def color_state(state: DomainState) -> str:

@@ -10,7 +10,7 @@ from typing import Final, final
 from .list import COLUMNS
 from .._base.info import InfoCommand, InfoItem
 from .._base.objects import DomainMixin
-from ...util.tables import color_optional
+from .._base.tables import color_optional
 
 INFO_ITEMS: Final = (
     InfoItem(name='Name', prop='name'),

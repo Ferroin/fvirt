@@ -9,9 +9,9 @@ from typing import Final, final
 
 from .._base.list import ListCommand
 from .._base.objects import StoragePoolMixin
+from .._base.tables import Column, color_bool, color_optional
+from .._base.terminal import get_terminal
 from ...libvirt.storage_pool import MATCH_ALIASES, StoragePoolState
-from ...util.tables import Column, color_bool, color_optional
-from ...util.terminal import get_terminal
 
 EPILOG: Final = '''
 For performance reasons, information about the volumes in any given

@@ -15,7 +15,7 @@ from .terminal import get_terminal
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Mapping, Sequence
 
-    from ..libvirt.entity import Entity
+    from ...libvirt.entity import Entity
 
 
 @dataclass(kw_only=True, slots=True)
