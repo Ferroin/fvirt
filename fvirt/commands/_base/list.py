@@ -15,8 +15,8 @@ import click
 from .exitcode import ExitCode
 from .match import MatchCommand
 from .objects import is_object_mixin
+from .tables import Column, ColumnsParam, column_info, render_table, tabulate_entities
 from ...util.match import MatchAlias, MatchTarget
-from ...util.tables import Column, ColumnsParam, column_info, render_table, tabulate_entities
 
 if TYPE_CHECKING:
     import re

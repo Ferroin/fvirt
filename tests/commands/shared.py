@@ -14,8 +14,8 @@ from typing import TYPE_CHECKING
 import click
 import pytest
 
+from fvirt.commands._base.tables import Column
 from fvirt.libvirt.entity import Entity
-from fvirt.util.tables import Column
 from fvirt.util.units import bytes_to_unit
 
 if TYPE_CHECKING:

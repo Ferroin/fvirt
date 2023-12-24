@@ -9,8 +9,8 @@ from typing import Final, final
 
 from .._base.list import ListCommand
 from .._base.objects import VolumeMixin
+from .._base.tables import Column, color_optional
 from ...libvirt.volume import MATCH_ALIASES
-from ...util.tables import Column, color_optional
 
 COLUMNS: Final = {
     'name': Column(title='Name', prop='name'),

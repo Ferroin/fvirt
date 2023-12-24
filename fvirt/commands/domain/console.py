@@ -15,8 +15,8 @@ import click
 from .._base.command import Command
 from .._base.exitcode import ExitCode
 from .._base.objects import DomainMixin
+from .._base.terminal import get_terminal
 from ...libvirt.domain import Domain
-from ...util.terminal import get_terminal
 
 if TYPE_CHECKING:
     from .._base.state import State

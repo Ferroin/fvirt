@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Any
 import click
 import pytest
 
-from fvirt.util.tables import Column, ColumnsParam, color_bool, color_optional, column_info, render_table, tabulate_entities
+from fvirt.commands._base.tables import Column, ColumnsParam, color_bool, color_optional, column_info, render_table, tabulate_entities
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
