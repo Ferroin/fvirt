@@ -12,7 +12,7 @@ from uuid import UUID
 
 from .entity import Entity
 from .exceptions import FVirtException
-from ..util.match import MatchArgument, match_items
+from ..util.match import MatchArgument
 
 if TYPE_CHECKING:
     from .hypervisor import Hypervisor
@@ -207,4 +207,8 @@ class EntityAccess(BaseEntityAccess[T], Iterable):
 
     def match(self: Self, match: MatchArgument, /) -> Iterable[T]:
         '''Return an iterable of entities that match given match parameters.'''
-        return match_items(self, match)
+        def f(entity: T) -> bool:
+            value = match[0].get_value(entity)
+            return match[1].search(value) is not None
+
+        return filter(f, self)

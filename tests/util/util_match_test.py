@@ -5,15 +5,11 @@
 
 from __future__ import annotations
 
-import re
-
 from typing import Self
-
-import pytest
 
 from lxml import etree
 
-from fvirt.util.match import MatchTarget, match_items
+from fvirt.util.match import MatchTarget
 
 TMPL = '''
 <root>
@@ -104,31 +100,3 @@ def test_match_target_path3() -> None:
     assert results == {
         str(x) for x in INDICES
     }
-
-
-@pytest.mark.parametrize('v', INDICES)
-def test_match_items1(v: int) -> None:
-    '''Check match_items behavior.'''
-    target = MatchTarget(property='name')
-
-    regex = re.compile(f'{v}$')
-
-    results = {
-        x for x in match_items(TEST_OBJECTS, (target, regex))  # type: ignore
-    }
-
-    assert results == {TEST_OBJECTS[v]}
-
-
-@pytest.mark.parametrize('v', INDICES)
-def test_match_items2(v: int) -> None:
-    '''Check match_items behavior.'''
-    target = MatchTarget(xpath=etree.XPath('./c/@d'))
-
-    regex = re.compile(f'^{v}$')
-
-    results = {
-        x for x in match_items(TEST_OBJECTS, (target, regex))  # type: ignore
-    }
-
-    assert results == {TEST_OBJECTS[v]}
