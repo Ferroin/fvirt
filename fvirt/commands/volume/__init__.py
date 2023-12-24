@@ -8,7 +8,7 @@ from __future__ import annotations
 from typing import Final
 
 from .._base.group import Group
-from ...libvirt.volume import MATCH_ALIASES
+from ...libvirt.volume import Volume
 
 volume: Final = Group(
     name='volume',
@@ -24,7 +24,7 @@ volume: Final = Group(
         'xml': 'fvirt.commands.volume.xml.xml',
         'wipe': 'fvirt.commands.volume.wipe.wipe',
     },
-    aliases=MATCH_ALIASES,
+    aliases=Volume.MATCH_ALIASES,
 )
 
 __all__ = [

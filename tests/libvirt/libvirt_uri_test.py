@@ -5,7 +5,8 @@
 
 import pytest
 
-from fvirt.libvirt.uri import DRIVER_INFO, LIBVIRT_DEFAULT_URI, URI, Driver, DriverFlag
+from fvirt.libvirt import DRIVER_INFO, LIBVIRT_DEFAULT_URI, URI, Driver
+from fvirt.libvirt.uri import DriverFlag
 
 # Definitions used below
 CLIENT_ONLY_DRIVER = [x for x in Driver if DriverFlag.CLIENT_ONLY in DRIVER_INFO[x]][0].value

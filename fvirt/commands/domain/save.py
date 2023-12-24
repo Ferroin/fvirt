@@ -9,7 +9,6 @@ from typing import Final, Self, final
 
 from .._base.lifecycle import OperationHelpInfo, SimpleLifecycleCommand
 from .._base.objects import DomainMixin
-from ...libvirt.domain import MATCH_ALIASES
 
 EXTRA_HELP: Final = '''
 Saving a domain is conceptually equivalent to suspending it to disk,
@@ -41,7 +40,6 @@ class _SaveCommand(SimpleLifecycleCommand, DomainMixin):
 
 save: Final = _SaveCommand(
     name='save',
-    aliases=MATCH_ALIASES,
     epilog=EXTRA_HELP,
 )
 

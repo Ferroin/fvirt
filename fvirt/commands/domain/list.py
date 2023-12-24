@@ -12,7 +12,6 @@ from .._base.objects import DomainMixin
 from .._base.tables import Column, color_bool, color_optional
 from .._base.terminal import get_terminal
 from ...libvirt import DomainState
-from ...libvirt.domain import MATCH_ALIASES
 
 
 def color_state(state: DomainState) -> str:
@@ -81,7 +80,6 @@ class _DomainList(ListCommand, DomainMixin):
 
 list_domains: Final = _DomainList(
     name='list',
-    aliases=MATCH_ALIASES,
     columns=COLUMNS,
     default_cols=DEFAULT_COLS,
     single_list_props=SINGLE_LIST_PROPS,

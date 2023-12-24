@@ -14,10 +14,8 @@ import pytest
 
 from lxml import etree
 
-from fvirt.libvirt import EntityRunning, Hypervisor, InvalidConfig, LifecycleResult, Volume
+from fvirt.libvirt import EntityRunning, FVirtException, Hypervisor, InvalidConfig, LifecycleResult, StoragePool, StoragePoolState, Volume
 from fvirt.libvirt.entity_access import EntityAccess
-from fvirt.libvirt.exceptions import FVirtException
-from fvirt.libvirt.storage_pool import MATCH_ALIASES, StoragePool, StoragePoolState
 from fvirt.util.match import MatchArgument, MatchTarget
 
 from .shared import (check_entity_access_get, check_entity_access_iterable, check_entity_access_mapping, check_entity_access_match,
@@ -32,7 +30,7 @@ if TYPE_CHECKING:
 def test_check_match_aliases(live_pool: tuple[StoragePool, Hypervisor]) -> None:
     '''Check typing for match aliases.'''
     pool, _ = live_pool
-    check_match_aliases(MATCH_ALIASES, pool)
+    check_match_aliases(StoragePool.MATCH_ALIASES, pool)
 
 
 def test_equality(

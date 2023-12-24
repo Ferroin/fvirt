@@ -9,7 +9,6 @@ from typing import Final, final
 
 from .._base.objects import DomainMixin
 from .._base.xslt import XSLTCommand
-from ...libvirt.domain import MATCH_ALIASES
 
 
 @final
@@ -19,7 +18,6 @@ class _DomainXSLT(XSLTCommand, DomainMixin):
 
 xslt: Final = _DomainXSLT(
     name='xslt',
-    aliases=MATCH_ALIASES,
 )
 
 __all__ = [

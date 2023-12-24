@@ -9,7 +9,6 @@ from typing import Final, final
 
 from .._base.autostart import AutostartCommand
 from .._base.objects import DomainMixin
-from ...libvirt.domain import MATCH_ALIASES
 
 
 @final
@@ -19,7 +18,6 @@ class _DomainAutostart(AutostartCommand, DomainMixin):
 
 autostart: Final = _DomainAutostart(
     name='autostart',
-    aliases=MATCH_ALIASES,
 )
 
 __all__ = (

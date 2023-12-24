@@ -16,11 +16,9 @@ from .exitcode import ExitCode
 from .match import MatchCommand
 from .objects import is_object_mixin
 from .tables import Column, ColumnsParam, column_info, render_table, tabulate_entities
-from ...util.match import MatchAlias, MatchTarget
+from ...util.match import MatchArgument
 
 if TYPE_CHECKING:
-    import re
-
     from collections.abc import Mapping, Sequence
 
     from .state import State
@@ -38,7 +36,6 @@ class ListCommand(MatchCommand):
     def __init__(
             self: Self,
             name: str,
-            aliases: Mapping[str, MatchAlias],
             columns: Mapping[str, Column],
             default_cols: Sequence[str],
             single_list_props: tuple[str, ...] = ('name', 'uuid'),
@@ -77,7 +74,7 @@ class ListCommand(MatchCommand):
             selected: Sequence[str],
             only: str | None,
             no_headings: bool,
-            match: tuple[MatchTarget, re.Pattern] | None,
+            match: MatchArgument | None,
             parent: str | None = None
         ) -> None:
             if selected == ['list']:
@@ -134,7 +131,6 @@ class ListCommand(MatchCommand):
         super().__init__(
             name=name,
             help=docstr,
-            aliases=aliases,
             epilog=epilog,
             callback=cb,
             params=params,

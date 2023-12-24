@@ -19,13 +19,11 @@ from .exitcode import ExitCode
 from .match import MatchCommand, get_match_or_entity
 from .objects import is_object_mixin
 from ...libvirt.runner import RunnerResult, run_entity_method, run_sub_entity_method
-from ...util.match import MatchAlias, MatchTarget
+from ...util.match import MatchArgument
 from ...util.report import summary
 
 if TYPE_CHECKING:
-    import re
-
-    from collections.abc import Mapping, Sequence
+    from collections.abc import Sequence
 
     from .state import State
 
@@ -40,7 +38,6 @@ class XSLTCommand(MatchCommand):
     def __init__(
             self: Self,
             name: str,
-            aliases: Mapping[str, MatchAlias],
             epilog: str | None = None,
             hidden: bool = False,
             deprecated: bool = False,
@@ -51,7 +48,7 @@ class XSLTCommand(MatchCommand):
                 ctx: click.Context,
                 state: State,
                 entity: str | None,
-                match: tuple[MatchTarget, re.Pattern] | None,
+                match: MatchArgument | None,
                 xslt: str,
                 parent: str | None = None
         ) -> None:
@@ -201,7 +198,6 @@ class XSLTCommand(MatchCommand):
         super().__init__(
             name=name,
             help=docstr,
-            aliases=aliases,
             epilog=epilog,
             callback=cb,
             params=params,

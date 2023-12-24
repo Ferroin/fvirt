@@ -9,7 +9,7 @@ import logging
 
 from enum import CONTINUOUS, UNIQUE, Enum, verify
 from time import sleep
-from typing import TYPE_CHECKING, Any, Final, Literal, Self, cast, overload
+from typing import TYPE_CHECKING, Any, ClassVar, Final, Literal, Self, cast, overload
 from uuid import UUID
 
 import libvirt
@@ -28,17 +28,6 @@ if TYPE_CHECKING:
     from .models.domain import DomainInfo
 
 LOGGER: Final = logging.getLogger(__name__)
-MATCH_ALIASES: Final = {
-    'arch': MatchAlias(property='os_arch', desc='Match on the architecture of the domain.'),
-    'autostart': MatchAlias(property='autostart', desc='Match on whether the domain is set to autostart or not.'),
-    'current-snapshot': MatchAlias(property='has_current_snapshot', desc='Match on whether the domain has a current snapshot or not.'),
-    'machine': MatchAlias(property='os_machine', desc='Match on the machine type of the domain.'),
-    'managed-save': MatchAlias(property='has_managed_save', desc='Match on whether the domain has a managed save state or not.'),
-    'name': MatchAlias(property='name', desc='Match on the name of the domain.'),
-    'os-type': MatchAlias(property='os_type', desc='Match on the OS type of the domain.'),
-    'persistent': MatchAlias(property='persistent', desc='Match on whether the domain is persistent or not.'),
-    'state': MatchAlias(property='state', desc='Match on the current state of the domain.'),
-}
 
 
 def _non_negative_integer(value: int, _instance: Any) -> None:
@@ -102,6 +91,18 @@ class Domain(RunnableEntity):
        This is a wrapper around a libvirt.virDomain instance. It lacks
        some of the functionality provided by that class, but wraps most
        of the useful parts in a nicer, more Pythonic interface.'''
+    MATCH_ALIASES: ClassVar = {
+        'arch': MatchAlias(property='os_arch', desc='Match on the architecture of the domain.'),
+        'autostart': MatchAlias(property='autostart', desc='Match on whether the domain is set to autostart or not.'),
+        'current-snapshot': MatchAlias(property='has_current_snapshot', desc='Match on whether the domain has a current snapshot or not.'),
+        'machine': MatchAlias(property='os_machine', desc='Match on the machine type of the domain.'),
+        'managed-save': MatchAlias(property='has_managed_save', desc='Match on whether the domain has a managed save state or not.'),
+        'name': MatchAlias(property='name', desc='Match on the name of the domain.'),
+        'os-type': MatchAlias(property='os_type', desc='Match on the OS type of the domain.'),
+        'persistent': MatchAlias(property='persistent', desc='Match on whether the domain is persistent or not.'),
+        'state': MatchAlias(property='state', desc='Match on the current state of the domain.'),
+    }
+
     genid: ConfigElementProperty[UUID] = ConfigElementProperty(
         doc='The generation ID of the domain.',
         path='./genid',
@@ -532,5 +533,4 @@ class DomainAccess(EntityAccess[Domain], Domains):
 __all__ = [
     'Domain',
     'DomainState',
-    'MATCH_ALIASES',
 ]

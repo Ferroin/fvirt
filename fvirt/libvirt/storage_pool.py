@@ -8,7 +8,7 @@ from __future__ import annotations
 import logging
 
 from enum import CONTINUOUS, UNIQUE, Enum, verify
-from typing import TYPE_CHECKING, Any, Final, Self, cast, overload
+from typing import TYPE_CHECKING, Any, ClassVar, Final, Self, cast, overload
 
 import libvirt
 
@@ -26,17 +26,6 @@ if TYPE_CHECKING:
     from .models.storage_pool import PoolInfo
 
 LOGGER: Final = logging.getLogger(__name__)
-MATCH_ALIASES: Final = {
-    'autostart': MatchAlias(property='autostart', desc='Match on whether the pool is set to autostart or not.'),
-    'device': MatchAlias(property='device', desc='Match on the pool device.'),
-    'directory': MatchAlias(property='dir', desc='Match on the pool directory.'),
-    'format': MatchAlias(property='format', desc='Match on the pool format.'),
-    'host': MatchAlias(property='host', desc='Match on the pool host.'),
-    'name': MatchAlias(property='name', desc='Match on the name of the pool.'),
-    'persistent': MatchAlias(property='persistent', desc='Match on whether the pool is persistent or not.'),
-    'target': MatchAlias(property='target', desc='Match on the pool target.'),
-    'type': MatchAlias(property='pool_type', desc='Match on the pool type.'),
-}
 
 
 @verify(UNIQUE)
@@ -61,9 +50,20 @@ class StoragePool(RunnableEntity):
        some of the functionality provided by that class, but wraps most
        of the useful parts in a nicer, more Pythonic interface.
 
-       The volumes in the pool can be iterated over using the `volumes` property.
+       The volumes in the pool can be accessed via the `volumes` property
+       using the EntityAccess protocol.'''
+    MATCH_ALIASES: ClassVar = {
+        'autostart': MatchAlias(property='autostart', desc='Match on whether the pool is set to autostart or not.'),
+        'device': MatchAlias(property='device', desc='Match on the pool device.'),
+        'directory': MatchAlias(property='dir', desc='Match on the pool directory.'),
+        'format': MatchAlias(property='format', desc='Match on the pool format.'),
+        'host': MatchAlias(property='host', desc='Match on the pool host.'),
+        'name': MatchAlias(property='name', desc='Match on the name of the pool.'),
+        'persistent': MatchAlias(property='persistent', desc='Match on whether the pool is persistent or not.'),
+        'target': MatchAlias(property='target', desc='Match on the pool target.'),
+        'type': MatchAlias(property='pool_type', desc='Match on the pool type.'),
+    }
 
-       Volumes in the pool can be looked up by name using the `volumes_by_name` property.'''
     pool_type: ConfigProperty[str] = ConfigProperty(
         doc='The storage pool type.',
         path='./@type',

@@ -10,7 +10,6 @@ from typing import Final, final
 from .._base.list import ListCommand
 from .._base.objects import VolumeMixin
 from .._base.tables import Column, color_optional
-from ...libvirt.volume import MATCH_ALIASES
 
 COLUMNS: Final = {
     'name': Column(title='Name', prop='name'),
@@ -41,7 +40,6 @@ class _VolList(ListCommand, VolumeMixin):
 
 list_volumes: Final = _VolList(
     name='list',
-    aliases=MATCH_ALIASES,
     columns=COLUMNS,
     default_cols=DEFAULT_COLS,
     single_list_props=SIMPLE_LIST_PROPS

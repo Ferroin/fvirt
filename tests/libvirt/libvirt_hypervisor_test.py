@@ -10,8 +10,9 @@ from typing import cast
 
 import pytest
 
+from fvirt.libvirt import Hypervisor, InsufficientPrivileges
 from fvirt.libvirt.entity_access import EntityAccess
-from fvirt.libvirt.hypervisor import HostInfo, Hypervisor, InsufficientPrivileges
+from fvirt.libvirt.hypervisor import HostInfo
 from fvirt.libvirt.uri import LIBVIRT_DEFAULT_URI, URI
 from fvirt.version import VersionNumber
 

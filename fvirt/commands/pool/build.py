@@ -9,7 +9,6 @@ from typing import Final, Self, final
 
 from .._base.lifecycle import OperationHelpInfo, SimpleLifecycleCommand
 from .._base.objects import StoragePoolMixin
-from ...libvirt.storage_pool import MATCH_ALIASES
 
 
 @final
@@ -30,7 +29,6 @@ class _BuildCommand(SimpleLifecycleCommand, StoragePoolMixin):
 
 build: Final = _BuildCommand(
     name='build',
-    aliases=MATCH_ALIASES,
 )
 
 __all__ = [

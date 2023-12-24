@@ -9,7 +9,7 @@ import io
 import logging
 import os
 
-from typing import TYPE_CHECKING, Any, Final, Self, cast, overload
+from typing import TYPE_CHECKING, Any, ClassVar, Final, Self, cast, overload
 
 import libvirt
 
@@ -27,13 +27,6 @@ if TYPE_CHECKING:
     from .storage_pool import StoragePool
 
 LOGGER: Final = logging.getLogger(__name__)
-MATCH_ALIASES: Final = {
-    'format': MatchAlias(property='format', desc='Match on the volume format.'),
-    'key': MatchAlias(property='key', desc='Match on the volume key.'),
-    'name': MatchAlias(property='name', desc='Match on the name of the volume.'),
-    'path': MatchAlias(property='path', desc='Match on the volume path.'),
-    'type': MatchAlias(property='vol_type', desc='Match on the volume type.'),
-}
 
 
 class Volume(Entity):
@@ -48,6 +41,14 @@ class Volume(Entity):
        config values other than `name` are read-only. Configuration
        updates should be made by rewriting either the `config` or
        `configRaw`.'''
+    MATCH_ALIASES: ClassVar = {
+        'format': MatchAlias(property='format', desc='Match on the volume format.'),
+        'key': MatchAlias(property='key', desc='Match on the volume key.'),
+        'name': MatchAlias(property='name', desc='Match on the name of the volume.'),
+        'path': MatchAlias(property='path', desc='Match on the volume path.'),
+        'type': MatchAlias(property='vol_type', desc='Match on the volume type.'),
+    }
+
     allocated: ConfigProperty[int] = ConfigProperty(
         doc='The actual space allocated to the volume.',
         path='./allocation',
@@ -412,5 +413,4 @@ class VolumeAccess(EntityAccess[Volume], Volumes):
 __all__ = [
     'Volume',
     'VolumeAccess',
-    'MATCH_ALIASES',
 ]

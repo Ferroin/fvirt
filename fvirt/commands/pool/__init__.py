@@ -8,7 +8,7 @@ from __future__ import annotations
 from typing import Final
 
 from .._base.group import Group
-from ...libvirt.volume import MATCH_ALIASES
+from ...libvirt.storage_pool import StoragePool
 
 pool: Final = Group(
     name='pool',
@@ -29,7 +29,7 @@ pool: Final = Group(
         'xml': 'fvirt.commands.pool.xml.xml',
         'xslt': 'fvirt.commands.pool.xslt.xslt',
     },
-    aliases=MATCH_ALIASES,
+    aliases=StoragePool.MATCH_ALIASES,
 )
 
 __all__ = [
