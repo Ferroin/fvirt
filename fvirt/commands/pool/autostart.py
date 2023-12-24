@@ -9,7 +9,6 @@ from typing import Final, final
 
 from .._base.autostart import AutostartCommand
 from .._base.objects import StoragePoolMixin
-from ...libvirt.storage_pool import MATCH_ALIASES
 
 
 @final
@@ -19,7 +18,6 @@ class _PoolAutostart(AutostartCommand, StoragePoolMixin):
 
 autostart: Final = _PoolAutostart(
     name='autostart',
-    aliases=MATCH_ALIASES,
 )
 
 __all__ = (

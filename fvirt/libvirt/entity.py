@@ -9,7 +9,7 @@ import enum
 import logging
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Final, Literal, Self, TypeVar, cast, final
+from typing import TYPE_CHECKING, Any, ClassVar, Final, Literal, Self, TypeVar, cast, final
 from uuid import UUID
 
 from lxml import etree
@@ -23,6 +23,8 @@ if TYPE_CHECKING:
     from collections.abc import Mapping
 
     from pydantic import BaseModel
+
+    from ..util.match import MatchAlias
 
 T = TypeVar('T')
 LOGGER: Final = logging.getLogger(__name__)
@@ -57,13 +59,18 @@ class Entity(ABC):
 
        Entity instances support the context manager protocol. Entering
        an entity’s context will ensure that the Hypervisor instance
-       it is tied to is connected, and that the entity itself is valid.'''
+       it is tied to is connected, and that the entity itself is valid.
+
+       The MATCH_ALIASES class variable should be updated by child
+       classes to reflect their actual list of match aliases.'''
     __slots__ = [
         '_entity',
         '_hv',
         '_parent',
         '_valid',
     ]
+
+    MATCH_ALIASES: ClassVar[Mapping[str, MatchAlias]] = dict()
 
     def __init__(self: Self, entity: Any, parent: Hypervisor | Entity | None = None, /) -> None:
         match parent:

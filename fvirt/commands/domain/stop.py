@@ -9,7 +9,6 @@ from typing import Final, final
 
 from .._base.lifecycle import StopCommand
 from .._base.objects import DomainMixin
-from ...libvirt.domain import MATCH_ALIASES
 
 
 @final
@@ -19,7 +18,6 @@ class _DomainStop(StopCommand, DomainMixin):
 
 stop: Final = _DomainStop(
     name='stop',
-    aliases=MATCH_ALIASES,
 )
 
 __all__ = [

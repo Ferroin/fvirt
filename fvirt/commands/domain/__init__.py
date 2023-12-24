@@ -8,7 +8,7 @@ from __future__ import annotations
 from typing import Final
 
 from .._base.group import Group
-from ...libvirt.domain import MATCH_ALIASES
+from ...libvirt import Domain
 
 domain: Final = Group(
     name='domain',
@@ -29,7 +29,7 @@ domain: Final = Group(
         'xml': 'fvirt.commands.domain.xml.xml',
         'xslt': 'fvirt.commands.domain.xslt.xslt',
     },
-    aliases=MATCH_ALIASES,
+    aliases=Domain.MATCH_ALIASES,
 )
 
 __all__ = [

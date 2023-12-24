@@ -9,7 +9,6 @@ from typing import Final, final
 
 from .._base.lifecycle import StartCommand
 from .._base.objects import DomainMixin
-from ...libvirt.domain import MATCH_ALIASES
 
 
 @final
@@ -19,7 +18,6 @@ class _DomainStart(StartCommand, DomainMixin):
 
 start: Final = _DomainStart(
     name='start',
-    aliases=MATCH_ALIASES,
 )
 
 __all__ = [

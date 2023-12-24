@@ -132,7 +132,6 @@ class MatchCommand(Command):
             name: str,
             help: str,
             callback: Callable[Concatenate[click.Context, State, P], T],
-            aliases: Mapping[str, MatchAlias],
             epilog: str | None = None,
             params: Sequence[click.Parameter] = [],
             hidden: bool = False,
@@ -142,7 +141,7 @@ class MatchCommand(Command):
 
         params = tuple(params) + (click.Option(
             param_decls=('--match',),
-            type=(MatchTargetParam(aliases)(), MatchPatternParam()),
+            type=(MatchTargetParam(self.CLASS.MATCH_ALIASES)(), MatchPatternParam()),
             nargs=2,
             help=f'Limit { self.NAME }s to operate on by match parameter. For more info, see `fvirt help matching`',
             default=None,

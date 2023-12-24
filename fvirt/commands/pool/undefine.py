@@ -9,7 +9,6 @@ from typing import Final, final
 
 from .._base.lifecycle import UndefineCommand
 from .._base.objects import StoragePoolMixin
-from ...libvirt.storage_pool import MATCH_ALIASES
 
 
 @final
@@ -19,7 +18,6 @@ class _PoolUndefine(UndefineCommand, StoragePoolMixin):
 
 undefine: Final = _PoolUndefine(
     name='undefine',
-    aliases=MATCH_ALIASES,
 )
 
 __all__ = [

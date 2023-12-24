@@ -9,7 +9,6 @@ from typing import Final, final
 
 from .._base.lifecycle import StartCommand
 from .._base.objects import StoragePoolMixin
-from ...libvirt.storage_pool import MATCH_ALIASES
 
 
 @final
@@ -19,7 +18,6 @@ class _PoolStart(StartCommand, StoragePoolMixin):
 
 start: Final = _PoolStart(
     name='start',
-    aliases=MATCH_ALIASES,
 )
 
 __all__ = [

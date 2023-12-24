@@ -9,7 +9,6 @@ from typing import Final, final
 
 from .._base.objects import StoragePoolMixin
 from .._base.xslt import XSLTCommand
-from ...libvirt.storage_pool import MATCH_ALIASES
 
 
 @final
@@ -19,7 +18,6 @@ class _PoolXSLT(XSLTCommand, StoragePoolMixin):
 
 xslt: Final = _PoolXSLT(
     name='xslt',
-    aliases=MATCH_ALIASES,
 )
 
 __all__ = [

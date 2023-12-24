@@ -15,8 +15,7 @@ import pytest
 
 from lxml import etree
 
-from fvirt.libvirt import EntityNotRunning, Hypervisor, InvalidConfig, LifecycleResult
-from fvirt.libvirt.domain import MATCH_ALIASES, Domain, DomainState
+from fvirt.libvirt import Domain, DomainState, EntityNotRunning, Hypervisor, InvalidConfig, LifecycleResult
 from fvirt.util.match import MatchArgument, MatchTarget
 
 from .shared import (check_entity_access_get, check_entity_access_iterable, check_entity_access_mapping, check_entity_access_match,
@@ -30,7 +29,7 @@ if TYPE_CHECKING:
 
 def test_check_match_aliases(test_dom: tuple[Domain, Hypervisor]) -> None:
     '''Check typing for match aliases.'''
-    check_match_aliases(MATCH_ALIASES, test_dom[0])
+    check_match_aliases(Domain.MATCH_ALIASES, test_dom[0])
 
 
 def test_equality(test_dom: tuple[Domain, Hypervisor]) -> None:

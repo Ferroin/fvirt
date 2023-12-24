@@ -9,7 +9,6 @@ from typing import Final, Self, final
 
 from .._base.lifecycle import OperationHelpInfo, SimpleLifecycleCommand
 from .._base.objects import VolumeMixin
-from ...libvirt.volume import MATCH_ALIASES
 
 
 @final
@@ -29,7 +28,6 @@ class _VolDelete(SimpleLifecycleCommand, VolumeMixin):
 
 delete: Final = _VolDelete(
     name='delete',
-    aliases=MATCH_ALIASES,
 )
 
 __all__ = [

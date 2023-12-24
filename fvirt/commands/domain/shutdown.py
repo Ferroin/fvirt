@@ -11,7 +11,6 @@ import click
 
 from .._base.lifecycle import OperationHelpInfo, SimpleLifecycleCommand
 from .._base.objects import DomainMixin
-from ...libvirt.domain import MATCH_ALIASES
 
 
 @final
@@ -32,7 +31,6 @@ class _ShutdownCommand(SimpleLifecycleCommand, DomainMixin):
 
 shutdown: Final = _ShutdownCommand(
     name='shutdown',
-    aliases=MATCH_ALIASES,
     params=(
         click.Option(
             param_decls=('--timeout',),

@@ -11,7 +11,7 @@ from .._base.list import ListCommand
 from .._base.objects import StoragePoolMixin
 from .._base.tables import Column, color_bool, color_optional
 from .._base.terminal import get_terminal
-from ...libvirt.storage_pool import MATCH_ALIASES, StoragePoolState
+from ...libvirt.storage_pool import StoragePoolState
 
 EPILOG: Final = '''
 For performance reasons, information about the volumes in any given
@@ -83,7 +83,6 @@ class _PoolList(ListCommand, StoragePoolMixin):
 
 list_pools: Final = _PoolList(
     name='list',
-    aliases=MATCH_ALIASES,
     columns=COLUMNS,
     default_cols=DEFAULT_COLS,
 )

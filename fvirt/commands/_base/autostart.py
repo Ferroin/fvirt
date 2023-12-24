@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import logging
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Sequence
 from textwrap import dedent
 from typing import TYPE_CHECKING, Final, Self, cast
 
@@ -22,7 +22,6 @@ from ...util.report import summary
 
 if TYPE_CHECKING:
     from .state import State
-    from ...util.match import MatchAlias
 
 LOGGER: Final = logging.getLogger(__name__)
 
@@ -34,7 +33,6 @@ class AutostartCommand(MatchCommand):
     def __init__(
         self: Self,
         name: str,
-        aliases: Mapping[str, MatchAlias],
         epilog: str | None = None,
         hidden: bool = False,
         deprecated: bool = False,
@@ -123,7 +121,6 @@ class AutostartCommand(MatchCommand):
 
         super().__init__(
             name=name,
-            aliases=aliases,
             callback=cb,
             deprecated=deprecated,
             epilog=epilog,

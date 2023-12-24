@@ -9,7 +9,6 @@ import concurrent.futures
 import logging
 
 from abc import ABC, abstractmethod
-from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from textwrap import dedent
 from typing import TYPE_CHECKING, Any, Final, Self
@@ -24,8 +23,9 @@ from ...libvirt.runner import RunnerResult, run_entity_method, run_sub_entity_me
 from ...util.report import summary
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from .state import State
-    from ...util.match import MatchAlias
 
 LOGGER: Final = logging.getLogger(__name__)
 
@@ -63,7 +63,6 @@ class LifecycleCommand(MatchCommand):
             self: Self,
             name: str,
             method: str,
-            aliases: Mapping[str, MatchAlias],
             op_help: OperationHelpInfo,
             epilog: str | None = None,
             params: Sequence[click.Parameter] = [],
@@ -244,7 +243,6 @@ class LifecycleCommand(MatchCommand):
             help=docstr,
             epilog=epilog,
             callback=cb,
-            aliases=aliases,
             params=params,
             hidden=hidden,
             deprecated=deprecated,
@@ -266,7 +264,6 @@ class SimpleLifecycleCommand(ABC, LifecycleCommand):
     def __init__(
             self: Self,
             name: str,
-            aliases: Mapping[str, MatchAlias],
             epilog: str | None = None,
             params: Sequence[click.Parameter] = [],
             hidden: bool = False,
@@ -275,7 +272,6 @@ class SimpleLifecycleCommand(ABC, LifecycleCommand):
         super().__init__(
             name=name,
             epilog=epilog,
-            aliases=aliases,
             method=self.METHOD,
             op_help=self.OP_HELP,
             params=params,

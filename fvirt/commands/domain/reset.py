@@ -9,7 +9,6 @@ from typing import Final, Self, final
 
 from .._base.lifecycle import OperationHelpInfo, SimpleLifecycleCommand
 from .._base.objects import DomainMixin
-from ...libvirt.domain import MATCH_ALIASES
 
 
 @final
@@ -30,7 +29,6 @@ class _ResetCommand(SimpleLifecycleCommand, DomainMixin):
 
 reset: Final = _ResetCommand(
     name='reset',
-    aliases=MATCH_ALIASES,
 )
 
 __all__ = [
