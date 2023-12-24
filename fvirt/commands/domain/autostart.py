@@ -7,8 +7,8 @@ from __future__ import annotations
 
 from typing import Final, final
 
+from ._mixin import DomainMixin
 from .._base.autostart import AutostartCommand
-from .._base.objects import DomainMixin
 
 
 @final

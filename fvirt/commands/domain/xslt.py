@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from typing import Final, final
 
-from .._base.objects import DomainMixin
+from ._mixin import DomainMixin
 from .._base.xslt import XSLTCommand
 
 

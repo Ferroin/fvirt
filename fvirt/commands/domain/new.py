@@ -9,8 +9,8 @@ from typing import Final, final
 
 import click
 
+from ._mixin import DomainMixin
 from .._base.new import NewCommand
-from .._base.objects import DomainMixin
 
 
 @final

@@ -7,8 +7,8 @@ from __future__ import annotations
 
 from typing import Final, final
 
+from ._mixin import StoragePoolMixin
 from .._base.lifecycle import UndefineCommand
-from .._base.objects import StoragePoolMixin
 
 
 @final

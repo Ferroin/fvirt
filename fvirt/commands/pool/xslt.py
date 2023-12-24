@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from typing import Final, final
 
-from .._base.objects import StoragePoolMixin
+from ._mixin import StoragePoolMixin
 from .._base.xslt import XSLTCommand
 
 

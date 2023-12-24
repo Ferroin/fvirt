@@ -7,8 +7,8 @@ from __future__ import annotations
 
 from typing import Final, Self, final
 
+from ._mixin import DomainMixin
 from .._base.lifecycle import OperationHelpInfo, SimpleLifecycleCommand
-from .._base.objects import DomainMixin
 
 
 @final

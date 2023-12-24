@@ -7,8 +7,8 @@ from __future__ import annotations
 
 from typing import Final, final
 
+from ._mixin import VolumeMixin
 from .._base.new import NewCommand
-from .._base.objects import VolumeMixin
 
 
 @final

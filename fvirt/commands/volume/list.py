@@ -7,8 +7,8 @@ from __future__ import annotations
 
 from typing import Final, final
 
+from ._mixin import VolumeMixin
 from .._base.list import ListCommand
-from .._base.objects import VolumeMixin
 from .._base.tables import Column, color_optional
 
 COLUMNS: Final = {

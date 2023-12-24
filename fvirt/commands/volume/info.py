@@ -7,9 +7,9 @@ from __future__ import annotations
 
 from typing import Final, final
 
+from ._mixin import VolumeMixin
 from .list import COLUMNS
 from .._base.info import InfoCommand, InfoItem
-from .._base.objects import VolumeMixin
 
 INFO_ITEMS: Final = (
     InfoItem(name='Name', prop='name'),
