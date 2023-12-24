@@ -213,7 +213,7 @@ def _post_process(
 
 
 def run_hv_method(
-    /, *,
+    *,
     uri: URI,
     method: str,
     ident: I1,
@@ -257,7 +257,7 @@ def run_hv_method(
 
 
 def run_entity_method(
-    /, *,
+    *,
     uri: URI,
     hvprop: str,
     method: str,
@@ -312,7 +312,7 @@ def run_entity_method(
 
 
 def run_sub_entity_method(
-    /, *,
+    *,
     uri: URI,
     hvprop: str,
     parentprop: str,
@@ -380,7 +380,7 @@ def run_sub_entity_method(
 
 
 def set_entity_attribute(
-    /, *,
+    *,
     uri: URI,
     hvprop: str,
     attrib: str,
@@ -421,7 +421,7 @@ def set_entity_attribute(
 
 
 def set_sub_entity_attribute(
-    /, *,
+    *,
     uri: URI,
     hvprop: str,
     parentprop: str,

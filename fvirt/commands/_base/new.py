@@ -161,7 +161,7 @@ class NewCommand(Command):
                 for c, p in confdata:
                     try:
                         if NEW_PARAMS:
-                            obj = getattr(define_obj, NEW_METHOD)(c, NEW_PARAMS)
+                            obj = getattr(define_obj, NEW_METHOD)(c, **NEW_PARAMS)
                         else:
                             obj = getattr(define_obj, NEW_METHOD)(c)
                     except InvalidConfig:

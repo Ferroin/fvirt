@@ -191,7 +191,7 @@ class DomainMixin(ObjectMixin):
     def DEFINE_METHOD(self: Self) -> str: return 'define_domain'
 
     @property
-    def CREATE_METHOD(self: Self) -> str: return 'createDomain'
+    def CREATE_METHOD(self: Self) -> str: return 'create_domain'
 
 
 class StoragePoolMixin(ObjectMixin):
