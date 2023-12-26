@@ -9,27 +9,16 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from fvirt.commands.domain.list import COLUMNS, DEFAULT_COLS
+from fvirt.commands.domain._mixin import DomainMixin
 
-from ..shared import check_columns, check_default_columns, check_list_entry, check_list_output
+from ..shared import check_list_entry, check_list_output
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
     from click.testing import Result
 
-    from fvirt.libvirt import Domain, Hypervisor
-
-
-def test_column_definitions(test_dom: tuple[Domain, Hypervisor]) -> None:
-    '''Test that column definitions are valid.'''
-    dom, _ = test_dom
-    check_columns(COLUMNS, dom)
-
-
-def test_default_columns() -> None:
-    '''Test that the default column list is valid.'''
-    check_default_columns(COLUMNS, DEFAULT_COLS)
+    from fvirt.libvirt import Hypervisor
 
 
 def test_list(runner: Callable[[Sequence[str], int], Result], test_hv: Hypervisor) -> None:
@@ -40,7 +29,7 @@ def test_list(runner: Callable[[Sequence[str], int], Result], test_hv: Hyperviso
 
     result = runner(('-c', uri, '--units', 'bytes', 'domain', 'list'), 0)
 
-    check_list_output(result.output, dom, tuple(COLUMNS[x] for x in DEFAULT_COLS))
+    check_list_output(result.output, dom, DomainMixin)
 
 
 def test_no_headings(runner: Callable[[Sequence[str], int], Result], test_hv: Hypervisor) -> None:
@@ -51,7 +40,7 @@ def test_no_headings(runner: Callable[[Sequence[str], int], Result], test_hv: Hy
 
     result = runner(('-c', uri, '--units', 'bytes', 'domain', 'list', '--no-headings'), 0)
 
-    check_list_entry(result.output, dom, tuple(COLUMNS[x] for x in DEFAULT_COLS))
+    check_list_entry(result.output, dom, DomainMixin)
 
 
 @pytest.mark.parametrize('a, e', (

@@ -8,6 +8,7 @@ from __future__ import annotations
 import logging
 
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Final, Self, Type, TypeGuard, cast
 
 import click
@@ -17,7 +18,7 @@ from ...libvirt.entity import Entity
 from ...libvirt.entity_access import EntityAccess
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Callable, Iterable, Mapping, Sequence
 
     from ...libvirt import Hypervisor
     from ...util.match import MatchArgument
@@ -34,6 +35,17 @@ def is_object_mixin(obj: Any) -> TypeGuard[ObjectMixin]:
         raise RuntimeError
 
     return True
+
+
+@dataclass(kw_only=True, slots=True)
+class DisplayProperty:
+    '''Defines a property of an object that can be displayed by the CLI.'''
+    name: str
+    title: str
+    prop: str
+    use_units: bool = False
+    right_align: bool = False
+    color: Callable[[Any], str] = lambda x: str(x)
 
 
 class ObjectMixin(ABC):
@@ -91,6 +103,22 @@ class ObjectMixin(ABC):
     def CREATE_METHOD(self: Self) -> str | None:
         '''Sepcifies the name of the method used to create the entity.'''
         return None  # pragma: no cover
+
+    @property
+    @abstractmethod
+    def DISPLAY_PROPS(self: Self) -> Mapping[str, DisplayProperty]:
+        '''Specifies the display properties for the entity.'''
+        return NotImplemented
+
+    @property
+    def DEFAULT_COLUMNS(self: Self) -> Sequence[str]:
+        '''Specifies the default display properties for a list view.'''
+        return list(self.DISPLAY_PROPS.keys())
+
+    @property
+    def SINGLE_LIST_PROPS(self: Self) -> set[str]:
+        '''Specifies the display properties available for a single list view.'''
+        return {x for x in self.DISPLAY_PROPS.keys() if x in {'name', 'uuid', 'id', 'key'}}
 
     @property
     def PARENT_ATTR(self: Self) -> str | None:

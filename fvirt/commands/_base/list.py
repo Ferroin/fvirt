@@ -15,11 +15,11 @@ import click
 from .exitcode import ExitCode
 from .match import MatchCommand
 from .objects import is_object_mixin
-from .tables import Column, ColumnsParam, column_info, render_table, tabulate_entities
+from .tables import ColumnsParam, column_info, render_table, tabulate_entities
 from ...util.match import MatchArgument
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping, Sequence
+    from collections.abc import Sequence
 
     from .state import State
     from ...libvirt import Hypervisor
@@ -36,9 +36,6 @@ class ListCommand(MatchCommand):
     def __init__(
             self: Self,
             name: str,
-            columns: Mapping[str, Column],
-            default_cols: Sequence[str],
-            single_list_props: tuple[str, ...] = ('name', 'uuid'),
             epilog: str | None = None,
             hidden: bool = False,
             deprecated: bool = False,
@@ -48,14 +45,14 @@ class ListCommand(MatchCommand):
         params: tuple[click.Parameter, ...] = (
             click.Option(
                 param_decls=('--columns', 'selected'),
-                type=ColumnsParam(columns, f'{ self.NAME } columns')(),
+                type=ColumnsParam(self.DISPLAY_PROPS, f'{ self.NAME } columns')(),
                 nargs=1,
                 help=f'A comma separated list of columns to show when listing { self.NAME }s. Use `--columns list` to list recognized column names.',
-                default=default_cols,
+                default=self.DEFAULT_COLUMNS,
             ),
             click.Option(
                 param_decls=('--only',),
-                type=click.Choice(single_list_props),
+                type=click.Choice(self.SINGLE_LIST_PROPS),
                 nargs=1,
                 help=f'Limit the output to a simple list of { self.NAME }s by the specified property.',
                 default=None,
@@ -78,7 +75,7 @@ class ListCommand(MatchCommand):
             parent: str | None = None
         ) -> None:
             if selected == ['list']:
-                click.echo(column_info(columns, default_cols))
+                click.echo(column_info(self.DISPLAY_PROPS, self.DEFAULT_COLUMNS))
                 ctx.exit(ExitCode.SUCCESS)
 
             with state.hypervisor as hv:
@@ -97,7 +94,7 @@ class ListCommand(MatchCommand):
                     ctx.exit(ExitCode.ENTITY_NOT_FOUND)
 
                 if only is None:
-                    data = tabulate_entities(entities, columns, selected, convert=lambda x: state.convert_units(x))
+                    data = tabulate_entities(entities, self.DISPLAY_PROPS, selected, convert=lambda x: state.convert_units(x))
                 else:
                     for e in entities:
                         click.echo(getattr(e, only))
@@ -105,7 +102,7 @@ class ListCommand(MatchCommand):
             if only is None:
                 click.echo(render_table(
                     data,
-                    [columns[x] for x in selected],
+                    [self.DISPLAY_PROPS[x] for x in selected],
                     headings=not no_headings,
                 ))
 

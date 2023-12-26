@@ -5,9 +5,8 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from textwrap import dedent
-from typing import TYPE_CHECKING, Any, Self
+from typing import TYPE_CHECKING, Self
 
 import click
 
@@ -15,18 +14,7 @@ from .command import Command
 from .objects import is_object_mixin
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Sequence
-
     from .state import State
-
-
-@dataclass(kw_only=True, slots=True)
-class InfoItem:
-    '''Represent an item to be printed by an InfoCommand.'''
-    name: str
-    prop: str
-    use_units: bool = False
-    color: Callable[[Any], str] = lambda x: str(x)
 
 
 class InfoCommand(Command):
@@ -37,7 +25,6 @@ class InfoCommand(Command):
     def __init__(
         self: Self,
         name: str,
-        info_items: Sequence[InfoItem],
         epilog: str | None = None,
         hidden: bool = False,
         deprecated: bool = False,
@@ -61,7 +48,7 @@ class InfoCommand(Command):
                 else:
                     obj = self.get_entity(ctx, hv, entity)
 
-                for item in info_items:
+                for item in self.DISPLAY_PROPS.values():
                     value = getattr(obj, item.prop, None)
 
                     if value is not None and value != '':
