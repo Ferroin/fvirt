@@ -22,13 +22,13 @@ python = "^3.11"
 blessed = "^1.20.0"
 click = "^8.1.7"
 frozendict = "^2.3.10"
-jinja2 = {version = "^3.1.2", optional = true}
+jinja2 = "^3.1.2"
 libvirt-python = "^9.10.0"
 lxml = "^4.9.4"
-psutil = {version = "^5.9.7", optional = true}
-pydantic = {version = "^2.5.3", optional = true}
-pydantic-extra-types = {version = "^2.2.0", optional = true}
-ruamel-yaml = {version = "^0.18.5", optional = true}
+psutil = "^5.9.7"
+pydantic = "^2.5.3"
+pydantic-extra-types = "^2.2.0"
+ruamel-yaml = "^0.18.5"
 
 [tool.poetry.group.dev.dependencies]
 bandit = "^1.7.6"
@@ -44,7 +44,6 @@ flaky = "^3.7.0"
 isort = "^5.13.2"
 lxml-stubs = "^0.4.0"
 mypy = "^1.8.0"
-pydantic = "^2.5.3"
 pytest = "^7.4.2"
 pytest-click = "^1.1.0"
 pytest-cov = "^4.1.0"
@@ -53,13 +52,9 @@ pytest-randomly = "^3.15.0"
 pytest-timeout = "^2.2.0"
 pytest-unique = "^0.1.1"
 pytest-xdist = "^3.5.0"
-ruamel-yaml = "^0.18.5"
 simple-file-lock = "^2023.6"
-yamllint = "^1.33.0"
 types-psutil = "^5.9.5.17"
-
-[tool.poetry.extras]
-templates = ["jinja2", "psutil", "pydantic", "pydantic-extra-types", "ruamel-yaml"]
+yamllint = "^1.33.0"
 
 [tool.mypy]
 python_version = "3.11"
