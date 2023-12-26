@@ -34,7 +34,6 @@ considered part of fvirt’s public API:
    import *`.
 6. The structure and typing of the Pydantic models located in
    `fvirt.libvirt.models`.
-7. The `check_for_templating()` function provided in `fvirt.templating`.
 
 A few specific exceptions to this exist in a number of places in the
 code. They will always be explicitly called out in the docstring of the

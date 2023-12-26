@@ -90,11 +90,6 @@ tool that works with pypi.
 
 The actual CLI tool is installed as a script with the name `fvirt`.
 
-Object templating support is optional, and can be installed by asking for
-the `templates` extra (for example `pip install fvirt[templates]`. A vast
-majority of fvirt’s functionality is usable without it, and the CLI
-tool won’t even expose templating functionality if it’s not installed.
-
 ## Contributing
 
 fvirt is developed using [Poetry](https://python-poetry.org/). Assuming
