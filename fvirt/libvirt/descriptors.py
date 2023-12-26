@@ -15,11 +15,29 @@ from lxml import etree
 from ..util.units import unit_to_bytes
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Sequence
+    from collections.abc import Callable, Iterable, Sequence
 
     from .entity import Entity
 
 T = TypeVar('T')
+
+
+def SequenceType(t: Callable[[Any], T] = lambda x: x) -> Callable[[Any | Iterable[Any]], Sequence[T]]:
+    '''Factory function for producing a function which ensures a sequence is output.'''
+    def inner(v: Any | Iterable[Any]) -> Sequence[T]:
+        ret: Sequence[T] = []
+
+        if isinstance(v, str) or isinstance(v, bytes):
+            ret = [t(v)]
+        else:
+            try:
+                ret = [t(x) for x in v]
+            except TypeError:
+                ret = [t(v)]
+
+        return ret
+
+    return inner
 
 
 class ReadDescriptor(Generic[T], ABC):
@@ -205,12 +223,14 @@ class ConfigProperty(ReadDescriptor[T]):
         path: str,
         type: Callable[[Any], T] = lambda x: cast(T, x),
         units_to_bytes: bool = False,
+        collection: bool = False,
         fallback: str | None = None,
         **kwargs: Any,
     ) -> None:
         self._path = path
         self._xpath = etree.XPath(path, smart_strings=False)
         self._units_to_bytes = units_to_bytes
+        self._collection = collection
 
         super().__init__(doc=doc, type=type, fallback=fallback, **kwargs)
 
@@ -218,26 +238,29 @@ class ConfigProperty(ReadDescriptor[T]):
         return f'<ConfigProperty: path={ self._path }, fallback={ self._fallback }>'
 
     def _get_value(self: Self, instance: Entity, /) -> Any:
-        ret: Any = None
         result = self._xpath(instance.config)
 
         if result is None or result == []:
             raise AttributeError(f'{ repr(instance) }:{ repr(self) }')
 
         if isinstance(result, list):
-            e: Any = result[0]
+            if self._collection:
+                return [self._handle_value(x) for x in result]
+            else:
+                return self._handle_value(result[0])
         else:
-            e = result
+            return self._handle_value(result)
 
-        if isinstance(e, bool) or isinstance(e, str) or isinstance(e, float) or isinstance(e, bytes) or isinstance(e, tuple):
-            ret = e
+    def _handle_value(self: Self, v: Any, /) -> Any:
+        if isinstance(v, bool) or isinstance(v, str) or isinstance(v, float) or isinstance(v, bytes) or isinstance(v, tuple):
+            ret = v
         elif self._units_to_bytes:
-            unit = e.get('unit', default='bytes')
-            value = int(str(e.text))
+            unit = v.get('unit', default='bytes')
+            value = int(str(v.text))
 
             ret = unit_to_bytes(value, unit)
         else:
-            ret = e.text
+            ret = v.text
 
         return ret
 

@@ -67,7 +67,7 @@ class MatchTarget:
     xpath: etree.XPath | None = None
     property: str | None = None
 
-    def get_value(self: Self, entity: Entity, /) -> str:
+    def get_value(self: Self, entity: Entity, /) -> str | list[str]:
         '''Get the match target value for the specified entity.'''
         if self.xpath is not None:
             result = self.xpath(entity.config)
@@ -82,7 +82,10 @@ class MatchTarget:
             if hasattr(entity, self.property):
                 ret = getattr(entity, self.property, '')
 
-                return str(ret)
+                if isinstance(ret, list):
+                    return [str(x) for x in ret]
+                else:
+                    return str(ret)
             else:
                 return ''
         else:
