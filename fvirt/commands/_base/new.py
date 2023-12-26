@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import logging
+import json
 import sys
 
 from textwrap import dedent
@@ -14,13 +15,13 @@ from typing import TYPE_CHECKING, Any, Final, Self
 import click
 
 from lxml import etree
+from ruamel.yaml import YAML
 
 from .command import Command
 from .exitcode import ExitCode
 from .objects import is_object_mixin
 from ...libvirt import Hypervisor, InvalidConfig
 from ...libvirt.entity import Entity
-from ...templates import get_environment
 from ...util.report import summary
 
 if TYPE_CHECKING:
@@ -28,17 +29,11 @@ if TYPE_CHECKING:
 
     from .state import State
 
-HAVE_TEMPLATING: Final = get_environment() is not None
 LOGGER: Final = logging.getLogger(__name__)
 
-if HAVE_TEMPLATING:
-    import json
-
-    from ruamel.yaml import YAML
-
-    yaml = YAML()
-    yaml.indent(sequence=4, offset=2)
-    yaml.default_flow_style = False
+yaml = YAML()
+yaml.indent(sequence=4, offset=2)
+yaml.default_flow_style = False
 
 
 def _read_xml_file(path: str) -> str:
@@ -72,7 +67,7 @@ class NewCommand(Command):
     ) -> None:
         assert is_object_mixin(self)
 
-        use_templating = HAVE_TEMPLATING and self.CLASS._get_template_info() is not None
+        use_templating = self.CLASS._get_template_info() is not None
 
         def cb(
             ctx: click.Context,

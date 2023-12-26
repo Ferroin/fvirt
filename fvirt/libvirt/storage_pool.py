@@ -252,12 +252,9 @@ class StoragePool(RunnableEntity):
 
     @staticmethod
     def _get_template_info() -> tuple[type[PoolInfo], str] | None:
-        try:
-            from .models.storage_pool import PoolInfo
-        except ImportError:
-            return None
-        else:
-            return (PoolInfo, 'pool.xml')
+        from .models.storage_pool import PoolInfo
+
+        return (PoolInfo, 'pool.xml')
 
 
 class StoragePools(BaseEntityAccess[StoragePool]):

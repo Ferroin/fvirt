@@ -418,12 +418,9 @@ class Domain(RunnableEntity):
 
     @staticmethod
     def _get_template_info() -> tuple[type[DomainInfo], str] | None:
-        try:
-            from .models.domain import DomainInfo
-        except ImportError:
-            return None
-        else:
-            return (DomainInfo, 'domain.xml')
+        from .models.domain import DomainInfo
+
+        return (DomainInfo, 'domain.xml')
 
 
 class Domains(BaseEntityAccess[Domain]):

@@ -416,9 +416,6 @@ class Entity(ABC):
            will be raised.'''
         env = get_environment()
 
-        if env is None:
-            raise FeatureNotSupported('Templating is not supported on this system.')
-
         if template is None:
             if template_name is None:
                 raise ValueError('One of template or template_name must be specified.')
