@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, Final, Self, cast, overload
 
 import libvirt
 
-from .descriptors import ConfigProperty
+from .descriptors import ConfigProperty, SequenceType
 from .entity import LifecycleResult, RunnableEntity
 from .entity_access import BaseEntityAccess, EntityAccess, NameMap, UUIDMap
 from .exceptions import EntityRunning, InsufficientPrivileges, NotConnected
@@ -20,7 +20,7 @@ from .volume import Volume, VolumeAccess
 from ..util.match import MatchAlias
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Iterable, Sequence
 
     from .hypervisor import Hypervisor
     from .models.storage_pool import PoolInfo
@@ -54,10 +54,10 @@ class StoragePool(RunnableEntity):
        using the EntityAccess protocol.'''
     MATCH_ALIASES: ClassVar = {
         'autostart': MatchAlias(property='autostart', desc='Match on whether the pool is set to autostart or not.'),
-        'device': MatchAlias(property='device', desc='Match on the pool device.'),
+        'device': MatchAlias(property='devices', desc='Match on the pool devices.'),
         'directory': MatchAlias(property='dir', desc='Match on the pool directory.'),
         'format': MatchAlias(property='format', desc='Match on the pool format.'),
-        'host': MatchAlias(property='host', desc='Match on the pool host.'),
+        'host': MatchAlias(property='hosts', desc='Match on the pool hosts.'),
         'name': MatchAlias(property='name', desc='Match on the name of the pool.'),
         'persistent': MatchAlias(property='persistent', desc='Match on whether the pool is persistent or not.'),
         'target': MatchAlias(property='target', desc='Match on the pool target.'),
@@ -84,10 +84,10 @@ class StoragePool(RunnableEntity):
         path='./allocation',
         type=int,
     )
-    host: ConfigProperty[str] = ConfigProperty(
+    hosts: ConfigProperty[Sequence[str]] = ConfigProperty(
         doc='The source host of the storage pool.',
         path='./source/host/@name',
-        type=str,
+        type=SequenceType(str),
     )
     format: ConfigProperty[str] = ConfigProperty(
         doc='The source format of the storage pool.',
@@ -99,10 +99,10 @@ class StoragePool(RunnableEntity):
         path='./source/dir/@path',
         type=str,
     )
-    device: ConfigProperty[str] = ConfigProperty(
+    devices: ConfigProperty[Sequence[str]] = ConfigProperty(
         doc='The source device of the storage pool.',
         path='./source/device/@path',
-        type=str,
+        type=SequenceType(str),
     )
     target: ConfigProperty[str] = ConfigProperty(
         doc='The target path of the storage pool.',

@@ -209,6 +209,12 @@ class EntityAccess(BaseEntityAccess[T], Iterable):
         '''Return an iterable of entities that match given match parameters.'''
         def f(entity: T) -> bool:
             value = match[0].get_value(entity)
-            return match[1].search(value) is not None
+
+            if isinstance(value, list):
+                return any(
+                    match[1].search(x) is not None for x in value
+                )
+            else:
+                return match[1].search(value) is not None
 
         return filter(f, self)
