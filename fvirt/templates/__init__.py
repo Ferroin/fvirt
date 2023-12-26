@@ -9,58 +9,22 @@
 
 from __future__ import annotations
 
-import functools
 import logging
 
-from importlib import import_module
-from typing import TYPE_CHECKING, Final
+from typing import Final
 
-if TYPE_CHECKING:
-    from collections.abc import Callable
-    from types import ModuleType
-
-    import jinja2
+import jinja2
 
 LOGGER: Final = logging.getLogger(__name__)
 
 
-@functools.cache
-def check_for_templating(*, importer: Callable[..., ModuleType] = import_module) -> bool:
-    '''Check if templating is actually supported.
-
-       The result of this function is cached.
-
-       The `importer` keyword argument is only intended for internal
-       usage and is not part of the public API for this function.'''
-    try:
-        importer('jinja2')
-        importer('psutil')
-        importer('pydantic')
-    except ImportError:
-        LOGGER.info('Templating support is not available.')
-        return False
-
-    return True
-
-
-def get_environment(*, importer: Callable[..., ModuleType] = import_module) -> jinja2.Environment | None:
+def get_environment() -> jinja2.Environment:
     '''Get a jinja2 Environment with our templates in it.
-
-       If templating is not supported, this will return None. This checks
-       for _all_ required templating dependencies, not just jinja2.
 
        The result of this function is not cached. A new environment will
        be returned each time. If you expect to do a lot of templating,
        it’s more efficient to call this once and cache the result
-       yourself. If you just want to check if templating support is
-       available, use check_for_templating() instead.'''
-    if not check_for_templating(importer=importer):
-        return None
-
-    LOGGER.debug('Generating jinja2 environment.')
-
-    import jinja2
-
+       yourself.'''
     return jinja2.Environment(
         loader=jinja2.PackageLoader('fvirt', 'templates'),
         autoescape=jinja2.select_autoescape(),

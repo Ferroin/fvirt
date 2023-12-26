@@ -340,12 +340,9 @@ class Volume(Entity):
 
     @staticmethod
     def _get_template_info() -> tuple[type[VolumeInfo], str] | None:
-        try:
-            from .models.volume import VolumeInfo
-        except ImportError:
-            return None
-        else:
-            return (VolumeInfo, 'volume.xml')
+        from .models.volume import VolumeInfo
+
+        return (VolumeInfo, 'volume.xml')
 
 
 class Volumes(BaseEntityAccess[Volume]):
