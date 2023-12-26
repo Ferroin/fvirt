@@ -14,7 +14,8 @@ from typing import TYPE_CHECKING, Any
 import click
 import pytest
 
-from fvirt.commands._base.tables import Column, ColumnsParam, color_bool, color_optional, column_info, render_table, tabulate_entities
+from fvirt.commands._base.objects import DisplayProperty
+from fvirt.commands._base.tables import ColumnsParam, color_bool, color_optional, column_info, render_table, tabulate_entities
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -24,10 +25,10 @@ if TYPE_CHECKING:
     from fvirt.libvirt import Domain, Hypervisor
 
 TEST_COLUMNS = {
-    'name': Column(title='Name', prop='name'),
-    'uuid': Column(title='UUID', prop='uuid'),
-    'running': Column(title='Running', prop='running', color=color_bool),
-    'id': Column(title='ID', prop='id', color=str, right_align=True),
+    'name': DisplayProperty(title='Name', name='Name', prop='name'),
+    'uuid': DisplayProperty(title='UUID', name='UUID', prop='uuid'),
+    'running': DisplayProperty(title='Running', name='Running', prop='running', color=color_bool),
+    'id': DisplayProperty(title='ID', name='ID', prop='id', color=str, right_align=True),
 }
 
 DEFAULT_COLS = (

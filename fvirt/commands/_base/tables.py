@@ -5,11 +5,11 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Final, Self, Type
 
 import click
 
+from .objects import DisplayProperty
 from .terminal import get_terminal
 
 if TYPE_CHECKING:
@@ -18,17 +18,7 @@ if TYPE_CHECKING:
     from ...libvirt.entity import Entity
 
 
-@dataclass(kw_only=True, slots=True)
-class Column:
-    '''Data class representing column configuration for table rendering.'''
-    title: str
-    prop: str
-    right_align: bool = False
-    use_units: bool = False
-    color: Callable[[Any], str] = lambda x: str(x)
-
-
-def ColumnsParam(cols: Mapping[str, Column], type_name: str, /) -> Type[click.ParamType]:
+def ColumnsParam(cols: Mapping[str, DisplayProperty], type_name: str, /) -> Type[click.ParamType]:
     '''Factory funcion for creating types for column options.
 
        This will produce a subclass of click.ParamType for parsing a
@@ -61,7 +51,7 @@ def ColumnsParam(cols: Mapping[str, Column], type_name: str, /) -> Type[click.Pa
     return ColumnsParam
 
 
-def column_info(columns: Mapping[str, Column], defaults: Sequence[str], /) -> str:
+def column_info(columns: Mapping[str, DisplayProperty], defaults: Sequence[str], /) -> str:
     '''Produce a list of supported columns.
 
        Takes the column definitions that would be passed to ColumnsParam
@@ -95,7 +85,7 @@ def color_optional(value: Any) -> str:
 
 def tabulate_entities(
     entities: Iterable[Entity],
-    columns: Mapping[str, Column],
+    columns: Mapping[str, DisplayProperty],
     selected_cols: Sequence[str],
     /, *,
     convert: Callable[[int], str] = lambda x: str(x),
@@ -122,7 +112,7 @@ def tabulate_entities(
     return ret
 
 
-def render_table(items: Sequence[Sequence[Any]], columns: Sequence[Column], headings: bool = True) -> str:
+def render_table(items: Sequence[Sequence[Any]], columns: Sequence[DisplayProperty], headings: bool = True) -> str:
     '''Render a table of items.
 
        `items` should be a list of rows, where each row is a list of
@@ -167,7 +157,6 @@ def render_table(items: Sequence[Sequence[Any]], columns: Sequence[Column], head
 
 
 __all__ = [
-    'Column',
     'ColumnsParam',
     'color_bool',
     'color_optional',

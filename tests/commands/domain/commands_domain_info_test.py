@@ -7,22 +7,16 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from fvirt.commands.domain.info import INFO_ITEMS
+from fvirt.commands.domain._mixin import DomainMixin
 
-from ..shared import check_info_items, check_info_output
+from ..shared import check_info_output
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
     from click.testing import Result
 
-    from fvirt.libvirt import Domain, Hypervisor
-
-
-def test_info_items(test_dom: tuple[Domain, Hypervisor]) -> None:
-    '''Test that the defined info items are valid.'''
-    dom, _ = test_dom
-    check_info_items(INFO_ITEMS, dom)
+    from fvirt.libvirt import Hypervisor
 
 
 def test_command_run(runner: Callable[[Sequence[str], int], Result], test_hv: Hypervisor) -> None:
@@ -35,4 +29,4 @@ def test_command_run(runner: Callable[[Sequence[str], int], Result], test_hv: Hy
     dom = test_hv.domains.get(1)
     assert dom is not None
 
-    check_info_output(result.output, INFO_ITEMS, dom, 'Domain: 1')
+    check_info_output(result.output, dom, 'Domain: 1', DomainMixin)

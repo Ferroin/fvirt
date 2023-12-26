@@ -14,15 +14,12 @@ from typing import TYPE_CHECKING
 import click
 import pytest
 
-from fvirt.commands._base.tables import Column
+from fvirt.commands._base.objects import DisplayProperty, ObjectMixin
 from fvirt.libvirt.entity import Entity
 from fvirt.util.units import bytes_to_unit
 
 if TYPE_CHECKING:
-    from collections.abc import Mapping, Sequence
-
     from fvirt.commands._base.group import Group
-    from fvirt.commands._base.info import InfoItem
 
 SRC_ROOT = Path(__file__).parents[2]
 
@@ -56,24 +53,29 @@ def check_lazy_commands(group: Group, modpath: Path) -> None:
         assert cmdpath in cmdpaths
 
 
-def check_columns(cols: Mapping[str, Column], sample: Entity) -> None:
-    '''CHeck that a mapping of columns is valid.'''
-    for k, v in cols.items():
+def check_mixin(mixin_class: type[ObjectMixin], sample: Entity) -> None:
+    '''Sanity check an object mixin class against the specified entity.'''
+    mixin = mixin_class()
+
+    assert isinstance(sample, mixin.CLASS)
+
+    for k, v in mixin.DISPLAY_PROPS.items():
         assert isinstance(k, str)
-        assert isinstance(v, Column)
+        assert isinstance(v, DisplayProperty)
         assert v.prop in dir(sample)
 
-    assert len({x.title for x in cols.values()}) == len(cols)
+    for k in mixin.DEFAULT_COLUMNS:
+        assert k in mixin.DISPLAY_PROPS.keys()
+
+    for k in mixin.SINGLE_LIST_PROPS:
+        assert k in mixin.DISPLAY_PROPS.keys()
 
 
-def check_default_columns(cols: Mapping[str, Column], default: Sequence[str]) -> None:
-    '''Check that a list of default columns is valid.'''
-    for k in default:
-        assert k in cols
-
-
-def check_list_entry(line: str, obj: Entity, cols: Sequence[Column]) -> None:
+def check_list_entry(line: str, obj: Entity, mixin_class: type[ObjectMixin]) -> None:
     '''Check a single entry in the list command output.'''
+    mixin = mixin_class()
+    cols = [mixin.DISPLAY_PROPS[x] for x in mixin.DEFAULT_COLUMNS]
+
     values = line.split()
 
     assert len(values) == len(cols)
@@ -82,8 +84,11 @@ def check_list_entry(line: str, obj: Entity, cols: Sequence[Column]) -> None:
         assert v == c.color(getattr(obj, c.prop, None))
 
 
-def check_list_output(output: str, obj: Entity, cols: Sequence[Column]) -> None:
+def check_list_output(output: str, obj: Entity, mixin_class: type[ObjectMixin]) -> None:
     '''Check that the list command works correctly.'''
+    mixin = mixin_class()
+    cols = [mixin.DISPLAY_PROPS[x] for x in mixin.DEFAULT_COLUMNS]
+
     lines = output.splitlines()
 
     headings = lines[0].split()
@@ -95,21 +100,13 @@ def check_list_output(output: str, obj: Entity, cols: Sequence[Column]) -> None:
 
     assert re.match('^-+?$', lines[1])
 
-    check_list_entry(lines[2], obj, cols)
+    check_list_entry(lines[2], obj, mixin_class)
 
 
-def check_info_items(items: tuple[InfoItem, ...], sample: Entity) -> None:
-    '''Check that a list of info items is valid for a given entity.'''
-    assert isinstance(items, tuple)
-
-    for item in items:
-        assert isinstance(item.name, str)
-        assert isinstance(item.prop, str)
-        assert item.prop in dir(sample)
-
-
-def check_info_output(output: str, items: tuple[InfoItem, ...], entity: Entity, header: str) -> None:
+def check_info_output(output: str, entity: Entity, header: str, mixin_class: type[ObjectMixin]) -> None:
     '''Check the output from an info command.'''
+    items = mixin_class().DISPLAY_PROPS.values()
+
     assert header == output.splitlines()[0]
 
     for item in items:

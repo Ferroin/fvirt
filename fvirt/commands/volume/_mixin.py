@@ -5,10 +5,14 @@
 
 from __future__ import annotations
 
-from typing import Self, Type
+from typing import TYPE_CHECKING, Self, Type
 
-from .._base.objects import ObjectMixin
+from .._base.objects import DisplayProperty, ObjectMixin
+from .._base.tables import color_optional
 from ...libvirt import Volume
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping, Sequence
 
 
 class VolumeMixin(ObjectMixin):
@@ -35,3 +39,56 @@ class VolumeMixin(ObjectMixin):
 
     @property
     def PARENT_ATTR(self: Self) -> str: return 'storage_pools'
+
+    @property
+    def DISPLAY_PROPS(self: Self) -> Mapping[str, DisplayProperty]:
+        return {
+            'name': DisplayProperty(
+                title='Name',
+                name='Name',
+                prop='name',
+            ),
+            'key': DisplayProperty(
+                title='Key',
+                name='Key',
+                prop='key',
+            ),
+            'type': DisplayProperty(
+                title='Type',
+                name='Volume Type',
+                prop='vol_type',
+            ),
+            'format': DisplayProperty(
+                title='Format',
+                name='Volume Format',
+                prop='format',
+            ),
+            'path': DisplayProperty(
+                title='Path',
+                name='Volume Path',
+                prop='path',
+                color=color_optional,
+            ),
+            'capacity': DisplayProperty(
+                title='Capacity',
+                name='Total Capacity',
+                prop='capacity',
+                right_align=True,
+                use_units=True,
+            ),
+            'allocated': DisplayProperty(
+                title='Allocated',
+                name='Allocated Space',
+                prop='allocated',
+                right_align=True,
+                use_units=True,
+            ),
+        }
+
+    @property
+    def DEFAULT_COLUMNS(self: Self) -> Sequence[str]:
+        return (
+            'name',
+            'path',
+            'capacity',
+        )
