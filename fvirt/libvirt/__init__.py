@@ -28,6 +28,7 @@ from .exceptions import (EntityNotRunning, EntityRunning, FeatureNotSupported, F
 from .hypervisor import Hypervisor
 from .storage_pool import StoragePool, StoragePoolState
 from .stream import Stream, StreamError
+from .types import OnOff, Timestamp, YesNo
 from .uri import DRIVER_INFO, LIBVIRT_DEFAULT_URI, URI, Driver, Transport
 from .volume import Volume
 from ..version import VersionNumber
@@ -52,6 +53,7 @@ __all__ = [
     'LIBVIRT_DEFAULT_URI',
     'LifecycleResult',
     'NotConnected',
+    'OnOff',
     'PlatformNotSupported',
     'start_libvirt_event_thread',
     'StoragePool',
@@ -60,7 +62,9 @@ __all__ = [
     'StreamError',
     'SubOperationFailed',
     'TimedOut',
+    'Timestamp',
     'Transport',
     'URI',
     'Volume',
+    'YesNo',
 ]
