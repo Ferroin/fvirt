@@ -52,7 +52,7 @@ class ListCommand(MatchCommand):
             ),
             click.Option(
                 param_decls=('--only',),
-                type=click.Choice(self.SINGLE_LIST_PROPS),
+                type=click.Choice(list(self.SINGLE_LIST_PROPS)),
                 nargs=1,
                 help=f'Limit the output to a simple list of { self.NAME }s by the specified property.',
                 default=None,
