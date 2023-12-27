@@ -7,18 +7,12 @@ import pytest
 
 import fvirt
 
-from fvirt.version import VERSION, VersionNumber
-
-
-def test_version_in_init() -> None:
-    '''Confirm that VERSION is also in the __init__ module.'''
-    assert hasattr(fvirt, 'VERSION')
-    assert fvirt.VERSION == VERSION
+from fvirt.version import VersionNumber
 
 
 def test_version_type() -> None:
     '''Confirm that VERSION is a VersionNumber.'''
-    assert isinstance(VERSION, VersionNumber)
+    assert isinstance(fvirt.VERSION, VersionNumber)
 
 
 def test_equality() -> None:
@@ -68,7 +62,7 @@ def test_invalid_args() -> None:
 
 def test_version_str() -> None:
     '''Test that conversion to a string works correctly.'''
-    assert str(VERSION) == f'{ VERSION.major }.{ VERSION.minor }.{ VERSION.release }'
+    assert str(fvirt.VERSION) == f'{ fvirt.VERSION.major }.{ fvirt.VERSION.minor }.{ fvirt.VERSION.release }'
 
 
 def test_version_hash() -> None:

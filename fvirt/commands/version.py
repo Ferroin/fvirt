@@ -10,8 +10,8 @@ from typing import TYPE_CHECKING, Final
 import click
 
 from ._base.command import Command
+from .. import VERSION
 from ..libvirt import API_VERSION
-from ..version import VERSION
 
 if TYPE_CHECKING:
     from ._base.state import State

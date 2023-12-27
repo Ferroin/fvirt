@@ -5,12 +5,26 @@
 
 from __future__ import annotations
 
-from typing import Any, Final, Self
+import functools
+
+from typing import TYPE_CHECKING, Any, Self
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 
+@functools.total_ordering
 class VersionNumber:
-    '''Minimal wrapper class for version information.'''
+    '''Minimal wrapper class for version information.
+
+       The individual components of a version number are accessible via
+       iteration or numeric indexing, as well as being accessible by name.
+
+       VersionNumber instances are immutable once instantiated.
+
+       Instances are comparable to each other and have a total ordering.'''
     __slots__ = (
+        '__weakref__',
         '__major',
         '__minor',
         '__release',
@@ -47,6 +61,27 @@ class VersionNumber:
                 self.minor == item.minor and
                 self.release == item.release)
 
+    def __lt__(self: Self, item: Any) -> bool:
+        if not isinstance(item, VersionNumber):
+            return NotImplemented
+
+        if self.major < item.major:
+            return True
+        elif self.major == item.major:
+            if self.minor < item.minor:
+                return True
+            elif self.minor == item.minor:
+                if self.release < item.release:
+                    return True
+
+        return False
+
+    def __len__(self: Self) -> int:
+        return 3
+
+    def __iter__(self: Self) -> Iterator[int]:
+        return iter((self.major, self.minor, self.release))
+
     def __getitem__(self: Self, idx: int) -> int:
         match idx:
             case 0 | -3:
@@ -70,7 +105,7 @@ class VersionNumber:
 
     @property
     def release(self: Self) -> int:
-        '''The release release number.'''
+        '''The release number.'''
         return self.__release
 
     @staticmethod
@@ -82,10 +117,14 @@ class VersionNumber:
         major = int(vstr[:-6].lstrip('0') or '0')
         return VersionNumber(major, minor, release)
 
+    @staticmethod
+    def from_string(version: str, /) -> VersionNumber:
+        '''Parse a version string into a VersionNumber.'''
+        vstr = version.lstrip('v').split('-')[0]
+        major, minor, release = vstr.split('.')[0:3]
+        return VersionNumber(int(major), int(minor), int(release))
 
-VERSION: Final = VersionNumber(0, 0, 1)
 
 __all__ = [
-    'VERSION',
     'VersionNumber',
 ]
