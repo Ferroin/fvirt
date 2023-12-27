@@ -86,8 +86,6 @@ class NewCommand(Command):
 
                 assert info is not None
 
-                schema = info[0].model_json_schema()
-
             match mode:
                 case 'define':
                     NEW_METHOD = self.DEFINE_METHOD
