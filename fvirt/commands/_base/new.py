@@ -5,8 +5,8 @@
 
 from __future__ import annotations
 
-import logging
 import json
+import logging
 import sys
 
 from textwrap import dedent
