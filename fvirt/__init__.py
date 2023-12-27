@@ -5,10 +5,16 @@
 
 import sys
 
-from .version import VERSION
+from typing import Final
+
+from .version import VersionNumber
 
 if not sys.version_info >= (3, 11):  # pragma: no cover # By definition this can never be covered by pytest
     raise RuntimeError('fvirt requires Python 3.11 or newer.')
+
+__version__: Final = '0.0.1'
+
+VERSION: Final = VersionNumber.from_string(__version__)
 
 __all__ = [
     'VERSION',
