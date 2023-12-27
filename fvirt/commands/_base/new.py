@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import json
 import logging
-import sys
 
 from textwrap import dedent
 from typing import TYPE_CHECKING, Any, Final, Self
@@ -76,7 +75,6 @@ class NewCommand(Command):
             parent: str | None = None,
             mode: str = 'define',
             template: str | None = None,
-            template_schema: str | None = None,
             **kwargs: Any,
         ) -> None:
             assert is_object_mixin(self)
@@ -89,22 +87,6 @@ class NewCommand(Command):
                 assert info is not None
 
                 schema = info[0].model_json_schema()
-
-                match template_schema:
-                    case None:
-                        pass
-                    case 'json-compact':
-                        json.dump(schema, sys.stdout, sort_keys=True)
-                        ctx.exit(ExitCode.SUCCESS)
-                    case 'json':
-                        json.dump(schema, sys.stdout, indent=4, sort_keys=True)
-                        sys.stdout.write('\n')
-                        ctx.exit(ExitCode.SUCCESS)
-                    case 'yaml':
-                        yaml.dump(schema, sys.stdout)
-                        ctx.exit(ExitCode.SUCCESS)
-                    case _:
-                        raise RuntimeError
 
             match mode:
                 case 'define':
@@ -203,8 +185,8 @@ class NewCommand(Command):
             mid2 = dedent('''
             If the "--template" argument is specified, the CONFIGPATH
             argument should instead be a file of the specified format
-            following the schema described by the output of the
-            `--template-schema` argument.
+            following the schema for the type of object being created. The
+            `fvirt schema` command may be used to view the schemas.
             ''')
 
             mid = f'{mid}\n\n{mid2}'
@@ -259,16 +241,6 @@ class NewCommand(Command):
                     )),
                     default='none',
                     help=f'Prepare the {self.NAME} configuration from the specified type of template. "none" explicitly disables templating.',
-                ),
-                click.Option(
-                    param_decls=('--template-schema',),
-                    type=click.Choice((
-                        'json-compact',
-                        'json',
-                        'yaml',
-                    )),
-                    default=None,
-                    help=f'Dump the schema used when templating {self.NAME} configurations, using the specified format.',
                 ),
             )
 

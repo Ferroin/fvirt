@@ -11,6 +11,7 @@ LAZY_COMMANDS: Final = {
     'domain': 'fvirt.commands.domain.domain',
     'host': 'fvirt.commands.host.host',
     'pool': 'fvirt.commands.pool.pool',
+    'schema': 'fvirt.commands.schema.schema',
     'version': 'fvirt.commands.version.version',
     'volume': 'fvirt.commands.volume.volume',
 }
