@@ -8,7 +8,7 @@ from __future__ import annotations
 from typing import Final
 
 from .._base.group import Group
-from ...libvirt import Domain
+from ...libvirt.domain import Domain
 
 domain: Final = Group(
     name='domain',

@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import functools
 
-from collections.abc import Sequence
 from ipaddress import IPv4Address, IPv6Address
 from typing import Annotated, Final, Self
 from uuid import UUID
@@ -152,13 +151,13 @@ class PoolSource(Model):
         description='Directory on the remote server to use for storing volumes. ' +
                     f'Only supported for pools of the following types: {", ".join(SOURCE_DIR_TYPES)}',
     )
-    devices: Sequence[NonEmptyString] | None = Field(
+    devices: list[NonEmptyString] | None = Field(
         default=None,
         min_length=1,
         description='A list of devices used to store pool data. ' +
                     f'Only supported for pools of the following types: {", ".join(SOURCE_DEVICE_TYPES | OPTIONAL_SOURCE_DEVICE_TYPES)}',
     )
-    hosts: Sequence[Hostname | IPv4Address | IPv6Address] | None = Field(
+    hosts: list[Hostname | IPv4Address | IPv6Address] | None = Field(
         default=None,
         min_length=1,
         description='A list of network hosts used to store pool data. ' +

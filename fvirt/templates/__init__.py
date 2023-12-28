@@ -11,9 +11,10 @@ from __future__ import annotations
 
 import logging
 
-from typing import Final
+from typing import TYPE_CHECKING, Final
 
-import jinja2
+if TYPE_CHECKING:
+    import jinja2
 
 LOGGER: Final = logging.getLogger(__name__)
 
@@ -25,6 +26,8 @@ def get_environment() -> jinja2.Environment:
        be returned each time. If you expect to do a lot of templating,
        it’s more efficient to call this once and cache the result
        yourself.'''
+    import jinja2
+
     return jinja2.Environment(
         loader=jinja2.PackageLoader('fvirt', 'templates'),
         autoescape=jinja2.select_autoescape(),

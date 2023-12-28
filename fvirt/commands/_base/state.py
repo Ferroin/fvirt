@@ -9,17 +9,19 @@ import logging
 import logging.config
 import os
 import sys
-import threading
 
-from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import Final, Self, TypeVar, cast
+from typing import TYPE_CHECKING, Final, Self, TypeVar, cast
 
 from .config import FVirtConfig, get_config
-from ...libvirt import URI, Hypervisor
-from ...libvirt.events import start_libvirt_event_thread
-from ...util.dummy_pool import DummyExecutor
-from ...util.units import bytes_to_unit, count_integer_digits
+
+if TYPE_CHECKING:
+    import threading
+
+    from concurrent.futures import ThreadPoolExecutor
+
+    from ...libvirt import URI, Hypervisor
+    from ...util.dummy_pool import DummyExecutor
 
 T = TypeVar('T')
 
@@ -178,7 +180,11 @@ class State:
         '''A Hypervisor instance for this command run.'''
         if self.__hypervisor is None:
             if self.__thread is None:
+                from ...libvirt.events import start_libvirt_event_thread
+
                 self.__thread = start_libvirt_event_thread()
+
+            from ...libvirt.hypervisor import Hypervisor
 
             self.__hypervisor = Hypervisor(hvuri=self.uri)
 
@@ -195,9 +201,15 @@ class State:
         if self.__pool is None:
             if self.jobs == 1:
                 LOGGER.debug('Creating fake thread pool for serialized execution.')
+
+                from ...util.dummy_pool import DummyExecutor
+
                 self.__pool = DummyExecutor()
             else:
                 LOGGER.info(f'Starting thread pool with {self.jobs} threads.')
+
+                from concurrent.futures import ThreadPoolExecutor
+
                 self.__pool = ThreadPoolExecutor(
                     max_workers=self.jobs,
                     thread_name_prefix='fvirt-worker',
@@ -209,6 +221,8 @@ class State:
         '''Convert units for output.'''
         if self.__units in {'raw', 'bytes'}:
             return f'{value:z.0F}'
+
+        from ...util.units import bytes_to_unit, count_integer_digits
 
         v, u = bytes_to_unit(value, iec=(self.__units == 'iec'))
 
