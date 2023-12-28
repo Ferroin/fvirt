@@ -17,6 +17,7 @@ from pydantic import BaseModel
 from ruamel.yaml import YAML
 
 from ._base.command import Command
+from ._base.config import FVirtConfig
 from ._base.exitcode import ExitCode
 from ..libvirt.models.domain import DomainInfo
 from ..libvirt.models.storage_pool import PoolInfo
@@ -42,6 +43,10 @@ argument. Specifying ‘list’ will list the recognized schemas instead
 of displaying a specific schema.
 '''.lstrip().rstrip()
 MODEL_MAP: Final = {
+    'config': (
+        'Schema for fvirt configuration files.',
+        FVirtConfig,
+    ),
     'domain': (
         'Schema for fvirt domain templates.',
         DomainInfo,
