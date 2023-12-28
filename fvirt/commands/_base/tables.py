@@ -7,14 +7,14 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Final, Self, Type
 
-import click
-
-from .objects import DisplayProperty
 from .terminal import get_terminal
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Mapping, Sequence
 
+    import click
+
+    from .objects import DisplayProperty
     from ...libvirt.entity import Entity
 
 
@@ -28,6 +28,8 @@ def ColumnsParam(cols: Mapping[str, DisplayProperty], type_name: str, /) -> Type
        The resultant class can be used with the `type` argument for
        click.option decorators to properly parse a list of columns for
        a command option.'''
+    import click
+
     class ColumnsParam(click.ParamType):
         name = type_name
 

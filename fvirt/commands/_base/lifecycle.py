@@ -5,7 +5,6 @@
 
 from __future__ import annotations
 
-import concurrent.futures
 import logging
 
 from abc import ABC, abstractmethod
@@ -18,9 +17,6 @@ import click
 from .exitcode import ExitCode
 from .match import MatchArgument, MatchCommand, get_match_or_entity
 from .objects import is_object_mixin
-from ...libvirt import InvalidOperation, LifecycleResult
-from ...libvirt.runner import RunnerResult, run_entity_method, run_sub_entity_method
-from ...util.report import summary
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -80,6 +76,13 @@ class LifecycleCommand(MatchCommand):
             *args: Any,
             **kwargs: Any
         ) -> None:
+            import concurrent.futures
+
+            from ...libvirt.entity import LifecycleResult
+            from ...libvirt.exceptions import InvalidOperation
+            from ...libvirt.runner import RunnerResult, run_entity_method, run_sub_entity_method
+            from ...util.report import summary
+
             if op_help.idempotent_state:
                 kwargs['idempotent'] = state.idempotent
 

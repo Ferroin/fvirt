@@ -5,7 +5,6 @@
 
 from __future__ import annotations
 
-import concurrent.futures
 import logging
 
 from textwrap import dedent
@@ -13,14 +12,10 @@ from typing import TYPE_CHECKING, Final, Self
 
 import click
 
-from lxml import etree
-
 from .exitcode import ExitCode
 from .match import MatchCommand, get_match_or_entity
 from .objects import is_object_mixin
-from ...libvirt.runner import RunnerResult, run_entity_method, run_sub_entity_method
 from ...util.match import MatchArgument
-from ...util.report import summary
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -52,6 +47,13 @@ class XSLTCommand(MatchCommand):
                 xslt: str,
                 parent: str | None = None
         ) -> None:
+            import concurrent.futures
+
+            from lxml import etree
+
+            from ...libvirt.runner import RunnerResult, run_entity_method, run_sub_entity_method
+            from ...util.report import summary
+
             xform = etree.XSLT(etree.parse(xslt))
 
             with state.hypervisor as hv:

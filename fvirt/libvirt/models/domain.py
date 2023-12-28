@@ -15,7 +15,6 @@ from __future__ import annotations
 
 import logging
 
-from collections.abc import Mapping, Sequence
 from ipaddress import IPv4Address, IPv6Address
 from typing import Annotated, Final, Literal, Self
 from uuid import UUID
@@ -405,11 +404,11 @@ class OSContainerBootInfo(_BaseOSInfo):
     init: FilePath = Field(
         description='Absolute path within the container to the init process for the container.',
     )
-    initargs: Sequence[str] = Field(
+    initargs: list[str] = Field(
         default_factory=list,
         description='List of arguments to pass to the init process on startup.',
     )
-    initenv: Mapping[NonEmptyString, str | int | float] = Field(
+    initenv: dict[NonEmptyString, str | int | float] = Field(
         default_factory=dict,
         description='Mapping of environment variables to use when launching the init process.',
     )
@@ -464,7 +463,7 @@ class ClockTimerInfo(Model):
 
 class _BaseClock(Model):
     '''Shared fields for all clock configurations.'''
-    timers: Sequence[ClockTimerInfo] = Field(
+    timers: list[ClockTimerInfo] = Field(
         default_factory=list,
         description='A list of clock timer configuration items.',
     )
@@ -803,7 +802,7 @@ class FeaturesCapabilities(Model):
     policy: Literal['default', 'allow', 'deny'] = Field(
         description='Specify the default policy for domain capabilities.',
     )
-    modify: Mapping[NonEmptyString, V_OnOff] = Field(
+    modify: dict[NonEmptyString, V_OnOff] = Field(
         default_factory=dict,
         description='Specify individual overrides for the default policy. Keys should be capability names, values should indicate whether that ' +
                     'capability will be enabled for the domain or not. If not specified or left empty, the default policy will be followed for ' +
@@ -1438,7 +1437,7 @@ GraphicsListener = Annotated[AddressGraphicsListener | NetworkGraphicsListener |
 
 class _RemoteGraphics(Model):
     '''Base model for graphics output interfaces that utilizes a remote connection.'''
-    listeners: Sequence[GraphicsListener] = Field(
+    listeners: list[GraphicsListener] = Field(
         default_factory=list,
         description='A list of listeners for the device.',
     )
@@ -1531,7 +1530,7 @@ class SPICEGraphics(_RemoteGraphics, _KeymapGraphicsMixin):
         default=None,
         description='The default channel security policy. If not specified, the hypervisor default will be used.',
     )
-    channels: Mapping[str, Literal['secure', 'insecure']] = Field(
+    channels: dict[str, Literal['secure', 'insecure']] = Field(
         default_factory=dict,
         description='Overrides for the defaault channel policy. Keys are channel names, ' +
                     'while each value is the security policy for the associated channel.',
@@ -1849,7 +1848,7 @@ class EmulatedTPM(_BaseTPM):
         default=False,
         description='Whether the TPM state should be kept or not when a transient domain is powered off.',
     )
-    active_pcr_banks: Sequence[Annotated[str, Field(min_length=1)]] = Field(
+    active_pcr_banks: list[Annotated[str, Field(min_length=1)]] = Field(
         default_factory=list,
         description='A list of PCR banks to activate on VM startup. If not specified, active PCR banks will not be modified on startup. ' +
                     'Duplicate entries in this list will be removed automatically.',
@@ -1873,55 +1872,55 @@ class SimpleDevice(Model):
 
 class Devices(Model):
     '''Model representing device configuration for a domain.'''
-    controllers: Sequence[ControllerDevice] = Field(
+    controllers: list[ControllerDevice] = Field(
         default_factory=list,
         description='A list of controller devices for the domain.',
     )
-    disks: Sequence[DiskDevice] = Field(
+    disks: list[DiskDevice] = Field(
         default_factory=list,
         description='A list of disk devices for the domain.',
     )
-    fs: Sequence[Filesystem] = Field(
+    fs: list[Filesystem] = Field(
         default_factory=list,
         description='A list of filesystems for the domain.',
     )
-    net: Sequence[NetworkInterface] = Field(
+    net: list[NetworkInterface] = Field(
         default_factory=list,
         description='A list of network interfaces for the domain.',
     )
-    input: Sequence[InputDevice] = Field(
+    input: list[InputDevice] = Field(
         default_factory=list,
         description='A list of input devices for the domain.',
     )
-    graphics: Sequence[GraphicsDevice] = Field(
+    graphics: list[GraphicsDevice] = Field(
         default_factory=list,
         description='A list of graphics output devices for the domain.',
     )
-    video: Sequence[VideoDevice] = Field(
+    video: list[VideoDevice] = Field(
         default_factory=list,
         description='A list of GPU devices for the domain.',
     )
-    chardev: Sequence[CharacterDevice] = Field(
+    chardev: list[CharacterDevice] = Field(
         default_factory=list,
         description='A list of character devices for the domain.',
     )
-    watchdog: Sequence[WatchdogDevice] = Field(
+    watchdog: list[WatchdogDevice] = Field(
         default_factory=list,
         description='A list of watchdog devices for the domain.',
     )
-    rng: Sequence[RNGDevice] = Field(
+    rng: list[RNGDevice] = Field(
         default_factory=list,
         description='A list of RNG devices for the domain.',
     )
-    tpm: Sequence[TPMDevice] = Field(
+    tpm: list[TPMDevice] = Field(
         default_factory=list,
         description='A list of TPM devices for the domain.',
     )
-    memballoon: Sequence[SimpleDevice] = Field(
+    memballoon: list[SimpleDevice] = Field(
         default_factory=list,
         description='A list of memory balloon devices for the domain.',
     )
-    panic: Sequence[SimpleDevice] = Field(
+    panic: list[SimpleDevice] = Field(
         default_factory=list,
         description='A list of crash notifier devices for the domain.',
     )

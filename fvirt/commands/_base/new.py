@@ -5,7 +5,6 @@
 
 from __future__ import annotations
 
-import json
 import logging
 
 from textwrap import dedent
@@ -13,39 +12,39 @@ from typing import TYPE_CHECKING, Any, Final, Self
 
 import click
 
-from lxml import etree
-from ruamel.yaml import YAML
-
 from .command import Command
 from .exitcode import ExitCode
 from .objects import is_object_mixin
-from ...libvirt import Hypervisor, InvalidConfig
-from ...libvirt.entity import Entity
-from ...util.report import summary
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
     from .state import State
+    from ...libvirt import Hypervisor
+    from ...libvirt.entity import Entity
 
 LOGGER: Final = logging.getLogger(__name__)
 
-yaml = YAML()
-yaml.indent(sequence=4, offset=2)
-yaml.default_flow_style = False
-
 
 def _read_xml_file(path: str) -> str:
+    from lxml import etree
+
     with click.open_file(path, mode='r') as f:
         return etree.tostring(etree.fromstring(f.read()), encoding='unicode')
 
 
 def _read_json_file(path: str) -> Any:
+    import json
+
     with click.open_file(path, mode='r') as f:
         return json.load(f)
 
 
 def _read_yaml_file(path: str) -> Any:
+    from ruamel.yaml import YAML
+
+    yaml = YAML(typ='safe')
+
     with click.open_file(path, mode='r') as f:
         return yaml.load(f)
 
@@ -77,6 +76,9 @@ class NewCommand(Command):
             template: str | None = None,
             **kwargs: Any,
         ) -> None:
+            from ...libvirt import InvalidConfig
+            from ...util.report import summary
+
             assert is_object_mixin(self)
 
             success = 0
@@ -197,6 +199,9 @@ class NewCommand(Command):
         All specified configuration files will be read before attempting
         to create any { self.NAME }s. Thus, if any configuration file is
         invalid, no { self.NAME }s will be create.
+
+        No matter how many configurations are specified, this command
+        will always create the new { self.NAME }s one at a time.
 
         If more than one { self.NAME } is requested to be defined, a failure
         creating any { self.NAME } will result in a non-zero exit code even if

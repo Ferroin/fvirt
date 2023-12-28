@@ -5,7 +5,6 @@
 
 from __future__ import annotations
 
-import json
 import logging
 import sys
 
@@ -13,22 +12,11 @@ from typing import TYPE_CHECKING, Final, cast
 
 import click
 
-from pydantic import BaseModel
-from ruamel.yaml import YAML
-
 from ._base.command import Command
-from ._base.config import FVirtConfig
 from ._base.exitcode import ExitCode
-from ..libvirt.models.domain import DomainInfo
-from ..libvirt.models.storage_pool import PoolInfo
-from ..libvirt.models.volume import VolumeInfo
 
 if TYPE_CHECKING:
     from ._base.state import State
-
-yaml: Final = YAML()
-yaml.indent(sequence=4, offset=2)
-yaml.default_flow_style = False
 
 LOGGER: Final = logging.getLogger(__name__)
 HELP: Final = '''
@@ -42,24 +30,6 @@ The schema to be displayed should be specified using the SCHEMA
 argument. Specifying ‘list’ will list the recognized schemas instead
 of displaying a specific schema.
 '''.lstrip().rstrip()
-MODEL_MAP: Final = {
-    'config': (
-        'Schema for fvirt configuration files.',
-        FVirtConfig,
-    ),
-    'domain': (
-        'Schema for fvirt domain templates.',
-        DomainInfo,
-    ),
-    'pool': (
-        'Schema for fvirt storage pool templates.',
-        PoolInfo,
-    ),
-    'volume': (
-        'Schema for fvirt volume templates.',
-        VolumeInfo,
-    ),
-}
 
 
 def cb(
@@ -68,6 +38,32 @@ def cb(
     fmt: str,
     name: str,
 ) -> None:
+    from pydantic import BaseModel
+
+    from ._base.config import FVirtConfig
+    from ..libvirt.models.domain import DomainInfo
+    from ..libvirt.models.storage_pool import PoolInfo
+    from ..libvirt.models.volume import VolumeInfo
+
+    MODEL_MAP: Final = {
+        'config': (
+            'Schema for fvirt configuration files.',
+            FVirtConfig,
+        ),
+        'domain': (
+            'Schema for fvirt domain templates.',
+            DomainInfo,
+        ),
+        'pool': (
+            'Schema for fvirt storage pool templates.',
+            PoolInfo,
+        ),
+        'volume': (
+            'Schema for fvirt volume templates.',
+            VolumeInfo,
+        ),
+    }
+
     match name:
         case 'list':
             click.echo('The following schemas are recognized:')
@@ -84,13 +80,22 @@ def cb(
 
     match fmt:
         case 'json-compact':
+            import json
+
             json.dump(schema, sys.stdout, sort_keys=True)
             ctx.exit(ExitCode.SUCCESS)
         case 'json':
+            import json
+
             json.dump(schema, sys.stdout, indent=4, sort_keys=True)
             sys.stdout.write('\n')
             ctx.exit(ExitCode.SUCCESS)
         case 'yaml':
+            from ruamel.yaml import YAML
+
+            yaml: Final = YAML()
+            yaml.indent(sequence=4, offset=2)
+            yaml.default_flow_style = False
             yaml.dump(schema, sys.stdout)
             ctx.exit(ExitCode.SUCCESS)
         case _:

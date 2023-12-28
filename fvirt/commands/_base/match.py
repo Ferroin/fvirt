@@ -12,12 +12,9 @@ from typing import TYPE_CHECKING, Any, Concatenate, Final, ParamSpec, Self, Type
 
 import click
 
-from lxml import etree
-
 from .command import Command
 from .exitcode import ExitCode
 from .objects import ObjectMixin, is_object_mixin
-from ...libvirt.entity import Entity
 from ...util.match import MatchAlias, MatchArgument, MatchTarget
 
 if TYPE_CHECKING:
@@ -25,6 +22,7 @@ if TYPE_CHECKING:
 
     from .state import State
     from ...libvirt import Hypervisor
+    from ...libvirt.entity import Entity
 
 P = ParamSpec('P')
 T = TypeVar('T')
@@ -52,6 +50,8 @@ def MatchTargetParam(aliases: Mapping[str, MatchAlias]) -> Type[click.ParamType]
                 if value in aliases:
                     ret = MatchTarget(property=aliases[value].property)
                 else:
+                    from lxml import etree
+
                     ret = MatchTarget(xpath=etree.XPath(value, smart_strings=False))
             else:
                 ret = value

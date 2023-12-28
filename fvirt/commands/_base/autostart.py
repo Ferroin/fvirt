@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import logging
 
-from collections.abc import Sequence
 from textwrap import dedent
 from typing import TYPE_CHECKING, Final, Self, cast
 
@@ -16,9 +15,6 @@ import click
 from .exitcode import ExitCode
 from .match import MatchArgument, MatchCommand, get_match_or_entity
 from .objects import is_object_mixin
-from ...libvirt import InsufficientPrivileges
-from ...libvirt.entity import RunnableEntity
-from ...util.report import summary
 
 if TYPE_CHECKING:
     from .state import State
@@ -47,7 +43,20 @@ class AutostartCommand(MatchCommand):
             ),
         )
 
-        def cb(ctx: click.Context, state: State, /, match: MatchArgument, entity: str | None, enable: bool) -> None:
+        def cb(
+            ctx: click.Context,
+            state: State,
+            /,
+            match: MatchArgument,
+            entity: str | None,
+            enable: bool
+        ) -> None:
+            from collections.abc import Sequence
+
+            from ...libvirt.entity import RunnableEntity
+            from ...libvirt.exceptions import InsufficientPrivileges
+            from ...util.report import summary
+
             with state.hypervisor as hv:
                 entities = cast(Sequence[RunnableEntity], get_match_or_entity(
                     obj=self,

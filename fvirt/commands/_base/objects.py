@@ -14,13 +14,12 @@ from typing import TYPE_CHECKING, Any, Final, Self, Type, TypeGuard, cast
 import click
 
 from .exitcode import ExitCode
-from ...libvirt.entity import Entity
-from ...libvirt.entity_access import EntityAccess
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Mapping, Sequence
 
     from ...libvirt import Hypervisor
+    from ...libvirt.entity import Entity
     from ...util.match import MatchArgument
 
 LOGGER: Final = logging.getLogger(__name__)
@@ -160,6 +159,9 @@ class ObjectMixin(ABC):
 
     def get_entity(self: Self, ctx: click.Context, parent: Entity | Hypervisor, ident: Any) -> Entity:
         '''Look up an entity based on an identifier.'''
+        from ...libvirt.entity import Entity
+        from ...libvirt.entity_access import EntityAccess
+
         entity = cast(EntityAccess[Entity], getattr(parent, self.LOOKUP_ATTR)).get(ident)
 
         if entity is None:
@@ -170,6 +172,9 @@ class ObjectMixin(ABC):
 
     def get_parent_obj(self: Self, ctx: click.Context, hv: Hypervisor, parent_ident: Any) -> Entity:
         '''Look up the parent object.'''
+        from ...libvirt.entity import Entity
+        from ...libvirt.entity_access import EntityAccess
+
         if self.PARENT_ATTR is None or self.PARENT_NAME is None:
             raise RuntimeError
 
@@ -189,6 +194,8 @@ class ObjectMixin(ABC):
 
     def match_entities(self: Self, ctx: click.Context, parent: Entity | Hypervisor, match: MatchArgument) -> Iterable[Entity]:
         '''Match a set of entities.'''
+        from ...libvirt.entity_access import EntityAccess
+
         return cast(EntityAccess, getattr(parent, self.LOOKUP_ATTR)).match(match)
 
     def match_sub_entities(self: Self, ctx: click.Context, hv: Hypervisor, parent_ident: Any, match: MatchArgument) -> Iterable[Entity]:

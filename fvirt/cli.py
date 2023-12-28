@@ -120,13 +120,11 @@ can be viewed by running 'fvirt schema config'.
 '''.lstrip().rstrip()
 
 FVIRT_HELP = '''
-A lightweight frontend for libvirt.
+A command-line frontend for libvirt.
 
-Most commands are grouped by the type of libvirt object they
-operate on.
+Most commands are grouped by the type of libvirt object they operate on.
 
-For more information about a specific command, run that `fvirt
-help COMMAND`.
+For more information about a specific command, run `fvirt help COMMAND`.
 '''.lstrip().rstrip()
 
 

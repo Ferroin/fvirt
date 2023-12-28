@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Self, Type
 from .._base.objects import DisplayProperty, ObjectMixin
 from .._base.tables import color_bool, color_optional
 from .._base.terminal import get_terminal
-from ...libvirt import StoragePool, StoragePoolState
+from ...libvirt.storage_pool import StoragePool, StoragePoolState
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence

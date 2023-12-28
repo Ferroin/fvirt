@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Self, Type
 
 from .._base.objects import DisplayProperty, ObjectMixin
 from .._base.tables import color_optional
-from ...libvirt import Volume
+from ...libvirt.volume import Volume
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence

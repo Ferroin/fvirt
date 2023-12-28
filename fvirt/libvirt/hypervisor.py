@@ -6,7 +6,6 @@
 from __future__ import annotations
 
 import logging
-import threading
 
 from types import TracebackType
 from typing import TYPE_CHECKING, Any, Final, Self, cast
@@ -164,6 +163,8 @@ class Hypervisor:
        The underlying libvirt APIs are all concurrent-access safe
        irrespective of the concurrency model in use.'''
     def __init__(self: Self, /, hvuri: URI, *, read_only: bool = False) -> None:
+        import threading
+
         from .domain import DomainAccess
         from .storage_pool import StoragePoolAccess
 
