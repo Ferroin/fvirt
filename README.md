@@ -1,8 +1,8 @@
-# fvirt - A lightweight CLI frontend for libvirt.
+# fvirt - A command-line frontend for libvirt.
 
-fvirt is a minimalistic CLI frontend for libvirt that is intended to
-fill a similar role to the `virsh` frontend, but be more human-friendly
-and require less scripting to cover some very common use cases.
+fvirt is a command-line frontend for libvirt that is intended to fill
+a similar role to the `virsh` frontend, but be more human-friendly and
+require less scripting to cover some very common use cases.
 
 It also includes enhanced Python bindings for the libvirt API that wrap
 the low-level official bindings in a more Pythonic manner, making it
@@ -49,7 +49,8 @@ over the official bindings for Python, including:
 
 - Hypervisor connections support the context manager protocol.
 - Hypervisor objects provide iterator and mapping access to objects like
-  domains and storage pools, including automatic connection management.
+  domains and storage pools, including reference-counted automatic
+  connection management.
 - Storage pools provide iterator and mapping access to their volumes.
 - Object states are enumerables (like they are in the C API) instead
   of a somewhat opaque list of integer constants (like they are in
@@ -86,16 +87,20 @@ not a priority at the moment.
 
 fvirt is packaged on the Python Package Index with the package name
 `fvirt`. It can be easily installed using any Python packag emanagement
-tool that works with pypi.
+tool that works with pypi. As usual with Python packages, use of a
+virtual environment is highly recommended.
 
 The actual CLI tool is installed as a script with the name `fvirt`.
 
+fvirt requires Python 3.11 or newer, and installation will also usually
+require the tools needed to build the libvirt-python package.
+
 ## Contributing
 
-fvirt is developed using [Poetry](https://python-poetry.org/). Assuming
-you have Poetry installed and have cloned the repository, you can set
-up almost everything that’s needed for development by running `poetry
-install --all-extras`
+fvirt's dependencies are managed using [Poetry](https://python-poetry.org/).
+Assuming you have Poetry installed and have cloned the repository, you
+can set up almost everything that’s needed for development by running
+`poetry install --all-extras`
 
 In addition to the Python dependencies, a number of tests in our test
 suite require additional tooling, specifically a usable local install
@@ -103,14 +108,9 @@ of libvirt (including `virtqemud`) and a working install of QEMU’s
 full system emulation tooling. Full details can be found in the
 `README.md` file in the `tests` directory of the repository.
 
-## Why not just contribute to libvirt/virsh?
+## Licensing
 
-For one, I’m not a C developer, and I recognize that it would have
-taken me far longer to add much of this functionality to virsh than it
-took me to implement it as a Python CLI tool.
-
-Secondarily, I’m not confident that a number of things that fvirt
-does would have actually been accepted into virsh, especially the XPath
-and XSLT related bits. virsh was always intended primarily as an example
-application and testing tool, not a primary user interface for libvirt,
-and that limits what they end up including.
+fvirt is licensed under a modified version of the MIT license commonly
+known as the ‘MIT +no-false-attribs license'. This license is a free
+software license and is GPL compatible, but is not formally FSF or
+OSI approved.
