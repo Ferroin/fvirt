@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Final
+from typing import Final, Literal
 
 import click
 
@@ -136,7 +136,7 @@ def cb(
     fail_if_no_match: bool | None,
     units: str | None,
     jobs: int | None,
-    log_level: str | None,
+    log_level: Literal['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'] | None,
     config_file: Path | None,
 ) -> None:
     ctx.obj = State(

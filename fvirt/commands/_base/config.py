@@ -39,6 +39,10 @@ class LoggingConfig(BaseModel):
         default='WARNING',
         description='The log level to use when logging.',
     )
+    full_log_output: bool = Field(
+        default=False,
+        description='If true, produce full logging output on stderr even if running interactively.',
+    )
 
 
 class RuntimeConfig(BaseModel):
