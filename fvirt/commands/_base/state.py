@@ -11,9 +11,9 @@ import os
 import sys
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Final, Self, TypeVar, cast
+from typing import TYPE_CHECKING, Final, Literal, Self, TypeVar, cast
 
-from .config import FVirtConfig, get_config
+from .config import FVirtConfig, LoggingConfig, get_config
 
 if TYPE_CHECKING:
     import threading
@@ -38,34 +38,35 @@ if hasattr(os, 'sched_getaffinity') and os.sched_getaffinity(0):
     DEFAULT_JOB_COUNT = min(DEFAULT_MAX_JOBS, len(os.sched_getaffinity(0)) + 4)
 
 
-def _configure_logging(level: str) -> None:
-    if sys.stderr.isatty():
-        formatter = {
-            'format': '%(message)s',
-        }
+def _configure_logging(config: LoggingConfig) -> None:
+    if sys.stderr.isatty() and not config.full_log_output:
+        stderr_formatter = 'stderr'
     else:
-        formatter = {
-            'format': '%(asctime)s : %(levelname)s : %(name)s : %(message)s',
-        }
+        stderr_formatter = 'full'
 
     logging.config.dictConfig({
         'version': 1,
         'formatters': {
-            'basic': formatter,
+            'stderr': {
+                'format': '%(message)s',
+            },
+            'full': {
+                'format': '%(asctime)s : %(levelname)s : %(name)s : %(message)s',
+            },
         },
         'handlers': {
-            'main': {
+            'stderr': {
                 'class': 'logging.StreamHandler',
                 'stream': sys.stderr,
-                'formatter': 'basic',
-                'level': level,
+                'formatter': stderr_formatter,
+                'level': config.level,
             },
         },
         'root': {
             'handlers': [
-                'main',
+                'stderr',
             ],
-            'level': level,
+            'level': config.level,
         },
         'disable_existing_loggers': False,
     })
@@ -109,7 +110,7 @@ class State:
         fail_if_no_match: bool | None,
         units: str | None,
         jobs: int | None,
-        log_level: str | None,
+        log_level: Literal['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'] | None,
     ) -> None:
         if jobs == 0:
             jobs = DEFAULT_JOB_COUNT
@@ -119,10 +120,10 @@ class State:
 
         self.__config = get_config(config_file)
 
-        if log_level is None:
-            log_level = self.config.log.level
+        if log_level is not None:
+            self.config.log.level = log_level
 
-        _configure_logging(log_level)
+        _configure_logging(self.config.log)
 
         self.__uri = uri
         LOGGER.info(f'Using libvirt URI: {uri}')
