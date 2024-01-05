@@ -25,11 +25,11 @@ frozendict = "^2.3.10"
 jinja2 = "^3.1.2"
 libvirt-python = "^9.10.0"
 lxml = ">=4.9.4,<6.0.0"
+platformdirs = "^4.1.0"
 psutil = "^5.9.7"
 pydantic = "^2.5.3"
 pydantic-extra-types = "^2.2.0"
 ruamel-yaml = "^0.18.5"
-platformdirs = "^4.1.0"
 
 [tool.poetry.group.dev.dependencies]
 bandit = "^1.7.6"
