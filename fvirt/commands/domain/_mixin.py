@@ -5,7 +5,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Self, Type
+from typing import TYPE_CHECKING, Final, Self, Type
 
 from .._base.objects import DisplayProperty, ObjectMixin
 from .._base.tables import color_bool, color_optional
@@ -43,6 +43,106 @@ def format_id(value: int) -> str:
         return str(value)
 
 
+_DISPLAY_PROPERTIES: Final = {
+    'name': DisplayProperty(
+        title='Name',
+        name='Name',
+        prop='name'
+    ),
+    'uuid': DisplayProperty(
+        title='UUID',
+        name='UUID',
+        prop='uuid',
+    ),
+    'genid': DisplayProperty(
+        title='GenID',
+        name='Generation ID',
+        prop='genid',
+        color=color_optional,
+    ),
+    'id': DisplayProperty(
+        title='ID',
+        name='Domain ID',
+        prop='id',
+        right_align=True,
+        color=format_id,
+    ),
+    'state': DisplayProperty(
+        title='State',
+        name='State',
+        prop='state',
+        color=color_state,
+    ),
+    'persistent': DisplayProperty(
+        title='Persistent',
+        name='Persistent',
+        prop='persistent',
+        color=color_bool,
+    ),
+    'autostart': DisplayProperty(
+        title='Autostart',
+        name='Autostart',
+        prop='autostart',
+        color=color_bool,
+    ),
+    'managed-save': DisplayProperty(
+        title='Managed Save',
+        name='Has Managed Save',
+        prop='has_managed_save',
+        color=color_bool,
+    ),
+    'current-snapshot': DisplayProperty(
+        title='Current Snapshot',
+        name='Has Current Snapshot',
+        prop='has_current_snapshot',
+        color=color_bool,
+    ),
+    'osType': DisplayProperty(
+        title='OS Type',
+        name='Guest OS Type',
+        prop='os_type',
+        color=color_optional,
+    ),
+    'osArch': DisplayProperty(
+        title='Architecture',
+        name='Guest CPU Architecture',
+        prop='os_arch',
+        color=color_optional,
+    ),
+    'osMachine': DisplayProperty(
+        title='Machine',
+        name='Guest Machine Type',
+        prop='os_machine',
+        color=color_optional,
+    ),
+    'emulator': DisplayProperty(
+        title='Emulator',
+        name='Emulator Binary',
+        prop='emulator',
+        color=color_optional,
+    ),
+    'vcpus': DisplayProperty(
+        title='vCPUs',
+        name='Current Virtual CPUs',
+        prop='current_cpus',
+        color=color_optional,
+    ),
+    'mem': DisplayProperty(
+        title='Memory',
+        name='Current Memory',
+        prop='current_memory',
+        use_units=True,
+        color=color_optional,
+    ),
+    'title': DisplayProperty(
+        title='Domain Title',
+        name='Domain Title',
+        prop='title',
+        color=color_optional,
+    ),
+}
+
+
 class DomainMixin(ObjectMixin):
     '''Mixin for commands that operate on domains.'''
     @property
@@ -65,104 +165,7 @@ class DomainMixin(ObjectMixin):
 
     @property
     def DISPLAY_PROPS(self: Self) -> Mapping[str, DisplayProperty]:
-        return {
-            'name': DisplayProperty(
-                title='Name',
-                name='Name',
-                prop='name'
-            ),
-            'uuid': DisplayProperty(
-                title='UUID',
-                name='UUID',
-                prop='uuid',
-            ),
-            'genid': DisplayProperty(
-                title='GenID',
-                name='Generation ID',
-                prop='genid',
-                color=color_optional,
-            ),
-            'id': DisplayProperty(
-                title='ID',
-                name='Domain ID',
-                prop='id',
-                right_align=True,
-                color=format_id,
-            ),
-            'state': DisplayProperty(
-                title='State',
-                name='State',
-                prop='state',
-                color=color_state,
-            ),
-            'persistent': DisplayProperty(
-                title='Persistent',
-                name='Persistent',
-                prop='persistent',
-                color=color_bool,
-            ),
-            'autostart': DisplayProperty(
-                title='Autostart',
-                name='Autostart',
-                prop='autostart',
-                color=color_bool,
-            ),
-            'managed-save': DisplayProperty(
-                title='Managed Save',
-                name='Has Managed Save',
-                prop='has_managed_save',
-                color=color_bool,
-            ),
-            'current-snapshot': DisplayProperty(
-                title='Current Snapshot',
-                name='Has Current Snapshot',
-                prop='has_current_snapshot',
-                color=color_bool,
-            ),
-            'osType': DisplayProperty(
-                title='OS Type',
-                name='Guest OS Type',
-                prop='os_type',
-                color=color_optional,
-            ),
-            'osArch': DisplayProperty(
-                title='Architecture',
-                name='Guest CPU Architecture',
-                prop='os_arch',
-                color=color_optional,
-            ),
-            'osMachine': DisplayProperty(
-                title='Machine',
-                name='Guest Machine Type',
-                prop='os_machine',
-                color=color_optional,
-            ),
-            'emulator': DisplayProperty(
-                title='Emulator',
-                name='Emulator Binary',
-                prop='emulator',
-                color=color_optional,
-            ),
-            'vcpus': DisplayProperty(
-                title='vCPUs',
-                name='Current Virtual CPUs',
-                prop='current_cpus',
-                color=color_optional,
-            ),
-            'mem': DisplayProperty(
-                title='Memory',
-                name='Current Memory',
-                prop='current_memory',
-                use_units=True,
-                color=color_optional,
-            ),
-            'title': DisplayProperty(
-                title='Domain Title',
-                name='Domain Title',
-                prop='title',
-                color=color_optional,
-            ),
-        }
+        return _DISPLAY_PROPERTIES
 
     @property
     def DEFAULT_COLUMNS(self: Self) -> Sequence[str]:
@@ -173,3 +176,6 @@ class DomainMixin(ObjectMixin):
             'persistent',
             'autostart',
         )
+
+    @property
+    def CONFIG_SECTION(self: Self) -> str: return 'domain'

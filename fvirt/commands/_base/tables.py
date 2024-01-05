@@ -33,8 +33,10 @@ def ColumnsParam(cols: Mapping[str, DisplayProperty], type_name: str, /) -> Type
     class ColumnsParam(click.ParamType):
         name = type_name
 
-        def convert(self: Self, value: str | list[str], param: Any, ctx: click.Context | None) -> list[str]:
-            if isinstance(value, str):
+        def convert(self: Self, value: str | list[str] | None, param: Any, ctx: click.Context | None) -> list[str] | None:
+            if value is None:
+                return None
+            elif isinstance(value, str):
                 if value == 'list':
                     return ['list']
                 elif value == 'all':
