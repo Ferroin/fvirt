@@ -8,13 +8,20 @@ from __future__ import annotations
 import functools
 import logging
 
-from typing import TYPE_CHECKING, Annotated, ClassVar, Final, Literal
+from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Final, Literal, Self, TypeVar
 
 from platformdirs import PlatformDirs
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..domain._mixin import _DISPLAY_PROPERTIES as DOMAIN_DISPLAY_PROPS
+from ..pool._mixin import _DISPLAY_PROPERTIES as POOL_DISPLAY_PROPS
+from ..volume._mixin import _DISPLAY_PROPERTIES as VOLUME_DISPLAY_PROPS
+from ...util.overlay import Overlay
+
 if TYPE_CHECKING:
     from pathlib import Path
+
+    from ...libvirt.uri import URI
 
 LOGGER: Final = logging.getLogger(__name__)
 MODEL_CONFIG: Final = ConfigDict(
@@ -29,6 +36,7 @@ CONFIG_PATHS: Final = tuple(
     [DIRS.user_config_path / x for x in CONFIG_NAMES] +
     [DIRS.site_config_path / x for x in CONFIG_NAMES]
 )
+T = TypeVar('T')
 
 
 class LoggingConfig(BaseModel):
@@ -42,6 +50,36 @@ class LoggingConfig(BaseModel):
     full_log_output: bool = Field(
         default=False,
         description='If true, produce full logging output on stderr even if running interactively.',
+    )
+
+
+class DomainConfig(BaseModel):
+    '''Configuration for domain sub-commands.'''
+    model_config: ClassVar = MODEL_CONFIG
+
+    default_list_columns: list[Annotated[str, Field(pattern=f'^({"|".join(DOMAIN_DISPLAY_PROPS.keys())})$')]] | None = Field(
+        default=None,
+        description='Specifies the default to use for domain list commands. If empty, the internal default is used.',
+    )
+
+
+class PoolConfig(BaseModel):
+    '''Configuration for pool sub-commands.'''
+    model_config: ClassVar = MODEL_CONFIG
+
+    default_list_columns: list[Annotated[str, Field(pattern=f'^({"|".join(POOL_DISPLAY_PROPS.keys())})$')]] | None = Field(
+        default=None,
+        description='Specifies the default columns to use for pool list commands. If empty, the internal default is used.',
+    )
+
+
+class VolumeConfig(BaseModel):
+    '''Configuration for volume sub-commands.'''
+    model_config: ClassVar = MODEL_CONFIG
+
+    default_list_columns: list[Annotated[str, Field(pattern=f'^({"|".join(VOLUME_DISPLAY_PROPS.keys())})$')]] | None = Field(
+        default=None,
+        description='Specifies the default columns to use for volume list commands. If empty, the internal default is used.',
     )
 
 
@@ -69,6 +107,18 @@ class RuntimeConfig(BaseModel):
         default=None,
         description='Specify the default number of jobs to use when executing operations in parallel.',
     )
+    domain: DomainConfig = Field(
+        default_factory=DomainConfig,
+        description='Configuration for domain sub-commands.',
+    )
+    pool: PoolConfig = Field(
+        default_factory=PoolConfig,
+        description='Configuration for pool sub-commands.',
+    )
+    volume: VolumeConfig = Field(
+        default_factory=VolumeConfig,
+        description='Configuration for volume sub-commands.',
+    )
 
 
 class FVirtConfig(BaseModel):
@@ -87,6 +137,19 @@ class FVirtConfig(BaseModel):
         default_factory=dict,
         description='Specifies per-URI overrides for the default runtime configuration.',
     )
+
+    def __init__(self: Self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self._effective: dict[URI, RuntimeConfig] = dict()
+
+    def get_effective_config(self: Self, uri: URI) -> RuntimeConfig:
+        if uri not in self._effective:
+            self._effective[uri] = RuntimeConfig(**Overlay(
+                self.uris.get(str(uri), RuntimeConfig()).model_dump(),
+                self.defaults.model_dump(),
+            ))
+
+        return self._effective[uri]
 
 
 @functools.cache

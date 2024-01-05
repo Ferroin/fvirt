@@ -76,11 +76,7 @@ def _effective(config: FVirtConfig, uri: URI, key: str, override: T | None, defa
     if override is not None:
         return override
 
-    if str(uri) in config.uris:
-        if (v := getattr(config.uris[str(uri)], key, None)) is not None:
-            return cast(T, v)
-
-    if (v := getattr(config.defaults, key, None)) is not None:
+    if (v := getattr(config.get_effective_config(uri), key, None)) is not None:
         return cast(T, v)
 
     return default
