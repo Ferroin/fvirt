@@ -49,11 +49,22 @@ class FileTransferCommand(Command):
             target: Path,
             entity: str,
             parent: str | None = None,
-            sparse: bool = False,
+            sparse: bool | None = None,
             **kwargs: Any,
         ) -> None:
             transfer_args = {k: v for k, v in kwargs.items()}
-            transfer_args['sparse'] = sparse
+
+            if support_sparse and sparse is None:
+                section = state.get_config_section(self.CONFIG_SECTION)
+
+                assert section is not None
+
+                sparse = False
+
+                if hasattr(section, 'sparse_transfer') and section.sparse_transfer is not None:
+                    sparse = section.sparse_transfer
+
+                transfer_args['sparse'] = sparse
 
             if require_file:
                 if not target.exists():
@@ -106,9 +117,8 @@ class FileTransferCommand(Command):
 
         if support_sparse:
             params += (click.Option(
-                param_decls=('--sparse',),
-                is_flag=True,
-                default=False,
+                param_decls=('--sparse/--no-sparse',),
+                default=None,
                 help='Skip holes when transferring data.',
             ),)
 

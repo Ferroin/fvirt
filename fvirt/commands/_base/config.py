@@ -81,6 +81,10 @@ class VolumeConfig(BaseModel):
         default=None,
         description='Specifies the default columns to use for volume list commands. If empty, the internal default is used.',
     )
+    sparse_transfer: bool | None = Field(
+        default=None,
+        description='Specifies whether to use sparse mode by default when uploading or aodnloading a volume. If empty, the internal default is used.',
+    )
 
 
 ConfigSection = DomainConfig | PoolConfig | VolumeConfig
