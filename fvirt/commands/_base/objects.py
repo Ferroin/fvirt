@@ -120,6 +120,12 @@ class ObjectMixin(ABC):
         return {x for x in self.DISPLAY_PROPS.keys() if x in {'name', 'uuid', 'id', 'key'}}
 
     @property
+    @abstractmethod
+    def CONFIG_SECTION(self: Self) -> str:
+        '''Specifies the name of the configuration section for the entity.'''
+        return NotImplemented
+
+    @property
     def PARENT_ATTR(self: Self) -> str | None:
         '''Specifies the name of the EntityAccess attribute needed to look up a parent.'''
         return None  # pragma: no cover

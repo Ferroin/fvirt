@@ -83,6 +83,9 @@ class VolumeConfig(BaseModel):
     )
 
 
+ConfigSection = DomainConfig | PoolConfig | VolumeConfig
+
+
 class RuntimeConfig(BaseModel):
     '''Configuration for runtime behavior of fvirt.'''
     model_config: ClassVar = MODEL_CONFIG

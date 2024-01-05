@@ -5,7 +5,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Self, Type
+from typing import TYPE_CHECKING, Final, Self, Type
 
 from .._base.objects import DisplayProperty, ObjectMixin
 from .._base.tables import color_bool, color_optional
@@ -33,6 +33,99 @@ def color_state(value: StoragePoolState) -> str:
     raise RuntimeError  # Needed because mypy thinks the above case statement is non-exhaustive.
 
 
+_DISPLAY_PROPERTIES: Final = {
+    'name': DisplayProperty(
+        title='Name',
+        name='Name',
+        prop='name',
+    ),
+    'uuid': DisplayProperty(
+        title='UUID',
+        name='UUID',
+        prop='uuid',
+    ),
+    'state': DisplayProperty(
+        title='State',
+        name='state',
+        prop='state',
+        color=color_state,
+    ),
+    'persistent': DisplayProperty(
+        title='Persistent',
+        name='Persistent',
+        prop='persistent',
+        color=color_bool,
+    ),
+    'autostart': DisplayProperty(
+        title='Autostart',
+        name='Autostart',
+        prop='autostart',
+        color=color_bool,
+    ),
+    'type': DisplayProperty(
+        title='Type',
+        name='Pool Type',
+        prop='pool_type',
+        color=color_optional,
+    ),
+    'format': DisplayProperty(
+        title='Format',
+        name='Pool Format',
+        prop='format',
+        color=color_optional,
+    ),
+    'dir': DisplayProperty(
+        title='Directory',
+        name='Pool Directory',
+        prop='dir',
+        color=color_optional,
+    ),
+    'device': DisplayProperty(
+        title='Device',
+        name='Pool Device',
+        prop='device',
+        color=color_optional,
+    ),
+    'target': DisplayProperty(
+        title='Target',
+        name='Pool Target',
+        prop='target',
+        color=color_optional,
+    ),
+    'volumes': DisplayProperty(
+        title='Volumes',
+        name='Volumes',
+        prop='num_volumes',
+        right_align=True,
+        color=color_optional,
+    ),
+    'capacity': DisplayProperty(
+        title='Capacity',
+        name='Total Capacity',
+        prop='capacity',
+        right_align=True,
+        color=color_optional,
+        use_units=True,
+    ),
+    'allocated': DisplayProperty(
+        title='Allocated',
+        name='Allocated Space',
+        prop='allocated',
+        right_align=True,
+        color=color_optional,
+        use_units=True,
+    ),
+    'available': DisplayProperty(
+        title='Available',
+        name='Available Space',
+        prop='available',
+        right_align=True,
+        color=color_optional,
+        use_units=True,
+    ),
+}
+
+
 class StoragePoolMixin(ObjectMixin):
     '''Mixin for commands that operate on storage pools.'''
     @property
@@ -55,97 +148,7 @@ class StoragePoolMixin(ObjectMixin):
 
     @property
     def DISPLAY_PROPS(self: Self) -> Mapping[str, DisplayProperty]:
-        return {
-            'name': DisplayProperty(
-                title='Name',
-                name='Name',
-                prop='name',
-            ),
-            'uuid': DisplayProperty(
-                title='UUID',
-                name='UUID',
-                prop='uuid',
-            ),
-            'state': DisplayProperty(
-                title='State',
-                name='state',
-                prop='state',
-                color=color_state,
-            ),
-            'persistent': DisplayProperty(
-                title='Persistent',
-                name='Persistent',
-                prop='persistent',
-                color=color_bool,
-            ),
-            'autostart': DisplayProperty(
-                title='Autostart',
-                name='Autostart',
-                prop='autostart',
-                color=color_bool,
-            ),
-            'type': DisplayProperty(
-                title='Type',
-                name='Pool Type',
-                prop='pool_type',
-                color=color_optional,
-            ),
-            'format': DisplayProperty(
-                title='Format',
-                name='Pool Format',
-                prop='format',
-                color=color_optional,
-            ),
-            'dir': DisplayProperty(
-                title='Directory',
-                name='Pool Directory',
-                prop='dir',
-                color=color_optional,
-            ),
-            'device': DisplayProperty(
-                title='Device',
-                name='Pool Device',
-                prop='device',
-                color=color_optional,
-            ),
-            'target': DisplayProperty(
-                title='Target',
-                name='Pool Target',
-                prop='target',
-                color=color_optional,
-            ),
-            'volumes': DisplayProperty(
-                title='Volumes',
-                name='Volumes',
-                prop='num_volumes',
-                right_align=True,
-                color=color_optional,
-            ),
-            'capacity': DisplayProperty(
-                title='Capacity',
-                name='Total Capacity',
-                prop='capacity',
-                right_align=True,
-                color=color_optional,
-                use_units=True,
-            ),
-            'allocated': DisplayProperty(
-                title='Allocated',
-                name='Allocated Space',
-                prop='allocated',
-                right_align=True,
-                color=color_optional,
-                use_units=True,
-            ),
-            'available': DisplayProperty(
-                title='Available',
-                name='Available Space',
-                prop='available',
-                right_align=True,
-                color=color_optional,
-                use_units=True,
-            ),
-        }
+        return _DISPLAY_PROPERTIES
 
     @property
     def DEFAULT_COLUMNS(self: Self) -> Sequence[str]:
@@ -159,3 +162,6 @@ class StoragePoolMixin(ObjectMixin):
             'capacity',
             'available',
         )
+
+    @property
+    def CONFIG_SECTION(self: Self) -> str: return 'pool'

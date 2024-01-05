@@ -5,7 +5,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Self, Type
+from typing import TYPE_CHECKING, Final, Self, Type
 
 from .._base.objects import DisplayProperty, ObjectMixin
 from .._base.tables import color_optional
@@ -13,6 +13,49 @@ from ...libvirt.volume import Volume
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
+
+_DISPLAY_PROPERTIES: Final = {
+    'name': DisplayProperty(
+        title='Name',
+        name='Name',
+        prop='name',
+    ),
+    'key': DisplayProperty(
+        title='Key',
+        name='Key',
+        prop='key',
+    ),
+    'type': DisplayProperty(
+        title='Type',
+        name='Volume Type',
+        prop='vol_type',
+    ),
+    'format': DisplayProperty(
+        title='Format',
+        name='Volume Format',
+        prop='format',
+    ),
+    'path': DisplayProperty(
+        title='Path',
+        name='Volume Path',
+        prop='path',
+        color=color_optional,
+    ),
+    'capacity': DisplayProperty(
+        title='Capacity',
+        name='Total Capacity',
+        prop='capacity',
+        right_align=True,
+        use_units=True,
+    ),
+    'allocated': DisplayProperty(
+        title='Allocated',
+        name='Allocated Space',
+        prop='allocated',
+        right_align=True,
+        use_units=True,
+    ),
+}
 
 
 class VolumeMixin(ObjectMixin):
@@ -42,48 +85,7 @@ class VolumeMixin(ObjectMixin):
 
     @property
     def DISPLAY_PROPS(self: Self) -> Mapping[str, DisplayProperty]:
-        return {
-            'name': DisplayProperty(
-                title='Name',
-                name='Name',
-                prop='name',
-            ),
-            'key': DisplayProperty(
-                title='Key',
-                name='Key',
-                prop='key',
-            ),
-            'type': DisplayProperty(
-                title='Type',
-                name='Volume Type',
-                prop='vol_type',
-            ),
-            'format': DisplayProperty(
-                title='Format',
-                name='Volume Format',
-                prop='format',
-            ),
-            'path': DisplayProperty(
-                title='Path',
-                name='Volume Path',
-                prop='path',
-                color=color_optional,
-            ),
-            'capacity': DisplayProperty(
-                title='Capacity',
-                name='Total Capacity',
-                prop='capacity',
-                right_align=True,
-                use_units=True,
-            ),
-            'allocated': DisplayProperty(
-                title='Allocated',
-                name='Allocated Space',
-                prop='allocated',
-                right_align=True,
-                use_units=True,
-            ),
-        }
+        return _DISPLAY_PROPERTIES
 
     @property
     def DEFAULT_COLUMNS(self: Self) -> Sequence[str]:
@@ -92,3 +94,6 @@ class VolumeMixin(ObjectMixin):
             'path',
             'capacity',
         )
+
+    @property
+    def CONFIG_SECTION(self: Self) -> str: return 'volume'

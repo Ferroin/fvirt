@@ -13,7 +13,7 @@ import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, Final, Literal, Self, TypeVar, cast
 
-from .config import FVirtConfig, LoggingConfig, get_config
+from .config import ConfigSection, FVirtConfig, LoggingConfig, get_config
 
 if TYPE_CHECKING:
     import threading
@@ -228,3 +228,7 @@ class State:
         p = max(4 - digits, 0)
 
         return f'{v:z#.{p}F} {u}'
+
+    def get_config_section(self: Self, section: str) -> ConfigSection | None:
+        '''Return the specified section from the effective configuration.'''
+        return getattr(self.config.get_effective_config(self.uri), section, None)

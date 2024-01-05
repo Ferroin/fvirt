@@ -48,7 +48,7 @@ class ListCommand(MatchCommand):
                 type=ColumnsParam(self.DISPLAY_PROPS, f'{ self.NAME } columns')(),
                 nargs=1,
                 help=f'A comma separated list of columns to show when listing { self.NAME }s. Use `--columns list` to list recognized column names.',
-                default=self.DEFAULT_COLUMNS,
+                default=None,
             ),
             click.Option(
                 param_decls=('--only',),
@@ -68,7 +68,7 @@ class ListCommand(MatchCommand):
         def cb(
             ctx: click.Context,
             state: State,
-            selected: Sequence[str],
+            selected: Sequence[str] | None,
             only: str | None,
             no_headings: bool,
             match: MatchArgument | None,
@@ -77,6 +77,15 @@ class ListCommand(MatchCommand):
             if selected == ['list']:
                 click.echo(column_info(self.DISPLAY_PROPS, self.DEFAULT_COLUMNS))
                 ctx.exit(ExitCode.SUCCESS)
+            elif selected is None:
+                section = state.get_config_section(self.CONFIG_SECTION)
+
+                assert section is not None
+
+                selected = section.default_list_columns
+
+                if selected is None:
+                    selected = self.DEFAULT_COLUMNS
 
             with state.hypervisor as hv:
                 if self.HAS_PARENT:
