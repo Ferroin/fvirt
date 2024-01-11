@@ -47,7 +47,7 @@ class CustomBool:
 
     def __init__(self: Self, value: bool | str | CustomBool, /) -> None:
         if not self.TRUE_STR or not self.FALSE_STR:
-            raise NotImplementedError
+            raise NotImplementedError  # pragma: nocover
 
         match value:
             case bool():
@@ -144,7 +144,9 @@ class Timestamp:
        number of things in libvirt domain XML). Note that this handles
        naive datetime.datetime instnaces just like the underlying Python
        standard library does, so it is strongly recommended to use aware
-       datetime.datetime instances.
+       datetime.datetime instances. Strings passed to the constructor
+       will be assumed to represent the time in UTC if they don’t
+       include timezone information.
 
        Converting to an integer will produce an integral number of
        seconds since the epoch in UTC, truncating any microseconds.
@@ -160,6 +162,15 @@ class Timestamp:
        as keys in a dict, they are treated as equivalent to an aware
        datetime.datetime instance representing the same time in the
        UTC timezone.
+
+       Timestamps are comparable to each other, as well as to any type
+       accepted by the constructor and to floats. Comparisons
+       against numeric types are done by converting to the appropriate
+       type. Comparisons against other types are done by converting to
+       a Timestamp and comparing the internal representation. Equality
+       checks against ints or datetime.date instances, as well as any
+       comparisons against strings, may produce unexpected results and
+       should usually be avoided.
 
        This class provides the required machinery to be used with Pydantic.'''
     __slots__ = (
@@ -209,16 +220,16 @@ class Timestamp:
     def __eq__(self: Self, other: Any) -> bool:
         match other:
             case Timestamp():
-                return float(self) == float(other)
+                return self.datetime == other.datetime
             case float():
                 return float(self) == other
             case int():
                 return int(self) == other
-            case datetime.datetime():
-                return float(self) == other.timestamp()
+            case datetime.datetime() | datetime.date():
+                return self.datetime == Timestamp(other).datetime
             case str():
                 try:
-                    return self == Timestamp(other)
+                    return self.datetime == Timestamp(other).datetime
                 except ValueError:
                     return False
             case _:
@@ -227,11 +238,16 @@ class Timestamp:
     def __lt__(self: Self, other: Any) -> bool:
         match other:
             case Timestamp():
-                return float(self) < float(other)
+                return self.datetime < other.datetime
             case datetime.datetime() | datetime.date():
-                return self.datetime < other
+                return self.datetime < Timestamp(other).datetime
             case float() | int():
                 return float(self) < other
+            case str():
+                try:
+                    return self.datetime < Timestamp(other).datetime
+                except ValueError:
+                    return NotImplemented
             case _:
                 return NotImplemented
 
