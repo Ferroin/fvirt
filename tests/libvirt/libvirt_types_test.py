@@ -24,16 +24,40 @@ def test_custom_bools(t: type[CustomBool], true_str: str, false_str: str) -> Non
     assert not bool(t(false_str))
     assert bool(t(True))
     assert not bool(t(False))
+    assert bool(t(t(true_str)))
+    assert not bool(t(t(false_str)))
 
-    assert str(t(true_str)) == true_str
-    assert str(t(false_str)) == false_str
-    assert str(t(True)) == true_str
-    assert str(t(False)) == false_str
+    cb_t = t(True)
+    cb_f = t(False)
 
-    assert hash(t(true_str)) == hash(True)
-    assert hash(t(false_str)) == hash(False)
-    assert hash(t(True)) == hash(True)
-    assert hash(t(False)) == hash(False)
+    assert cb_t == t(true_str)
+    assert cb_f == t(false_str)
+    assert cb_t == True  # noqa: E712
+    assert cb_f == False  # noqa: E712
+    assert cb_t == true_str
+    assert cb_f == false_str
+    assert cb_t != ''
+    assert cb_f != ''
+    assert cb_t != []
+    assert cb_f != []
+
+    assert str(cb_t) == true_str
+    assert str(cb_f) == false_str
+
+    assert hash(cb_t) == hash(True)
+    assert hash(cb_f) == hash(False)
+
+
+def test_Timestamp_invalid_init() -> None:
+    '''Test that invalid Timestamp initializers are rejected.'''
+    with pytest.raises(ValueError):
+        Timestamp('')
+
+    with pytest.raises(ValueError):
+        Timestamp(None)  # type: ignore
+
+    with pytest.raises(ValueError):
+        Timestamp([])  # type: ignore
 
 
 @pytest.mark.parametrize('v, t, e', (
@@ -43,6 +67,12 @@ def test_custom_bools(t: type[CustomBool], true_str: str, false_str: str) -> Non
     ('1970-01-01T00:00:00Z', int, 0),
     ('1970-01-01T00:00:00Z', float, 0.0),
     ('1970-01-01T00:00:00Z', str, '1970-01-01T00:00:00'),
+    (datetime.datetime.fromisoformat('1970-01-01T00:00:00Z'), int, 0),
+    (datetime.datetime.fromisoformat('1970-01-01T00:00:00Z'), float, 0.0),
+    (datetime.datetime.fromisoformat('1970-01-01T00:00:00Z'), str, '1970-01-01T00:00:00'),
+    (datetime.date.fromisoformat('1970-01-01'), int, 0),
+    (datetime.date.fromisoformat('1970-01-01'), float, 0.0),
+    (datetime.date.fromisoformat('1970-01-01'), str, '1970-01-01T00:00:00'),
 ))
 def test_Timestamp_conversion(v: int | str | datetime.datetime, t: type[int | str | float], e: int | str | float) -> None:
     '''Check base type conversion handling for Timestamps.'''
@@ -52,9 +82,24 @@ def test_Timestamp_conversion(v: int | str | datetime.datetime, t: type[int | st
 
 
 @pytest.mark.parametrize('v, e', (
-    (0, (0, 0.0, '1970-01-01T00:00:00', datetime.datetime.fromisoformat('1970-01-01T00:00:00Z'))),
-    (1, (1, 1.0, '1970-01-01T00:00:01', datetime.datetime.fromisoformat('1970-01-01T00:00:01Z'))),
-    (60, (60, 60.0, '1970-01-01T00:01:00', datetime.datetime.fromisoformat('1970-01-01T00:01:00Z'))),
+    (0, (
+        0,
+        0.0,
+        '1970-01-01T00:00:00',
+        datetime.datetime.fromisoformat('1970-01-01T00:00:00Z'),
+    )),
+    (1, (
+        1,
+        1.0,
+        '1970-01-01T00:00:01',
+        datetime.datetime.fromisoformat('1970-01-01T00:00:01Z'),
+    )),
+    (60, (
+        60,
+        60.0,
+        '1970-01-01T00:01:00',
+        datetime.datetime.fromisoformat('1970-01-01T00:01:00Z'),
+    )),
 ))
 def test_Timestamp_equality(v: int, e: tuple[Any]) -> None:
     '''Check Timestamp equality checking.'''
@@ -64,6 +109,12 @@ def test_Timestamp_equality(v: int, e: tuple[Any]) -> None:
 
     for x in e:
         assert tstamp == x
+
+
+def test_Timestamp_not_equal() -> None:
+    '''Check invalid equality cases for Timestamp instances.'''
+    assert Timestamp(0) != []
+    assert Timestamp(0) != ''
 
 
 @pytest.mark.parametrize('v', (
@@ -91,6 +142,23 @@ def test_Timestamp_ordering() -> None:
     assert tstamp2 > tstamp1
     assert tstamp2 >= tstamp1
     assert tstamp1 >= tstamp1
+
+
+def test_Timestamp_comparison() -> None:
+    '''Check ordering comparisons between Timestamps and other types.'''
+    tstamp = Timestamp(1)
+
+    assert tstamp < datetime.datetime.fromisoformat('1970-01-01T00:01:00')
+    assert tstamp > datetime.date.fromisoformat('1970-01-01')
+
+    assert tstamp < 2
+    assert tstamp > 0
+
+    assert tstamp < '1970-01-01T00:01:00'
+    assert tstamp > '1970-01-01'
+
+    assert tstamp.__lt__('') is NotImplemented
+    assert tstamp.__lt__([]) is NotImplemented
 
 
 def test_Timestamp_datetime() -> None:
