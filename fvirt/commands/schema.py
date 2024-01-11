@@ -98,7 +98,7 @@ def cb(
             yaml.default_flow_style = False
             yaml.dump(schema, sys.stdout)
             ctx.exit(ExitCode.SUCCESS)
-        case _:
+        case _:  # pragma: nocover
             raise RuntimeError
 
 
