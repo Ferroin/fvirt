@@ -6,22 +6,45 @@
 from __future__ import annotations
 
 import importlib
+import json
 import re
 
+from io import StringIO
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Final
 
 import click
 import pytest
+
+from ruamel.yaml import YAML
 
 from fvirt.commands._base.objects import DisplayProperty, ObjectMixin
 from fvirt.libvirt.entity import Entity
 from fvirt.util.units import bytes_to_unit
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
+
+    from click.testing import Result
+    from pydantic import BaseModel
+
     from fvirt.commands._base.group import Group
 
 SRC_ROOT = Path(__file__).parents[2]
+
+yaml: Final = YAML(typ='safe')
+
+
+def _yaml_loads(v: str) -> Any:
+    st = StringIO(v)
+    return yaml.load(st)
+
+
+SCHEMA_FORMATS: Final = (
+    ('json', json.loads),
+    ('json-compact', json.loads),
+    ('yaml', _yaml_loads),
+)
 
 
 def check_lazy_commands(group: Group, modpath: Path) -> None:
@@ -125,3 +148,18 @@ def check_info_output(output: str, entity: Entity, header: str, mixin_class: typ
                 assert match[1] == item.color(prop)
         else:
             assert match is None, f'Found erroneous entry for { item.name }.'
+
+
+def check_schema(
+    name: str,
+    fmt: str,
+    decoder: Callable[[str], dict],
+    model: type[BaseModel],
+    runner: Callable[[Sequence[str], int], Result],
+) -> None:
+    '''Validate that the schema command correctly dumps a given schema.'''
+    result = runner(('schema', '--format', fmt, name), 0)
+
+    data = decoder(result.output)
+
+    assert data == model.model_json_schema()
