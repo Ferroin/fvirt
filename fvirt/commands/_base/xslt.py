@@ -154,18 +154,18 @@ class XSLTCommand(MatchCommand):
                 success=success,
             ))
 
-            if success != len(futures) or (not futures and state.fail_if_no_match):
-                ctx.exit(3)
+            if success != len(futures):
+                ctx.exit(ExitCode.OPERATION_FAILED)
 
         if self.HAS_PARENT:
-            header = f'Apply an XSLT document to one or more { self.NAME }s.'
-        else:
             header = f'''
             Apply an XSLT document to one or more { self.NAME }s in a given { self.PARENT_NAME }.
 
             A { self.PARENT_NAME } must be exlicitly specified with the { self.PARENT_METAVAR }
             argument.
             '''
+        else:
+            header = f'Apply an XSLT document to one or more { self.NAME }s.'
 
         body = f'''
         Either a specific { self.NAME } name to modify should be specified as
