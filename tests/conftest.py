@@ -21,6 +21,7 @@ from typing import TYPE_CHECKING, Any, cast
 
 import pytest
 
+from click.testing import CliRunner, Result
 from lxml import etree
 from ruamel.yaml import YAML
 from simple_file_lock import FileLock
@@ -31,8 +32,6 @@ from fvirt.libvirt.events import start_libvirt_event_thread
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
-
-    from click.testing import CliRunner, Result
 
 if not sys.warnoptions:
     import warnings
@@ -120,9 +119,10 @@ def cleanup_hv(hv: Hypervisor, prefix: str) -> None:
 
 
 @pytest.fixture
-def runner(cli_runner: CliRunner) -> Callable[[Sequence[str], int], Result]:
+def runner() -> Callable[[Sequence[str], int], Result]:
     '''Provide a runner for running the fvirt cli with a given set of arguments.'''
     def runner(args: Sequence[str], exit_code: int) -> Result:
+        cli_runner = CliRunner(mix_stderr=False)
         result = cli_runner.invoke(cli, args)
 
         if isinstance(result.exception, SystemExit):
