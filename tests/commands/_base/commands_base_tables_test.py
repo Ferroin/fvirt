@@ -14,13 +14,13 @@ from typing import TYPE_CHECKING, Any
 import click
 import pytest
 
+from click.testing import CliRunner
+
 from fvirt.commands._base.objects import DisplayProperty
 from fvirt.commands._base.tables import ColumnsParam, color_bool, color_optional, column_info, render_table, tabulate_entities
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
-
-    from click.testing import CliRunner
 
     from fvirt.libvirt import Domain, Hypervisor
 
@@ -172,8 +172,9 @@ def test_render_table_with_titles() -> None:
             assert items[j] == SELECTED_TEST_COLUMNS[j].color(TEST_LINES[i - 2][j])
 
 
-def test_columns_param_list(cli_runner: CliRunner, column_test_cmd: click.Command) -> None:
+def test_columns_param_list(column_test_cmd: click.Command) -> None:
     '''Test list functionality of ColumnsParam.'''
+    cli_runner = CliRunner(mix_stderr=False)
     result = cli_runner.invoke(column_test_cmd, ['--columns', 'list'])
     assert not result.exception, ''.join(format_exception(*result.exc_info))  # type: ignore
     assert result.exit_code == 0, result.output
@@ -184,8 +185,9 @@ def test_columns_param_list(cli_runner: CliRunner, column_test_cmd: click.Comman
     assert re.match('^list$', output_lines[0])
 
 
-def test_columns_param_all(cli_runner: CliRunner, column_test_cmd: click.Command) -> None:
+def test_columns_param_all(column_test_cmd: click.Command) -> None:
     '''Test all columns functionality of ColumnsParam.'''
+    cli_runner = CliRunner(mix_stderr=False)
     result = cli_runner.invoke(column_test_cmd, ['--columns', 'all'])
     assert not result.exception, ''.join(format_exception(*result.exc_info))  # type: ignore
     assert result.exit_code == 0, result.output
@@ -201,8 +203,9 @@ def test_columns_param_all(cli_runner: CliRunner, column_test_cmd: click.Command
                                  [x for x in combinations(TEST_COLUMNS.keys(), 2)] +
                                  [x for x in combinations(TEST_COLUMNS.keys(), 3)] +
                                  [[x for x in TEST_COLUMNS.keys()]])
-def test_columns_param(cli_runner: CliRunner, column_test_cmd: click.Command, cols: Sequence[str]) -> None:
+def test_columns_param(column_test_cmd: click.Command, cols: Sequence[str]) -> None:
     '''Test column selection functionality of ColumnsParam.'''
+    cli_runner = CliRunner(mix_stderr=False)
     result = cli_runner.invoke(column_test_cmd, ['--columns', ', '.join(cols)])
     assert not result.exception, ''.join(format_exception(*result.exc_info))  # type: ignore
     assert result.exit_code == 0, result.output
