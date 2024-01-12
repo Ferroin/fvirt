@@ -132,6 +132,10 @@ class FVirtConfig(BaseModel):
     '''Configuration for the fvirt command line tool.'''
     model_config: ClassVar = MODEL_CONFIG
 
+    config_source: str = Field(
+        default='INTERNAL',
+        description='Overridden automatically to indicate what configuration file was used. Ignored on input.',
+    )
     log: LoggingConfig = Field(
         default_factory=LoggingConfig,
         description='Specifies configuration for logging.',
@@ -183,6 +187,7 @@ def get_config(config_path: Path | None = None) -> FVirtConfig:
             if conf.is_file():
                 LOGGER.info(f'Loading configuration from {str(conf)}')
                 data = yaml.load(conf.read_text())
+                data['config_source'] = str(conf)
                 break
             elif config_path is not None:
                 LOGGER.fatal(f'User specified configuration file {str(conf)} could not be found')
