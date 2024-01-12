@@ -31,12 +31,12 @@ def cb(ctx: click.Context, state: State) -> None:
     with state.hypervisor as hv:
         click.echo(f'libvirt: v{ str(hv.lib_version) }')
 
-        if hv.uri.driver is not None:
-            driver = hv.uri.driver.value
-        else:
+        if hv.uri.driver is None:  # pragma: nocover
             driver = 'unknown'
+        else:
+            driver = hv.uri.driver.value
 
-        if hv.version is None:
+        if hv.version is None:  # pragma: nocover
             version = 'UNKNOWN'
         else:
             version = f'v{ str(hv.version) }'

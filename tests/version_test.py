@@ -76,6 +76,36 @@ def test_version_hash() -> None:
     (1000, VersionNumber(0, 1, 0)),
     (1000000, VersionNumber(1, 0, 0)),
 ))
-def test_libvirt_parse(v: int, t: VersionNumber) -> None:
+def test_VersionNumber_libvirt_parse(v: int, t: VersionNumber) -> None:
     '''Test that parsing libvirt version numbers works correctly.'''
     assert VersionNumber.from_libvirt_version(v) == t
+
+
+def test_VersionNumber_order() -> None:
+    '''Test ordering of VersionNumbers.'''
+    v1 = VersionNumber(0, 0, 0)
+    v2 = VersionNumber(1, 0, 0)
+    v3 = VersionNumber(0, 1, 0)
+    v4 = VersionNumber(0, 0, 1)
+    v5 = VersionNumber(1, 1, 0)
+    v6 = VersionNumber(0, 1, 1)
+
+    assert v1 < v2
+    assert v2 > v3
+    assert v3 > v4
+    assert v2 < v5
+    assert v3 < v6
+
+
+def test_VersionNumber_len() -> None:
+    '''Test the length of a VersionNumber.'''
+    assert len(VersionNumber(1, 2, 3)) == 3
+
+
+def test_VersionNumber_iter() -> None:
+    '''Test use of a VersionNumber as an iterator.'''
+    for i, j in zip(
+        VersionNumber(1, 2, 3),
+        (1, 2, 3),
+    ):
+        assert i == j
