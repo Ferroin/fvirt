@@ -1,7 +1,7 @@
 # Copyright (c) 2023 Austin S. Hemmelgarn
 # SPDX-License-Identifier: MITNFA
 
-'''A command to host info .'''
+'''A command to view host info.'''
 
 from __future__ import annotations
 
