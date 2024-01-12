@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Any, Final, Self, cast
 
 import libvirt
 
-from .exceptions import InsufficientPrivileges, call_libvirt, libvirtCallWrapper
+from .exceptions import FVirtException, InsufficientPrivileges, call_libvirt, libvirtCallWrapper
 from .uri import URI
 from ..version import VersionNumber
 
@@ -169,12 +169,12 @@ class Hypervisor:
         from .storage_pool import StoragePoolAccess
 
         self._uri = hvuri
-
-        self._connection: libvirtCallWrapper[libvirt.virConnect] | None = None
-
-        self.__read_only = bool(read_only)
-        self.__conn_count = 0
         self.__lock = threading.RLock()
+        self.__read_only = bool(read_only)
+
+        with self.__lock:
+            self._connection: libvirtCallWrapper[libvirt.virConnect] | None = None
+            self.__conn_count = 0
 
         self.__domains = DomainAccess(self)
 
@@ -326,7 +326,21 @@ class Hypervisor:
                 self._connection.registerCloseCallback(cb, None)
 
         with self.__lock:
-            if self._connection is None or not self._connection.isAlive():
+            new_connect = False
+
+            if self._connection is None:
+                new_connect = True
+            else:
+                # For some reason, libvirt.virConnect.isAlive() will throw
+                # an error instead of returning False if the connection
+                # is in some way invalid. The below code is intended to
+                # account for this debatable behavior.
+                try:
+                    new_connect = not self._connection.isAlive()
+                except FVirtException:
+                    new_connect = True
+
+            if new_connect:
                 LOGGER.debug(f'Opening new connection for hypervisor instance: {repr(self)}')
 
                 if self.read_only:
@@ -337,12 +351,12 @@ class Hypervisor:
                 self._connection.registerCloseCallback(cb, None)
                 self.__conn_count += 1
             else:
-                LOGGER.debug(f'Registering new connection user for hypervisor instance: {repr(self)}')
 
                 if self.__conn_count == 0:
-                    raise RuntimeError
-                else:
-                    self.__conn_count += 1
+                    LOGGER.critical(f'Internal consistency error detected: {repr(self)} has an active connection but a connection count of 0.')
+
+                LOGGER.debug(f'Registering new connection user for hypervisor instance: {repr(self)}')
+                self.__conn_count += 1
 
         return self
 
@@ -360,20 +374,20 @@ class Hypervisor:
            access protocols, you should not need to call this function
            manually.'''
         with self.__lock:
-            if self._connection is not None and self.__conn_count < 2:
-                LOGGER.debug(f'Closing connection for hypervisor: {repr(self)}')
+            if self._connection is not None:
+                if self.__conn_count < 2:
+                    LOGGER.debug(f'Closing connection for hypervisor: {repr(self)}')
 
-                if self._connection.isAlive():
-                    self._connection.unregisterCloseCallback()
-                    self._connection.close()
+                    if self._connection.isAlive():
+                        self._connection.unregisterCloseCallback()
+                        self._connection.close()
 
-                self._connection = None
+                    self._connection = None
+                    self.__conn_count = 0
+                else:
+                    LOGGER.debug(f'Unregistering user for hypervisor connection: {repr(self)}')
+                    self.__conn_count -= 1
             else:
-                LOGGER.debug(f'Unregistering user for hypervisor connection: {repr(self)}')
-
-            self.__conn_count -= 1
-
-            if self.__conn_count < 0:
                 self.__conn_count = 0
 
     def define_domain(self: Self, /, config: str) -> Domain:
