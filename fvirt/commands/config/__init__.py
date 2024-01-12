@@ -16,6 +16,7 @@ config: Final = Group(
     lazy_commands={
         'dump': 'fvirt.commands.config.dump.dump',
         'effective': 'fvirt.commands.config.effective.effective',
+        'paths': 'fvirt.commands.config.paths.paths',
     },
 )
 
