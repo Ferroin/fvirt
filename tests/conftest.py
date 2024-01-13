@@ -59,6 +59,7 @@ if DEBUG_LOG != 0:
 TESTS_PATH = Path(__file__).parent
 config.CONFIG_PATHS = (
     TESTS_PATH / 'data' / 'fvirt-config.yaml',
+    TESTS_PATH / 'data' / 'fvirt-config.yml',
 )
 
 PREFIX = 'fvirt-test'
