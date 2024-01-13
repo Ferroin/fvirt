@@ -32,7 +32,7 @@ CONFIG_NAMES: Final = (
     'config.yml',
     'config.yaml',
 )
-CONFIG_PATHS: Final = tuple(
+CONFIG_PATHS = tuple(
     [DIRS.user_config_path / x for x in CONFIG_NAMES] +
     [DIRS.site_config_path / x for x in CONFIG_NAMES]
 )
@@ -164,8 +164,12 @@ class FVirtConfig(BaseModel):
 
 
 @functools.cache
-def get_config(config_path: Path | None = None) -> FVirtConfig:
+def get_config(config_path: Path | None = None, ignore_config_files: bool = False) -> FVirtConfig:
     '''Load the fvirt configuration.'''
+    if ignore_config_files:
+        LOGGER.info('Ignoring external configuration, using internal defaults.')
+        return FVirtConfig()
+
     from ruamel.yaml import YAML
 
     from fvirt.libvirt.exceptions import FVirtException

@@ -22,7 +22,7 @@ OUTPUT_REGEX = re.compile('^fvirt ([0-9]+\\.[0-9]+\\.[0-9]+), using libvirt-pyth
 
 def test_version(runner: Callable[[Sequence[str], int], Result]) -> None:
     '''Test that the version command properly reports the version.'''
-    result = runner(('version'), 0)
+    result = runner(('version',), 0)
 
     matches = OUTPUT_REGEX.match(result.output)
 
@@ -33,7 +33,7 @@ def test_version(runner: Callable[[Sequence[str], int], Result]) -> None:
 
 def test_api_version(runner: Callable[[Sequence[str], int], Result]) -> None:
     '''Test that the version command properly reports the api version.'''
-    result = runner(('version'), 0)
+    result = runner(('version',), 0)
 
     matches = OUTPUT_REGEX.match(result.output)
 

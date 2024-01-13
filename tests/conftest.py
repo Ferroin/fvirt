@@ -27,6 +27,7 @@ from ruamel.yaml import YAML
 from simple_file_lock import FileLock
 
 from fvirt.cli import cli
+from fvirt.commands._base import config
 from fvirt.libvirt import URI, Domain, Hypervisor, StoragePool, Volume
 from fvirt.libvirt.events import start_libvirt_event_thread
 
@@ -56,6 +57,9 @@ if DEBUG_LOG != 0:
     logging.basicConfig(level=logging.DEBUG)
 
 TESTS_PATH = Path(__file__).parent
+config.CONFIG_PATHS = (
+    TESTS_PATH / 'data' / 'fvirt-config.yaml',
+)
 
 PREFIX = 'fvirt-test'
 XSLT_DATA = '''
@@ -118,12 +122,31 @@ def cleanup_hv(hv: Hypervisor, prefix: str) -> None:
             remove_pool(pool)
 
 
+@pytest.fixture(scope='session')
+def test_data() -> Path:
+    '''Provide the path to the test data directory.'''
+    return TESTS_PATH / 'data'
+
+
+@pytest.fixture(scope='session')
+def test_config_file(test_data: Path) -> Path:
+    '''Provide the path to the fvirt config file used for test runs.'''
+    return test_data / 'fvirt-config.yaml'
+
+
 @pytest.fixture
-def runner() -> Callable[[Sequence[str], int], Result]:
+def runner(test_config_file: Path) -> Callable[[Sequence[str], int, bool], Result]:
     '''Provide a runner for running the fvirt cli with a given set of arguments.'''
-    def runner(args: Sequence[str], exit_code: int) -> Result:
+    def runner(args: Sequence[str], exit_code: int, isolated_config: bool = True) -> Result:
         cli_runner = CliRunner(mix_stderr=False)
-        result = cli_runner.invoke(cli, args)
+        initial_args: tuple[str, ...] = tuple()
+
+        if isolated_config:
+            initial_args += (
+                '--ignore-config-files',
+            )
+
+        result = cli_runner.invoke(cli, initial_args + tuple(args))
 
         if isinstance(result.exception, SystemExit):
             if exit_code != 0:
@@ -303,11 +326,11 @@ def require_qemu(require_virtqemud: None, qemu_system: tuple[Path, str] | None) 
 
 
 @pytest.fixture(scope='session')
-def vm_kernel(qemu_system: tuple[Path, str]) -> tuple[Path, Path]:
+def vm_kernel(test_data: Path, qemu_system: tuple[Path, str]) -> tuple[Path, Path]:
     '''Provides a path to a usable kernel image for booting live VMs.'''
     _, vm_arch = qemu_system
-    kernel_image = TESTS_PATH / 'data' / 'images' / vm_arch / 'kernel.img'
-    initramfs_image = TESTS_PATH / 'data' / 'images' / vm_arch / 'initramfs.img'
+    kernel_image = test_data / 'images' / vm_arch / 'kernel.img'
+    initramfs_image = test_data / 'images' / vm_arch / 'initramfs.img'
 
     return (kernel_image, initramfs_image)
 

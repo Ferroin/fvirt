@@ -138,9 +138,11 @@ def cb(
     jobs: int | None,
     log_level: Literal['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'] | None,
     config_file: Path | None,
+    ignore_config_files: bool,
 ) -> None:
     ctx.obj = State(
         config_file=config_file,
+        ignore_config_files=ignore_config_files,
         uri=URI.from_string(connect),
         fail_fast=fail_fast,
         idempotent=idempotent,
@@ -170,6 +172,12 @@ cli: Final = Group(
             default=None,
             nargs=1,
             help='Specify an alternative configuration file to use.',
+        ),
+        click.Option(
+            param_decls=('--ignore-config-files',),
+            is_flag=True,
+            default=False,
+            help='Ignore any external configuration files and use internal defaults for configuration.',
         ),
         click.Option(
             param_decls=('--fail-fast/--no-fail-fast',),
