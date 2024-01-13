@@ -100,6 +100,7 @@ class State:
     def __init__(
         self: Self,
         config_file: Path | None,
+        ignore_config_files: bool,
         uri: URI,
         fail_fast: bool | None,
         idempotent: bool | None,
@@ -114,7 +115,7 @@ class State:
         if isinstance(jobs, int) and jobs < 1:
             raise ValueError('Number of jobs must be at least 1')
 
-        self.__config = get_config(config_file)
+        self.__config = get_config(config_file, ignore_config_files)
 
         if log_level is not None:
             self.config.log.level = log_level
