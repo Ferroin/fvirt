@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Final
 from ruamel.yaml import YAML
 
 from fvirt.commands._base.config import FVirtConfig, RuntimeConfig
+from fvirt.libvirt.uri import URI
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -70,7 +71,7 @@ def test_config_effective_command(tmp_path: Path, test_uri: str, runner: Callabl
 
     data = yaml.load(StringIO(result.stdout))
 
-    loaded_conf = RuntimeConfig(data)
-    effective_conf = conf.get_effective_config()
+    loaded_conf = RuntimeConfig.model_validate(data)
+    effective_conf = conf.get_effective_config(URI.from_string(test_uri))
 
     assert loaded_conf == effective_conf
