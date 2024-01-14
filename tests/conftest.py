@@ -57,10 +57,6 @@ if DEBUG_LOG != 0:
     logging.basicConfig(level=logging.DEBUG)
 
 TESTS_PATH = Path(__file__).parent
-config.CONFIG_PATHS = (
-    TESTS_PATH / 'data' / 'fvirt-config.yaml',
-    TESTS_PATH / 'data' / 'fvirt-config.yml',
-)
 
 PREFIX = 'fvirt-test'
 XSLT_DATA = '''
@@ -133,6 +129,33 @@ def test_data() -> Path:
 def test_config_file(test_data: Path) -> Path:
     '''Provide the path to the fvirt config file used for test runs.'''
     return test_data / 'fvirt-config.yaml'
+
+
+@pytest.fixture
+def isolated_config() -> Generator[None, None, None]:
+    '''Run a test using no configuration search paths at all.'''
+    real_config_paths = config.CONFIG_PATHS
+    config.CONFIG_PATHS = tuple()
+
+    try:
+        yield None
+    finally:
+        config.CONFIG_PATHS = real_config_paths
+
+
+@pytest.fixture
+def test_configs(test_data: Path) -> Generator[None, None, None]:
+    '''Run a test using the test configuration shipped with fvirt.'''
+    real_config_paths = config.CONFIG_PATHS
+    config.CONFIG_PATHS = (
+        test_data / 'fvirt-config.yaml',
+        test_data / 'fvirt-config.yml',
+    )
+
+    try:
+        yield None
+    finally:
+        config.CONFIG_PATHS = real_config_paths
 
 
 @pytest.fixture
