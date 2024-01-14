@@ -22,9 +22,20 @@ yaml: Final = YAML()
 yaml.representer.add_representer(type(None), lambda r, d: r.represent_scalar('tag:yaml.org,2002:null', 'null'))
 
 
+def test_config_dump_default(runner: Callable[[Sequence[str], int, bool], Result], isolated_config: None) -> None:
+    '''Test that we correctly dump the default configuration.'''
+    result = runner(('config', 'dump'), 0, False)
+
+    data = yaml.load(StringIO(result.stdout))
+
+    config = FVirtConfig.model_validate(data)
+
+    assert config == FVirtConfig()
+
+
 def test_config_dump_internal(runner: Callable[[Sequence[str], int, bool], Result]) -> None:
     '''Test that we correctly dump the internal configuration.'''
-    result = runner(('--ignore-config-files', 'config', 'dump'), 0, True)
+    result = runner(('--ignore-config-files', 'config', 'dump'), 0, False)
 
     data = yaml.load(StringIO(result.stdout))
 
@@ -55,7 +66,7 @@ def test_config_dump_specific(tmp_path: Path, runner: Callable[[Sequence[str], i
     assert loaded_conf == conf
 
 
-def test_config_dump_auto(test_config_file: Path, runner: Callable[[Sequence[str], int, bool], Result]) -> None:
+def test_config_dump_auto(test_config_file: Path, runner: Callable[[Sequence[str], int, bool], Result], test_configs: None) -> None:
     '''Check that dumping a searched config file works correctly.'''
     result = runner(('config', 'dump'), 0, False)
 

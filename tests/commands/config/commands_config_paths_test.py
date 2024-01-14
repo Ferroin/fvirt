@@ -7,16 +7,16 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from fvirt.commands._base.config import CONFIG_PATHS
-
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
     from click.testing import Result
 
 
-def test_config_paths_command(runner: Callable[[Sequence[str], int, bool], Result]) -> None:
+def test_config_paths_command(runner: Callable[[Sequence[str], int, bool], Result], test_configs: None) -> None:
     '''Check that the config paths command works correctly.'''
+    from fvirt.commands._base.config import CONFIG_PATHS
+
     result = runner(('config', 'paths'), 0, False)
 
     items = result.stdout.splitlines()
