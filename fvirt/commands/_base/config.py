@@ -5,7 +5,6 @@
 
 from __future__ import annotations
 
-import functools
 import logging
 
 from typing import TYPE_CHECKING, Annotated, Any, ClassVar, Final, Literal, Self, TypeVar
@@ -163,7 +162,6 @@ class FVirtConfig(BaseModel):
         return self._effective[uri]
 
 
-@functools.cache
 def get_config(config_path: Path | None = None, ignore_config_files: bool = False) -> FVirtConfig:
     '''Load the fvirt configuration.'''
     if ignore_config_files:
