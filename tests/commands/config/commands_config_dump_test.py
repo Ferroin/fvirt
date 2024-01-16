@@ -44,14 +44,8 @@ def test_config_dump_internal(runner: Callable[[Sequence[str], int, bool], Resul
     assert config == FVirtConfig()
 
 
-def test_config_dump_specific(tmp_path: Path, runner: Callable[[Sequence[str], int, bool], Result]) -> None:
-    conf_path = tmp_path / 'config.yaml'
-
-    conf = FVirtConfig()
-    conf.log.level = 'DEBUG'
-    conf.defaults.idempotent = True
-
-    yaml.dump(conf.model_dump(), conf_path)
+def test_config_dump_specific(sample_config: tuple[FVirtConfig, Path], runner: Callable[[Sequence[str], int, bool], Result]) -> None:
+    conf, conf_path = sample_config
 
     result = runner(('--config-file', str(conf_path), 'config', 'dump'), 0, False)
 

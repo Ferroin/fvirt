@@ -159,6 +159,20 @@ def test_configs(test_data: Path) -> Generator[None, None, None]:
 
 
 @pytest.fixture
+def sample_config(tmp_path: Path) -> tuple[config.FVirtConfig, Path]:
+    '''Provide a sample configuration in a temporary location for testing.'''
+    conf_path = tmp_path / 'config.yaml'
+
+    conf = config.FVirtConfig()
+    conf.log.level = 'DEBUG'
+    conf.defaults.idempotent = True
+
+    yaml.dump(conf.model_dump(), conf_path)
+
+    return (conf, conf_path)
+
+
+@pytest.fixture
 def runner(test_config_file: Path) -> Callable[[Sequence[str], int, bool], Result]:
     '''Provide a runner for running the fvirt cli with a given set of arguments.'''
     def runner(args: Sequence[str], exit_code: int, isolated_config: bool = True) -> Result:
