@@ -530,3 +530,19 @@ def test_new_config(data: Mapping, virt_xml_validate: Callable[[str], None]) -> 
     assert isinstance(doc, str)
 
     virt_xml_validate(doc)
+
+
+def test_new_config_custom_template() -> None:
+    '''Test pool templating with a custom template.'''
+    doc = StoragePool.new_config(
+        config={
+            'type': 'dir',
+            'name': 'pool',
+            'target': {
+                'path': '/nonexistent',
+            },
+        },
+        template='{{name}}',
+    )
+
+    assert doc == 'pool'

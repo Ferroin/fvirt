@@ -161,7 +161,7 @@ class Entity(ABC):
            instance of the Entity type.
 
            Children should override this appropriately.'''
-        return ''
+        return ''  # pragma: nocover
 
     @property
     def _config_flags(self: Self) -> int:
@@ -171,7 +171,7 @@ class Entity(ABC):
 
            Children should override this if they need specific flags to
            be used when accessing config.'''
-        return 0
+        return 0  # pragma: nocover
 
     @property
     @abstractmethod
@@ -206,7 +206,7 @@ class Entity(ABC):
     @property
     def _mark_invalid_on_undefine(self: Self) -> bool:
         '''Whether or not the Entity should be marked invalid when undefined.'''
-        return False
+        return True  # pragma: nocover
 
     @final
     @property
@@ -235,7 +235,7 @@ class Entity(ABC):
         '''The UUID of the entity, or None if it has no UUID.'''
         self._check_valid()
 
-        get_uuid = getattr(self._entity, 'UUIDString')
+        get_uuid = getattr(self._entity, 'UUIDString', None)
 
         if get_uuid is None:
             return None
@@ -308,9 +308,6 @@ class Entity(ABC):
 
         self._check_valid()
 
-        if self._hv.read_only:
-            raise InsufficientPrivileges
-
         config = self.config
         element = config.find(path)
 
@@ -342,9 +339,6 @@ class Entity(ABC):
             raise ValueError('value must be a string.')
 
         self._check_valid()
-
-        if self._hv.read_only:
-            raise InsufficientPrivileges
 
         config = self.config
         element = config.find(path)
@@ -499,7 +493,7 @@ class RunnableEntity(Entity):
     def _mark_invalid_on_undefine(self: Self) -> bool:
         return not self.running
 
-    @property
+    @Entity.config_raw.getter  # type: ignore
     def config_raw(self: Self) -> str:
         '''The raw persistent XML configuration of the entity.
 
@@ -524,32 +518,12 @@ class RunnableEntity(Entity):
         else:
             return self.config_raw_live
 
-    @config_raw.setter
-    def config_raw(self: Self, config: str) -> None:
-        '''Recreate the entity with the specified raw XML configuration.'''
-        if not self._define_method:
-            raise ValueError('No method specified to redefine entity.')
-
-        if self._hv.read_only:
-            raise InsufficientPrivileges
-
-        define = getattr(self._define_target, self._define_method, None)
-
-        if define is None:
-            raise RuntimeError(f'Could not find define method { self._define_method } on target instance.')
-
-        self._entity = define(config)._entity
-
-        self._valid = True
-
     @property
     def config_raw_live(self: Self) -> str:
         '''The raw live XML configuration of the entity.
 
            For pre-parsed configuration, use the config_live property instead.'''
-        self._check_valid()
-
-        return cast(str, self._entity.XMLDesc(self._config_flags))
+        return super().config_raw
 
     @property
     def config_live(self: Self) -> etree._ElementTree:

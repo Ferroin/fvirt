@@ -108,7 +108,8 @@ class Volume(Entity):
 
     @property
     def _format_properties(self: Self) -> set[str]:
-        return super()._format_properties | {
+        return {
+            'name',
             'allocated',
             'capacity',
             'key',

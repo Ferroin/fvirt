@@ -32,18 +32,19 @@ def test_check_match_aliases(test_dom: tuple[Domain, Hypervisor]) -> None:
     check_match_aliases(Domain.MATCH_ALIASES, test_dom[0])
 
 
-def test_equality(test_dom: tuple[Domain, Hypervisor]) -> None:
+def test_equality(test_dom_group: tuple[tuple[Domain, ...], Hypervisor]) -> None:
     '''Test that domain equality checks work correctly.'''
     # TODO: Needs to be expanded to use a live domain for better test coverage.
-    dom, hv = test_dom
+    doms, hv = test_dom_group
 
-    assert dom == dom
+    assert doms[0] == doms[0]
+    assert doms[0] != doms[1]
 
-    assert dom != ''
+    assert doms[0] != ''
 
-    dom2 = hv.domains.get(dom.name)
+    dom2 = hv.domains.get(doms[0].name)
 
-    assert dom == dom2
+    assert doms[0] == dom2
 
 
 def test_self_wrap(test_dom: tuple[Domain, Hypervisor]) -> None:
@@ -564,3 +565,24 @@ def test_new_config(data: Mapping, virt_xml_validate: Callable[[str], None]) -> 
     assert isinstance(doc, str)
 
     virt_xml_validate(doc)
+
+
+def test_new_config_custom_template() -> None:
+    '''Test domain templating with a custom template.'''
+    doc = Domain.new_config(
+        config={
+            'name': 'test',
+            'type': 'xen',
+            'memory': 65536,
+            'vcpu': 4,
+            'cpu': {},
+            'os': {
+                'variant': 'host',
+                'bootloader': '/usr/bin/test_loader',
+                'type': 'linux',
+            },
+        },
+        template='{{name}}',
+    )
+
+    assert doc == 'test'
