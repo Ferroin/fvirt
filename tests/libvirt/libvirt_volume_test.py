@@ -78,6 +78,12 @@ def test_key(live_volume: tuple[Volume, StoragePool, Hypervisor]) -> None:
     assert isinstance(vol.key, str)
 
 
+def test_volume_uuid_none(live_volume: tuple[Volume, StoragePool, Hypervisor]) -> None:
+    '''Check that the UUID property for volumes returns None.'''
+    vol, _, _ = live_volume
+    assert vol.uuid is None
+
+
 def test_config_raw(live_volume: tuple[Volume, StoragePool, Hypervisor]) -> None:
     '''Check that the config_raw property works correctly.'''
     vol, _, _ = live_volume
@@ -438,3 +444,18 @@ def test_new_config(data: Mapping, virt_xml_validate: Callable[[str], None]) -> 
     assert isinstance(doc, str)
 
     virt_xml_validate(doc)
+
+
+def test_new_config_custom_template() -> None:
+    '''Test volume templating with a custom template.'''
+    doc = Volume.new_config(
+        config={
+            'name': 'vol',
+            'pool_type': 'dir',
+            'capacity': 65536,
+            'format': 'raw',
+        },
+        template='{{name}}',
+    )
+
+    assert doc == 'vol'
