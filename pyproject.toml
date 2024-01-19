@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "fvirt"
-version = "0.1.0"
+version = "0.1.1"
 description = "A CLI frontend for libvirt."
 authors = ["Austin S. Hemmelgarn <ahferroin7@gmail.com>"]
 license = "MITNFA"
