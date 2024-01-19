@@ -12,7 +12,7 @@ import pytest
 
 from ruamel.yaml import YAML
 
-from fvirt.commands._base.config import FVirtConfig, RuntimeConfig, get_config
+from fvirt.commands._base.config import FVirtConfig, get_config
 from fvirt.libvirt.exceptions import FVirtException
 
 yaml: Final = YAML()
