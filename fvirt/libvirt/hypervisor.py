@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Any, Final, Self, cast
 import libvirt
 
 from .exceptions import FVirtException, InsufficientPrivileges, call_libvirt, libvirtCallWrapper
-from .uri import URI
+from .uri import LIBVIRT_URI, URI
 from ..version import VersionNumber
 
 if TYPE_CHECKING:
@@ -162,7 +162,7 @@ class Hypervisor:
 
        The underlying libvirt APIs are all concurrent-access safe
        irrespective of the concurrency model in use.'''
-    def __init__(self: Self, /, hvuri: URI, *, read_only: bool = False) -> None:
+    def __init__(self: Self, /, hvuri: LIBVIRT_URI, *, read_only: bool = False) -> None:
         import threading
 
         from .domain import DomainAccess
@@ -238,7 +238,10 @@ class Hypervisor:
         '''The canonicalized URI for this Hypervisor connection.'''
         with self:
             assert self._connection is not None
-            return URI.from_string(self._connection.getURI())
+            uri = URI.from_string(self._connection.getURI())
+
+        assert isinstance(uri, URI)
+        return uri
 
     @property
     def lib_version(self: Self) -> VersionNumber:

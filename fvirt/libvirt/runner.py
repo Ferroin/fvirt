@@ -22,7 +22,7 @@ from uuid import UUID
 from .entity import Entity
 from .events import start_libvirt_event_thread
 from .hypervisor import Hypervisor
-from .uri import URI
+from .uri import LIBVIRT_URI
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping, Sequence
@@ -214,7 +214,7 @@ def _post_process(
 
 def run_hv_method(
     *,
-    uri: URI,
+    uri: LIBVIRT_URI,
     method: str,
     ident: I1,
     arguments: Sequence[Any] = [],
@@ -258,7 +258,7 @@ def run_hv_method(
 
 def run_entity_method(
     *,
-    uri: URI,
+    uri: LIBVIRT_URI,
     hvprop: str,
     method: str,
     ident: I1,
@@ -313,7 +313,7 @@ def run_entity_method(
 
 def run_sub_entity_method(
     *,
-    uri: URI,
+    uri: LIBVIRT_URI,
     hvprop: str,
     parentprop: str,
     method: str,
@@ -381,7 +381,7 @@ def run_sub_entity_method(
 
 def set_entity_attribute(
     *,
-    uri: URI,
+    uri: LIBVIRT_URI,
     hvprop: str,
     attrib: str,
     value: Any,
@@ -422,7 +422,7 @@ def set_entity_attribute(
 
 def set_sub_entity_attribute(
     *,
-    uri: URI,
+    uri: LIBVIRT_URI,
     hvprop: str,
     parentprop: str,
     attrib: str,

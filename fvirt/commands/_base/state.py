@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
     from concurrent.futures import ThreadPoolExecutor
 
-    from ...libvirt import URI, Hypervisor
+    from ...libvirt import LIBVIRT_URI, Hypervisor
     from ...util.dummy_pool import DummyExecutor
 
 T = TypeVar('T')
@@ -72,7 +72,7 @@ def _configure_logging(config: LoggingConfig) -> None:
     })
 
 
-def _effective(config: FVirtConfig, uri: URI, key: str, override: T | None, default: T) -> T:
+def _effective(config: FVirtConfig, uri: LIBVIRT_URI, key: str, override: T | None, default: T) -> T:
     if override is not None:
         return override
 
@@ -101,7 +101,7 @@ class State:
         self: Self,
         config_file: Path | None,
         ignore_config_files: bool,
-        uri: URI,
+        uri: LIBVIRT_URI,
         fail_fast: bool | None,
         idempotent: bool | None,
         fail_if_no_match: bool | None,
@@ -154,7 +154,7 @@ class State:
         return self.__config
 
     @property
-    def uri(self: Self) -> URI:
+    def uri(self: Self) -> LIBVIRT_URI:
         '''The URI specified to the CLI.'''
         return self.__uri
 

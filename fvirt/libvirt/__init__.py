@@ -29,7 +29,7 @@ from .hypervisor import Hypervisor
 from .storage_pool import StoragePool, StoragePoolState
 from .stream import Stream, StreamError
 from .types import OnOff, Timestamp, YesNo
-from .uri import DRIVER_INFO, LIBVIRT_DEFAULT_URI, URI, Driver, Transport
+from .uri import DRIVER_INFO, LIBVIRT_DEFAULT_URI, LIBVIRT_URI, URI, Driver, Transport, URIAlias
 from .volume import Volume
 from ..version import VersionNumber
 
@@ -51,6 +51,7 @@ __all__ = [
     'InvalidEntity',
     'InvalidOperation',
     'LIBVIRT_DEFAULT_URI',
+    'LIBVIRT_URI',
     'LifecycleResult',
     'NotConnected',
     'OnOff',
@@ -65,6 +66,7 @@ __all__ = [
     'Timestamp',
     'Transport',
     'URI',
+    'URIAlias',
     'Volume',
     'YesNo',
 ]
