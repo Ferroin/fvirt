@@ -5,7 +5,7 @@
 
 import pytest
 
-from fvirt.libvirt import DRIVER_INFO, LIBVIRT_DEFAULT_URI, URI, Driver
+from fvirt.libvirt import DRIVER_INFO, LIBVIRT_DEFAULT_URI, URI, Driver, URIAlias
 from fvirt.libvirt.uri import DriverFlag
 
 # Definitions used below
@@ -55,26 +55,26 @@ BAD_URIS = (
 
 
 @pytest.mark.parametrize('uri', SAMPLE_URIS)
-def test_check_validity(uri: str) -> None:
+def test_check_uri_validity(uri: str) -> None:
     '''Check that known valid URIs pass our validation.'''
     assert isinstance(URI.from_string(uri), URI)
 
 
 @pytest.mark.parametrize('uri', BAD_URIS)
-def test_check_invalid(uri: str) -> None:
+def test_check_uri_invalid(uri: str) -> None:
     '''Check that known invalid URIs are treated as such.'''
     with pytest.raises(ValueError):
         URI.from_string(uri)
 
 
 @pytest.mark.parametrize('uri', SAMPLE_URIS)
-def test_check_roundtrip(uri: str) -> None:
+def test_check_uri_roundtrip(uri: str) -> None:
     '''Check that a canonical URI can be parsed and then regurgitated successfully.'''
     assert str(URI.from_string(uri)) == uri
 
 
 @pytest.mark.parametrize('uri', SAMPLE_URIS)
-def test_check_equality(uri: str) -> None:
+def test_check_uri_equality(uri: str) -> None:
     '''Check that equality testing works.'''
     uri1 = URI.from_string(uri)
     uri2 = URI.from_string(uri)
@@ -83,14 +83,43 @@ def test_check_equality(uri: str) -> None:
     assert str(uri1) != uri2
 
 
-def test_check_hash() -> None:
+def test_check_uri_hash() -> None:
     '''Check that hashing works.'''
     assert isinstance(hash(URI.from_string(SAMPLE_URIS[0])), int)
 
 
-def test_check_repr() -> None:
+def test_check_uri_repr() -> None:
     '''Check that repr works.'''
     assert isinstance(repr(URI.from_string(SAMPLE_URIS[0])), str)
+
+
+@pytest.mark.parametrize('v', (
+    '',
+    'alias',
+    '/not/a/uri',
+))
+def test_uri_alias_generation(v: str) -> None:
+    '''Check that URI.from_string() returns a URIAlias for things that don't parse as a URI.'''
+    assert isinstance(URI.from_string(v), URIAlias)
+
+
+def test_check_uri_alias_equality() -> None:
+    '''Check that equality testing of URI aliases works.'''
+    uri1 = URIAlias('')
+    uri2 = URIAlias('')
+
+    assert uri1 == uri2
+    assert str(uri1) != uri2
+
+
+def test_check_uri_alias_hash() -> None:
+    '''Check that URI alias hashing works.'''
+    assert isinstance(hash(URIAlias('')), int)
+
+
+def test_check_uri_alias_repr() -> None:
+    '''Check that URI alias repr behavior is correct.'''
+    assert isinstance(repr(URIAlias('')), str)
 
 
 def test_check_default_uri() -> None:

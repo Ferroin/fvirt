@@ -20,7 +20,7 @@ from ...util.overlay import Overlay
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from ...libvirt.uri import URI
+    from ...libvirt.uri import LIBVIRT_URI
 
 LOGGER: Final = logging.getLogger(__name__)
 MODEL_CONFIG: Final = ConfigDict(
@@ -150,9 +150,9 @@ class FVirtConfig(BaseModel):
 
     def __init__(self: Self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self._effective: dict[URI, RuntimeConfig] = dict()
+        self._effective: dict[LIBVIRT_URI, RuntimeConfig] = dict()
 
-    def get_effective_config(self: Self, uri: URI) -> RuntimeConfig:
+    def get_effective_config(self: Self, uri: LIBVIRT_URI) -> RuntimeConfig:
         if uri not in self._effective:
             self._effective[uri] = RuntimeConfig(**Overlay(
                 self.uris.get(str(uri), RuntimeConfig()).model_dump(),

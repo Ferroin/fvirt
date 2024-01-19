@@ -97,7 +97,7 @@ REMOTE_TRANSPORTS: Final[Set] = frozenset({
 
 
 class URI:
-    '''A class representing a libvirt URI.'''
+    '''Represents a libvirt URI.'''
     __slots__ = [
         '__weakref__',
         '__driver',
@@ -110,16 +110,16 @@ class URI:
     ]
 
     def __init__(
-            self: Self,
-            /, *,
-            driver: Driver | None = None,
-            transport: Transport | None = None,
-            user: str | None = None,
-            host: str | None = None,
-            port: int | None = None,
-            path: str | None = None,
-            parameters: Mapping[str, str] = dict(),
-            ) -> None:
+        self: Self,
+        /, *,
+        driver: Driver | None = None,
+        transport: Transport | None = None,
+        user: str | None = None,
+        host: str | None = None,
+        port: int | None = None,
+        path: str | None = None,
+        parameters: Mapping[str, str] = dict(),
+    ) -> None:
         if driver is None:
             transport = None
             host = None
@@ -207,7 +207,7 @@ class URI:
         return uri
 
     def __hash__(self: Self) -> int:
-        return hash(str(self))
+        return hash(repr(self))
 
     def __eq__(self: Self, other: Any) -> bool:
         if not isinstance(other, URI):
@@ -278,15 +278,15 @@ class URI:
         return self.__parameters
 
     @classmethod
-    def from_string(cls: Type[URI], uri: str, /) -> URI:
+    def from_string(cls: Type[URI], uri: str = '', /) -> URI | URIAlias:
         '''Construct a URI instance from a URI string.'''
-        if not uri:
-            return cls()
-
         urlparts = urlparse(uri, allow_fragments=False)
 
         if not urlparts.scheme:
-            raise ValueError('No scheme specified for URI.')
+            if uri.startswith('://'):
+                raise ValueError('Invalid URI specified')
+            else:
+                return URIAlias(uri)
 
         match urlparts.scheme.split('+'):
             case [str() as d1]:
@@ -320,12 +320,40 @@ class URI:
         )
 
 
-LIBVIRT_DEFAULT_URI: Final = URI()
+class URIAlias:
+    '''Represents a URI alias for libvirt.'''
+    __slots__ = [
+        '__weakref__',
+        '__value',
+    ]
+
+    def __init__(self: Self, value: str, /) -> None:
+        self.__value = value
+
+    def __repr__(self: Self) -> str:
+        return f'<URIAlias: {self.__value}>'
+
+    def __str__(self: Self) -> str:
+        return self.__value
+
+    def __eq__(self: Self, other: Any) -> bool:
+        if not isinstance(other, URIAlias):
+            return False
+
+        return str(self) == str(other)
+
+    def __hash__(self: Self) -> int:
+        return hash(repr(self))
+
+
+LIBVIRT_URI = URI | URIAlias
+LIBVIRT_DEFAULT_URI: Final = URIAlias('')
 
 __all__ = [
     'Driver',
     'DRIVER_INFO',
     'Transport',
-    'URI',
     'LIBVIRT_DEFAULT_URI',
+    'URI',
+    'URIAlias',
 ]

@@ -33,7 +33,8 @@ default URI selection logic. Because this logic is provided by libvirt
 itself, fvirt should use the exact same default URI in any given situation
 that would be used by virsh, virt-manager, and virt-install.
 
-fvirt does not (currently) support URI aliases.
+fvirt supports URI aliases with no additional steps required, though
+they are handled entirely by libvirt itself.
 '''.lstrip().rstrip(), preserve_paragraphs=True)
 
 CONNECTION_HELP += f'\n\nSupported drivers:\n{ click.wrap_text(" ".join(RECOGNIZED_DRIVERS), initial_indent="  ", subsequent_indent="  ") }'
